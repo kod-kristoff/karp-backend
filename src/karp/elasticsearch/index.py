@@ -65,9 +65,9 @@ class EsIndex(IndexInterface):
     def create_index(self, resource_id, config):
         mapping = _create_es_mapping(config)
 
-        mapping['properties']['freetext'] = {
-            'type': 'text'
-        }
+        # mapping['properties']['freetext'] = {
+        #     'type': 'text'
+        # }
 
         body = {
             'settings': {
