@@ -52,6 +52,41 @@ def test_query_no_q(es, client_with_data_f):
     assert entries['hits'][0]['entry']['name'] == 'Grund test'
     assert entries['hits'][1]['entry']['name'] == 'Grunds'
     assert entries['hits'][2]['entry']['name'] == 'Botten test'
+
+
+def test_contains_string_lowercase(es, client_with_data_f):
+    client = init(client_with_data_f, es, ENTRIES)
+
+    entries = get_json(client, 'places/query?q=contains|name|grund')
+    assert len(entries['hits']) == 2
+    assert entries['hits'][0]['entry']['name'] == 'Grund test'
+    assert entries['hits'][1]['entry']['name'] == 'Grunds'
+
+
+def test_contains_string_correct_case(es, client_with_data_f):
+    client = init(client_with_data_f, es, ENTRIES)
+
+    entries = get_json(client, 'places/query?q=contains|name|Grund')
+    assert len(entries['hits']) == 2
+    assert entries['hits'][0]['entry']['name'] == 'Grund test'
+    assert entries['hits'][1]['entry']['name'] == 'Grunds'
+
+
+def test_contains_raw_field_string_correct_case(es, client_with_data_f):
+    client = init(client_with_data_f, es, ENTRIES)
+
+    entries = get_json(client, 'places/query?q=contains|name.raw|Grund')
+    assert len(entries['hits']) == 2
+    assert entries['hits'][0]['entry']['name'] == 'Grund test'
+    assert entries['hits'][1]['entry']['name'] == 'Grunds'
+
+
+@pytest.mark.skip(reason="regex can't handle integer")
+def test_contains_integer(es, client_with_data_f):
+    client = init(client_with_data_f, es, ENTRIES)
+
+    entries = get_json(client, 'places/query?q=contains|population|3122')
+    assert len(entries['hits']) == 1
     assert entries['hits'][0]['entry']['name'] == 'grund test'
 
 
