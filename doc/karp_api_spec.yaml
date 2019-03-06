@@ -154,16 +154,31 @@ paths:
                     example:
                       places: 123
                       municipalities: 6
-                example:
-                  total: 6578,
-                  hits: [
-                    {
-                      id: "1410",
-                      resource: "places",
-                      version: 2,
-                      entry: ...
-                    }
-                  ]
+                examples:
+                  lexicon_stats_false:
+                      total: 6578,
+                      hits: [
+                        {
+                            id: "1410",
+                            resource: "places",
+                            version: 2,
+                            entry: ...
+                        }
+                      ]
+                  lexicon_stats_true:
+                      total: 6578,
+                      hits: [
+                        {
+                            id: "1410",
+                            resource: "places",
+                            version: 2,
+                            entry: ...
+                        }
+                      ],
+                      ditribution: {
+                        "places": 6328,
+                        "municipalities": 250
+                      }
 
         '500':
           description: Query failed
