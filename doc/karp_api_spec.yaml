@@ -134,6 +134,9 @@ paths:
                     description: Total number of matches
                     example: 6278
                   hits:
+                    description: If `split_results=false`, hits is an array.
+                                 If `split_results=true`, hits is an object
+                                 with resource as keys and arrays with hits as values.
                     properties:
                       match:
                         oneOf:
@@ -155,31 +158,15 @@ paths:
                       places: 123
                       municipalities: 6
                 examples:
-                  lexicon_stats_false:
-                      total: 6578,
-                      hits: [
-                        {
-                            id: "1410",
-                            resource: "places",
-                            version: 2,
-                            entry: ...
-                        }
-                      ]
-                  lexicon_stats_true:
-                      total: 6578,
-                      hits: [
-                        {
-                            id: "1410",
-                            resource: "places",
-                            version: 2,
-                            entry: ...
-                        }
-                      ],
-                      ditribution: {
-                        "places": 6328,
-                        "municipalities": 250
-                      }
-
+                  total: 6578,
+                  hits: [
+                    {
+                        id: "1410",
+                        resource: "places",
+                        version: 2,
+                        entry: ...
+                    }
+                  ]
         '500':
           description: Query failed
           content:
