@@ -35,7 +35,8 @@ def create_app(config_class=None):
 
     if app.config['ELASTICSEARCH_ENABLED'] and app.config.get('ELASTICSEARCH_HOST', ''):
         from karp.elasticsearch import init_es
-        init_es(app.config['ELASTICSEARCH_HOST'])
+        with app.app_context():
+            init_es(app.config['ELASTICSEARCH_HOST'])
     else:
         # TODO if an elasticsearch test runs before a non elasticsearch test this
         # is needed to reset the index and search modules
