@@ -9,7 +9,7 @@ sqlalchemy = "*"
 flask-sqlalchemy = "*"
 mysqlclient = "*"
 gunicorn = "*"
-karp = {editable = true, path = "."}
+karp = {editable = true,path = "."}
 click = "*"
 fastjsonschema = "*"
 pytest = "*"
@@ -21,6 +21,7 @@ pyjwt = "*"
 cryptography = "*"
 flask-cors = "*"
 elasticsearch-test-py = "*"
+ujson = "*"
 
 [dev-packages]
 pytest = "*"
