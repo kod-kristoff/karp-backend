@@ -4,8 +4,11 @@ import json
 import elasticsearch_dsl as es_dsl  # pyre-ignore
 
 from karp.query_dsl import basic_ast as ast
-from karp import search
 from karp import query_dsl
+from karp import search
+from karp import resourcemgr
+from karp.database import ResourceDefinition
+
 
 logger = logging.getLogger('karp')
 
@@ -170,11 +173,13 @@ class EsSearch(search.SearchInterface):
                         analyzed_fields.append(prop_name)
             return analyzed_fields
 
-        aliases = self._get_all_aliases()
-        mapping = self.es.indices.get_mapping()
         field_mapping = {}
-        for (alias, index) in aliases:
-            field_mapping[alias] = parse_mapping(mapping[index]['mappings']['entry']['properties'])
+        for resource in resourcemgr.get_available_resources():
+            mapping = self.es.indices.get_mapping(index=resource.resource_id)
+            field_mapping[resource.resource_id] = parse_mapping(
+                next(iter(mapping.values()))['mappings']['entry']['properties']
+            )
+
         return field_mapping
 
     def _get_all_aliases(self):
