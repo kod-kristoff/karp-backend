@@ -1,9 +1,10 @@
 .PHONY: test pytest build-dev
-default: tox
+default: run-tests
 
 test: build-dev
 	pipenv run py.test -vv --cov=karp --cov-report=term-missing tests > pytest.log
 
+run-tests: lint type-check test
 tox:
 	tox
 
