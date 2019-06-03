@@ -10,5 +10,4 @@ def test_places():
     mappings = _create_es_mapping(schema)
 
     print(repr(mappings))
-    assert mappings is None
-    
+    assert mappings is not None
