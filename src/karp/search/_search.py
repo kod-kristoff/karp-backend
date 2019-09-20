@@ -14,7 +14,7 @@ T = TypeVar('T', bool, int, str, List[str])
 def arg_get(args: Dict,
             arg_name: str,
             convert: Optional[Callable[[str], T]] = None,
-            default: Optional[T] = None) -> T:
+            default: Optional[T] = None) -> Optional[T]:
     arg = args.get(arg_name, None)
     if arg is None:
         return default
@@ -102,23 +102,3 @@ class SearchInterface:
     def statistics(self, resource_id: str, field: str):
         raise NotImplementedError()
 
-
-class KarpSearch(SearchInterface):
-
-    def __init__(self):
-        self.impl = SearchInterface()
-
-    def init(self, impl: SearchInterface):
-        self.impl = impl
-
-    def build_query(self, args, resource_str: str) -> Query:
-        return self.impl.build_query(args, resource_str)
-
-    def search_with_query(self, query: Query):
-        return self.impl.search_with_query(query)
-
-    def search_ids(self, args, resource_id: str, entry_ids: str):
-        return self.impl.search_ids(args, resource_id, entry_ids)
-
-    def statistics(self, resource_id: str, field: str):
-        return self.impl.statistics(resource_id, field)

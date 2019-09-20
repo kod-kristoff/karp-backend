@@ -5,7 +5,7 @@ import logging
 from flask import Flask     # pyre-ignore
 from flask_cors import CORS  # pyre-ignore
 from flask import request  # pyre-ignore
-import werkzeug.exceptions  # pyre-ignore
+import werkzeug.exceptions
 
 from karp.errors import KarpError
 import karp.util.logging.slack as slack_logging
@@ -42,10 +42,10 @@ def create_app(config_class=None):
     else:
         # TODO if an elasticsearch test runs before a non elasticsearch test this
         # is needed to reset the index and search modules
-        from karp.search import SearchInterface, search
+        from karp.search import SearchInterface, init as init_search
         from karp.indexmgr.index import IndexInterface
         from karp.indexmgr import indexer
-        search.init(SearchInterface())
+        init_search(SearchInterface())
         indexer.init(IndexInterface())
 
     with app.app_context():

@@ -2,7 +2,7 @@ import json
 import urllib.request
 import urllib.parse
 import pytest  # pyre-ignore
-from karp.search import search
+from karp import search
 from karp import elasticsearch as karp_es
 
 entries = [{
@@ -62,8 +62,9 @@ def test_es_search(es, client_with_data_f):
         args = {
             'q': 'equals|population|3'
         }
-        query = search.build_query(args, 'places,municipalities')
-        ids = search.search_with_query(query)
+        print("search = {search}".format(search=search.search))
+        query = search.search.build_query(args, 'places,municipalities')
+        ids = search.search.search_with_query(query)
         assert len(ids['hits']) == 1
         print('ids[0] = {}'.format(ids['hits'][0]))
         assert 'entry' in ids['hits'][0]
@@ -80,10 +81,10 @@ def test_es_search2(es, client_with_data_f):
         args = {
             'q': 'equals|population|3'
         }
-        query = search.build_query(args, 'places,municipalities')
+        query = search.search.build_query(args, 'places,municipalities')
         assert isinstance(query, karp_es.search.EsQuery)
         query.split_results = True
-        result = search.search_with_query(query)
+        result = search.search.search_with_query(query)
         assert 'hits' in result
         assert 'places' in result['hits']
         assert 'municipalities' in result['hits']

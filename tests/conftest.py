@@ -1,9 +1,10 @@
 import json
-
-import pytest  # pyre-ignore
 import os
 from distutils.util import strtobool
-import elasticsearch_test
+
+import pytest  # pyre-ignore
+
+import elasticsearch_test  # pyre-ignore
 
 from karp import create_app
 from karp.database import db

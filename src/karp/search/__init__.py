@@ -1,4 +1,13 @@
-from karp.search.search import KarpSearch, SearchInterface, Query  # noqa: F401
+
+
+from karp.search._search import SearchInterface, Query  # noqa: F401
 from . import errors  # noqa: F401
 
-search = KarpSearch()
+
+search = None
+
+
+def init(x: SearchInterface):
+    global search
+    search = x
+    print("Setting search = {x}".format(x=x))
