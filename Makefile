@@ -1,4 +1,4 @@
-.PHONY: test test-to-log pytest build-dev run-tests clean clean-pyc help
+.PHONY: test test-to-log pytest build-dev run-tests clean clean-pyc clean-build help
 .DEFAULT: test
 
 ifeq (${VIRTUAL_ENV},)
@@ -17,7 +17,7 @@ else
 endif
 
 help:
-	echo "Available commands:"
+	@echo "Available commands:"
 
 venv: ${VENV_NAME}/venv.created
 
@@ -52,6 +52,9 @@ test-log: install-dev clean-pyc
 
 prepare-release: venv setup.py
 	${VENV_ACTIVATE}; pip-compile --output-file=requirements.txt setup.py
+
+isort:
+	${VENV_ACTIVATE}; isort --skip-glob=.tox --skip-glob=${VENV_NAME} --recursive .
 
 bump-version-patch:
 	bumpversion patch
@@ -96,8 +99,12 @@ mkrelease-patch: bumpversion-patch prepare-release docs/openapi.html
 mkrelease-minor: bumpversion-minor prepare-release docs/openapi.html
 mkrelease-major: bumpversion-major prepare-release docs/openapi.html
 
-clean: clean-pyc
+clean: clean-pyc clean-build
+
 clean-pyc:
-	find . -name '*.pyc' -exec rm {} \;
-	find . -type d -name '__pycache__' -exec rm -rf {} \;
-	# test -d .pytest_cache && rm -rf .pytest_cache
+	find . -name '*.pyc' -exec rm --force {} +
+	find . -name '*.pyo' -exec rm --force {} +
+	find . -name '*~' -exec rm --force  {} +
+
+clean-build:
+	rm --force --recursive *.egg-info
