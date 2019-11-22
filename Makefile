@@ -77,7 +77,7 @@ tox-to-log:
 	tox > tox.log
 
 lint:
-	flake8 src tests setup.py wsgi.py
+	${VENV_ACTIVATE}; pylint --rcfile .pylintrc src tests *.py
 
 type-check:
 	pyre check
