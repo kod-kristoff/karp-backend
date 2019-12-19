@@ -33,6 +33,9 @@ def create_app(config_class=None):
     app.register_blueprint(stats_api)
     app.register_blueprint(history_api)
 
+    from karp import context
+    context.init(app)
+
     from .init import init_db
     init_db(app)
 
