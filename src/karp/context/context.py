@@ -10,7 +10,7 @@ class SQLwES6:
                 sniffer_timeout=60,
                 sniff_timeout=10
                 )
-        self.search_service = es.EsSearch(_es)
+        self.search = es.EsSearch(_es)
         self.index_service = es.EsIndex(_es)
         self.auth_service = None
         self.resource_def_repo = None
@@ -19,7 +19,7 @@ class SQLwES6:
 
 class SQL:
     def __init__(self, app):
-        self.search_service = None
+        self.search = None
         self.index_service = None
         self.auth_service = None
         self.resource_def_repo = None
