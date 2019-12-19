@@ -24,6 +24,9 @@ def create_app(config_class=None):
 
     logger = setup_logging(app)
 
+    from karp import context
+    context.init(app)
+
     from .api import health_api, edit_api, query_api, conf_api, documentation, stats_api, history_api
     app.register_blueprint(edit_api)
     app.register_blueprint(health_api)
@@ -32,9 +35,6 @@ def create_app(config_class=None):
     app.register_blueprint(documentation)
     app.register_blueprint(stats_api)
     app.register_blueprint(history_api)
-
-    from karp import context
-    context.init(app)
 
     from .init import init_db
     init_db(app)

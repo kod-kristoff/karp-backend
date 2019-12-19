@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify as flask_jsonify, request    # pyre-ignore
 
 from karp import resourcemgr
 
+from karp.context import ctx
 from karp import search
 import karp.auth.auth as auth
 from karp import errors
@@ -35,9 +36,9 @@ def query(resources: str):
     resource_list = resources.split(',')
     resourcemgr.check_resource_published(resource_list)
     try:
-        q = search.search.build_query(request.args, resources)
+        q = ctx.search_service.build_query(request.args, resources)
         print('query::q={q}'.format(q=q))
-        response = search.search.search_with_query(q)
+        response = ctx.search_service.search_with_query(q)
     except errors.KarpError as e:
         _logger.exception(
             "Error occured when calling 'query' with resources='{}' and q='{}'. e.msg='{}".format(
