@@ -3,7 +3,7 @@ from karp import elasticsearch as es
 
 class SQLwES6:
     def __init__(self, app):
-        _es = es.ElasticSearch(
+        _es = es.Elasticsearch(
                 hosts=app.config['ELASTICSEARCH_HOST'],
                 sniff_on_start=True,
                 sniff_on_connection_fail=True,
