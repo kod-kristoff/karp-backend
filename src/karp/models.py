@@ -1,3 +1,6 @@
+import attr
+
+@attr.s(auto_attrib=True)
 class ResourceDef:
-    def __init__(self, name: str):
-        self.name = name
+    name: str
+
