@@ -14,7 +14,7 @@ def test_empty_arg_and_empty_resource_str(query):
 
 
 def test_minimal(query):
-    query.parse_arguments({}, 'saldo')
+    query.parse_arguments({}, "saldo")
     assert isinstance(query.resources, list)
     assert len(query.resources) == 1
-    assert query.resources[0] == 'saldo'
+    assert query.resources[0] == "saldo"
