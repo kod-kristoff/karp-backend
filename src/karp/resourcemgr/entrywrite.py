@@ -8,8 +8,8 @@ from sqlalchemy import exc as sql_exception
 
 from sb_json_tools import jsondiff
 
+from karp import context
 from karp.errors import KarpError, ClientErrorCodes, EntryNotFoundError, UpdateConflict
-from karp.resourcemgr import get_resource
 from karp.database import db
 import karp.indexmgr as indexmgr
 from .resource import Resource
@@ -35,7 +35,9 @@ def add_entry(
 
 
 def preview_entry(resource_id, entry, resource_version=None):
-    resource = get_resource(resource_id, version=resource_version)
+    resource = context.ctx.resource_repo.get_by_id(
+        resource_id, version=resource_version
+    )
     entry_json = _validate_and_prepare_entry(resource, entry)
     return entry_json
 
@@ -50,7 +52,9 @@ def update_entry(
     resource_version: int = None,
     force: bool = False,
 ):
-    resource = get_resource(resource_id, version=resource_version)
+    resource = context.ctx.resource_repo.get_by_id(
+        resource_id, version=resource_version
+    )
 
     schema = _compile_schema(resource.entry_json_schema)
     _validate_entry(schema, entry)
@@ -147,7 +151,9 @@ def add_entries(
     List
         List of the id's of the created entries.
     """
-    resource = get_resource(resource_id, version=resource_version)
+    resource = context.ctx.resource_repo.get_by_id(
+        resource_id, version=resource_version
+    )
     resource_conf = resource.config
 
     validate_entry = _compile_schema(resource.entry_json_schema)
@@ -238,7 +244,7 @@ def _src_entry_to_db_kwargs(entry, entry_json, resource_model, resource_conf):
 
 
 def delete_entry(resource_id: str, entry_id: str, user_id: str):
-    resource = get_resource(resource_id)
+    resource = context.ctx.resource_repo.get_by_id(resource_id)
     entry = resource.model.query.filter_by(entry_id=entry_id, deleted=False).first()
     if not entry:
         raise EntryNotFoundError(resource_id, entry_id)
