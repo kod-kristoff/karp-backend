@@ -1,21 +1,16 @@
-from distutils.util import strtobool
-import os
-
+from .context import SQL
 from .context import SQLwES6
 
 
-def _create_context():
-    if strtobool(os.environ.get("ELASTICSEARCH_ENABLED")):
-        return SQLwES6()
-    else:
-        raise RuntimeError("No context loaded.")
+ctx = None
 
 
-ctx = _create_context()
-# del _create_context
-
-
-def set_context(context_name: str = None):
+def init(app):
     global ctx
-    if not context_name:
-        ctx = SQLwES6()
+    if app.config["ELASTICSEARCH_ENABLED"]:
+        if not app.config.get("ELASTICSEARCH_HOST"):
+            raise RuntimeError("No host for ES")
+        ctx = SQLwES6(app)
+    else:
+        ctx = SQL(app)
+

@@ -7,7 +7,6 @@ from flask_cors import CORS  # pyre-ignore
 from flask import request  # pyre-ignore
 import werkzeug.exceptions  # pyre-ignore
 
-from karp.context import ctx
 from karp.errors import KarpError
 import karp.util.logging.slack as slack_logging
 
@@ -24,6 +23,10 @@ def create_app(config_class=None):
         app.config.from_object(os.getenv("KARP_CONFIG"))
 
     logger = setup_logging(app)
+
+    from karp import context
+
+    context.init(app)
 
     from .api import (
         health_api,
@@ -42,8 +45,6 @@ def create_app(config_class=None):
     app.register_blueprint(documentation)
     app.register_blueprint(stats_api)
     app.register_blueprint(history_api)
-
-    ctx.init(app)
 
     from .init import init_db
 
