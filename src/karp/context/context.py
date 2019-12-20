@@ -1,4 +1,5 @@
 from karp import elasticsearch as es
+from karp import search
 
 
 class SQLwES6:
@@ -19,7 +20,7 @@ class SQLwES6:
 
 class SQL:
     def __init__(self, app):
-        self.search = None
+        self.search = search.SearchInterface()
         self.index_service = None
         self.auth_service = None
         self.resource_def_repo = None

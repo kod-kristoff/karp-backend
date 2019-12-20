@@ -5,7 +5,8 @@ import os
 import pytest  # pyre-ignore
 
 from dotenv import load_dotenv
-load_dotenv(dotenv_path='.env')
+
+load_dotenv(dotenv_path=".env")
 
 import elasticsearch_test
 
@@ -176,9 +177,9 @@ def app_with_data_f_scope_session(app_f_scope_session):
 @pytest.fixture
 def app_with_data(app):
     with app.app_context():
-        with open('tests/data/config/places.json') as fp:
+        with open("tests/data/config/places.json") as fp:
             resourcemgr.create_new_resource_from_file(fp)
-        with open('tests/data/config/municipalities.json') as fp:
+        with open("tests/data/config/municipalities.json") as fp:
             resourcemgr.create_new_resource_from_file(fp)
     return app
 
@@ -186,9 +187,9 @@ def app_with_data(app):
 @pytest.fixture(scope="module")
 def app_with_data_scope_module(app_scope_module):
     with app_scope_module.app_context():
-        with open('tests/data/config/places.json') as fp:
+        with open("tests/data/config/places.json") as fp:
             resourcemgr.create_new_resource_from_file(fp)
-        with open('tests/data/config/municipalities.json') as fp:
+        with open("tests/data/config/municipalities.json") as fp:
             resourcemgr.create_new_resource_from_file(fp)
 
     return app_scope_module
@@ -241,7 +242,7 @@ def runner(app_f):
 @pytest.fixture(scope="session")
 def es():
     if not strtobool(os.environ.get("ELASTICSEARCH_ENABLED", "false")):
-        yield "skip"
+        pytest.skip()
     else:
         if not os.environ.get("ES_HOME"):
             raise RuntimeError("must set $ES_HOME to run tests that use elasticsearch")
@@ -335,14 +336,16 @@ ENTRIES = [
 
 
 def init(client, es_status_code, entries):
-    if es_status_code == 'skip':
-        pytest.skip('elasticsearch disabled')
+    if es_status_code == "skip":
+        pytest.skip("elasticsearch disabled")
     client_with_data = client(use_elasticsearch=True)
 
     for entry in entries:
-        client_with_data.post('places/add',
-                              data=json.dumps({'entry': entry}),
-                              content_type='application/json')
+        client_with_data.post(
+            "places/add",
+            data=json.dumps({"entry": entry}),
+            content_type="application/json",
+        )
     return client_with_data
 
 
