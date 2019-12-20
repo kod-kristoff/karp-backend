@@ -154,7 +154,6 @@ def add_entries(
     resource = context.ctx.resource_repo.get_by_id(
         resource_id, version=resource_version
     )
-    resource_conf = resource.config
 
     validate_entry = _compile_schema(resource.entry_json_schema)
 
@@ -165,7 +164,7 @@ def add_entries(
 
             entry_json = json.dumps(entry)
             db_entry = _src_entry_to_db_entry(
-                entry, entry_json, resource.model, resource_conf
+                entry, entry_json, resource.model, resource.config
             )
             created_db_entries.append((db_entry, entry, entry_json))
             db.session.add(db_entry)

@@ -46,12 +46,12 @@ def get_entries_by_column(resource_obj: Resource, filters):
 
 def get_entry(resource_id: str, entry_id: str, version: Optional[int] = None):
     resource = context.ctx.resource_repo.get_by_id(resource_id, version=version)
-    return get_entry_by_entry_id(resource, entry_id)
+    return resource.get_entry_by_id(entry_id)
 
 
-def get_entry_by_entry_id(resource: Resource, entry_id: str):
-    cls = resource.model
-    return cls.query.filter_by(entry_id=entry_id).first()
+# def get_entry_by_entry_id(resource: Resource, entry_id: str):
+#     cls = resource.model
+#     return cls.query.filter_by(entry_id=entry_id).first()
 
 
 def diff(

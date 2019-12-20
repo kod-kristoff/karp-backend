@@ -5,6 +5,7 @@ import pickle
 from flask.cli import FlaskGroup  # pyre-ignore
 
 from .config import MariaDBConfig
+from karp import context
 from karp import resourcemgr
 from karp.resourcemgr import entrywrite
 from karp import indexmgr
@@ -22,8 +23,13 @@ def create_app():
 
 
 @click.group(cls=FlaskGroup, create_app=create_app)
-def cli():
-    pass
+@click.pass_context
+def cli(ctx):
+    # ensure that ctx.obj exists and is a dict (in case `cli()` is called
+    # by means other than the `if` block below
+    # cli_ctx.ensure_object(dict)
+
+    ctx = context.ctx
 
 
 def cli_error_handler(func):
@@ -140,16 +146,16 @@ def import_resource(resource_id, version, data):
 @click.option("--version", default=None, help="", required=True)
 @cli_error_handler
 @cli_timer
-def publish_resource(resource_id, version):
-    resource = resourcemgr.get_resource(resource_id, version=version)
+@click.pass_context
+def publish_resource(ctx, resource_id, version):
+    resource = ctx.resource_repo.get_by_id(resource_id, version=version)
+    # resource = resourcemgr.get_resource(resource_id, version=version)
     if resource.active:
         click.echo("Resource already published")
     else:
         indexmgr.publish_index(resource_id, version=version)
         click.echo(
-            "Successfully indexed and published all data in {resource_id}, version {version}".format(
-                resource_id=resource_id, version=version
-            )
+            f"Successfully indexed and published all data in {resource_id}, version {version}"
         )
 
 

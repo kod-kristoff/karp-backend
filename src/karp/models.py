@@ -1,6 +1,1 @@
-import attr
-
-@attr.s(auto_attrib=True)
-class ResourceDef:
-    name: str
-
+from karp.resourcemgr.resource import Resource
