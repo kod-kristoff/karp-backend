@@ -1,5 +1,16 @@
+"""Standard contexts."""
+from typing import Optional
+
 from karp import elasticsearch as es
 from karp import search
+from karp import resourcemgr
+
+
+class ResourceRepository:
+    def get_by_id(
+        self, resource_id: str, version: Optional[int] = None
+    ) -> resourcemgr.Resource:
+        return resourcemgr.get_resource(resource_id, version=version)
 
 
 class SQLwES6:
@@ -15,7 +26,7 @@ class SQLwES6:
         self.index_service = es.EsIndex(_es)
         self.auth_service = None
         self.resource_def_repo = None
-        self.resource_repo = None
+        self.resource_repo = ResourceRepository()
 
 
 class SQL:
@@ -24,4 +35,4 @@ class SQL:
         self.index_service = None
         self.auth_service = None
         self.resource_def_repo = None
-        self.resource_repo = None
+        self.resource_repo = ResourceRepository()
