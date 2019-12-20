@@ -284,8 +284,8 @@ def _validate_entry(schema, json_obj):
         schema(json_obj)
     except fastjsonschema.JsonSchemaException as e:
         _logger.warning(
-            "Entry not valid:\n{entry}\nMessage: {message}".format(
-                entry=json.dumps(json_obj, indent=2), message=e.message
-            )
+            "Entry not valid:\n%s\nMessage: %s",
+            json.dumps(json_obj, indent=2),
+            e.message,
         )
         raise KarpError("entry not valid", ClientErrorCodes.ENTRY_NOT_VALID)
