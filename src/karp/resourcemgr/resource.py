@@ -56,6 +56,10 @@ class Resource:
     def get_entry_by_id(self, entry_id: str):
         return self.model.query.filter_by(entry_id=entry_id).first()
 
+    def get_entries_by_column(self, filters):
+        from karp.resourcemgr import entryread
+        return entryread.get_entries_by_column(self, filters)
+
     def diff(
         self,
         entry_id: str,
@@ -128,7 +132,7 @@ class Resource:
             else:
                 if field_val:
                     kwargs[field_name] = field_val
-        id_field = resource_conf.get("id")
+        id_field = self.config.get("id")
         if id_field:
             kwargs["entry_id"] = entry[id_field]
         else:

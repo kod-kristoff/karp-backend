@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, Tuple
 
 from karp.resourcemgr.entrymetadata import EntryMetadata
@@ -67,18 +68,20 @@ class IndexInterface:
                             filters[target_field] = src_entry[arg["self"]]
                         else:
                             raise NotImplementedError()
-                    target_entries = entryread.get_entries_by_column(
-                        target_resource, filters
-                    )
+                    target_entries = target_resource.get_entries_by_column(filters)
+                    #entryread.get_entries_by_column(
+                    #    target_resource, filters
+                    #)
                 elif operator == "contains":
                     for arg in args:
                         if "self" in arg:
                             filters[target_field] = src_entry[arg["self"]]
                         else:
                             raise NotImplementedError()
-                    target_entries = entryread.get_entries_by_column(
-                        target_resource, filters
-                    )
+                    target_entries = target_resource.get_entries_by_column(filters)
+                    #target_entries = entryread.get_entries_by_column(
+                    #    target_resource, filters
+                    #)
                 else:
                     raise NotImplementedError()
             else:
@@ -125,9 +128,10 @@ class IndexInterface:
                     if ref_field["field"].get("collection"):
                         ref_objs = []
                         for ref_id in _src_entry[field_name]:
-                            ref_entry_body = entryread.get_entry_by_entry_id(
-                                ref_resource, str(ref_id)
-                            )
+                            ref_entry_body = ref_resource.get_entry_by_id(str(ref_id))
+                            #ref_entry_body = entryread.get_entry_by_entry_id(
+                            #    ref_resource, str(ref_id)
+                            #)
                             if ref_entry_body:
                                 ref_entry = {
                                     field_name: json.loads(ref_entry_body.body)
@@ -152,7 +156,8 @@ class IndexInterface:
                         ref_id = [ref_id]
 
                     for elem in ref_id:
-                        ref = entryread.get_entry_by_entry_id(resource, str(elem))
+                        ref = resource.get_entry_by_id(str(elem))
+                        # ref = entryread.get_entry_by_entry_id(resource, str(elem))
                         if ref:
                             ref_entry = {field_name: json.loads(ref.body)}
                             ref_index_entry = {}
