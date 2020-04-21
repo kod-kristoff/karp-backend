@@ -1,0 +1,135 @@
+"""Handles all sql db connections."""
+import collections
+import json
+from typing import Dict, Any, Optional
+
+import attr
+import sqlalchemy
+from sqlalchemy import Table, Column, Integer, String, MetaData, Text, ForeignKey, event
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import mapper
+from sqlalchemy.orm.session import Session, sessionmaker
+from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.types import TypeDecorator, VARCHAR, Boolean
+from sqlalchemy.ext.mutable import Mutable
+
+from sqlalchemy_json import NestedMutableJson
+
+
+@attr.s(auto_attribs=True)
+class SQLEngineSessionfactory:
+    engine: Engine = attr.ib()
+    session_factory: sessionmaker = attr.ib()
+
+    @classmethod
+    def from_db_uri(cls, db_uri: str):
+        engine = sqlalchemy.create_engine(db_uri)
+        session_factory = sessionmaker(bind=engine)
+        return cls(engine, session_factory)
+
+
+_db_handlers: Dict[str, SQLEngineSessionfactory] = dict()
+
+
+def create_session(db_uri: str) -> Session:
+    _assure_in_db_handlers(db_uri)
+    return _db_handlers[db_uri].session_factory()
+
+
+def get_engine(db_uri: str) -> Engine:
+    _assure_in_db_handlers(db_uri)
+    return _db_handlers[db_uri].engine
+
+
+def _assure_in_db_handlers(db_uri: str):
+    if db_uri not in _db_handlers:
+        _db_handlers[db_uri] = SQLEngineSessionfactory.from_db_uri(db_uri)
+
+
+def metadata(_: str) -> MetaData:
+    return _metadata
+
+
+def get_table(table_name: str) -> Optional[Table]:
+    return _metadata.tables.get(table_name)
+
+
+_metadata = MetaData()
+
+
+class JsonEncodedDict(TypeDecorator):
+    """Represent an immutable dictionary as a json-encoded-string."""
+
+    impl = VARCHAR
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
+
+class MutableDict(Mutable, dict):
+    """Tracking changes for sql."""
+
+    @classmethod
+    def coerce(cls, key, value):
+        """Convert plain dicts to MutableDict."""
+        if not isinstance(value, MutableDict):
+            if isinstance(value, dict):
+                return cls(value)
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
+    def __setitem__(self, key, value):
+        """Detect dictionary set events and emit changed event."""
+        dict.__setitem__(self, key, value)
+        self.changed()
+
+    def __delitem__(self, key, value):
+        """Detect dictionary del events and emit changed event."""
+        dict.__delitem__(self, key, value)
+        self.changed()
+
+
+MutableDict.associate_with(JsonEncodedDict)
+
+
+class FalseEncodedAsNullBoolean(TypeDecorator):
+    impl = Boolean
+
+    def process_bind_param(self, value, dialect):
+        if value is False:
+            value = None
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return False
+        return value
+
+
+# class MutableBool(Mutable):
+#     @classmethod
+#     def coerce(cls, key, value):
+#         if isinstance(value, MutableBool):
+#             return value
+#
+#         if isinstance(value, bool):
+#             return cls(value)
+#
+#         return Mutable.coerce(key, value)
+#
+#     def __setattr__(self, name, value):
+#         object.__setattr__(self, name, value)
+#         self.changed()
+
+
+# MutableBool.associate_with(FalseEncodedAsNullBoolean)
