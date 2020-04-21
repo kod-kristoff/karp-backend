@@ -11,4 +11,10 @@ class Entity:
 
 
 class VersionedEntity(Entity):
-    pass
+    def __init__(self, entity_id, version):
+        super().__init__(entity_id)
+        self._version = version
+
+    @property
+    def version(self) -> int:
+        return self._version
