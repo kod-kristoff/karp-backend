@@ -16,7 +16,7 @@ def test_create_lexicon_creates_lexicon():
     assert lexicon.version is None
     assert lexicon.lexicon_id == lexicon_id
     assert lexicon.name == name
-    assert not lexicon.is_deleted
+    assert not lexicon.discarded
     assert not lexicon.is_active
     assert "lexicon_id" not in lexicon.config
     assert "lexicon_name" not in lexicon.config
