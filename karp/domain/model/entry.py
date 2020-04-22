@@ -1,5 +1,5 @@
 """Model for a lexical entry."""
-
+import abc
 from typing import Dict, Optional
 
 from karp.domain import common
