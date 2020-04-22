@@ -11,7 +11,7 @@ class ConsistencyError(DomainError):
     pass
 
 
-class DeletedEntityError(DomainError):
-    """Raised when an attempt is made to use a deleted Entity."""
+class DiscardedEntityError(DomainError):
+    """Raised when an attempt is made to use a discarded Entity."""
 
     pass

@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+from karp.domain.errors import DiscardedEntityError
 from karp.domain.model.entry import Entry
 
 

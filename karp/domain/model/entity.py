@@ -1,11 +1,16 @@
 """Entity"""
 from karp.domain.common import _now, _unknown_user
-from karp.domain.errors import ConsistencyError, DeletedEntityError
+from karp.domain.errors import ConsistencyError, DiscardedEntityError
+from karp.domain.model.events import DomainEvent
 
 from karp.utility.time import monotonic_utc_now
 
 
 class Entity:
+    class Discarded(DomainEvent):
+        def mutate(self, obj):
+            obj._discarded = True
+
     def __init__(self, entity_id):
         self._id = entity_id
         self._discarded = False
@@ -23,7 +28,7 @@ class Entity:
 
     def _check_not_discarded(self):
         if self._discarded:
-            raise DeletedEntityError(f"Attempt to use {self!r}")
+            raise DiscardedEntityError(f"Attempt to use {self!r}")
 
     def _validate_event_applicability(self, event):
         if event.entity_id != self.id:
@@ -33,6 +38,11 @@ class Entity:
 
 
 class VersionedEntity(Entity):
+    class Discarded(Entity.Discarded):
+        def mutate(self, obj):
+            obj._discarded = True
+            obj._increment_version()
+
     def __init__(self, entity_id, version: int):
         super().__init__(entity_id)
         self._version = version
@@ -57,6 +67,12 @@ class VersionedEntity(Entity):
 
 
 class TimestampedVersionedEntity(VersionedEntity):
+    class Discarded(VersionedEntity.Discarded):
+        def mutate(self, obj):
+            super().mutate(obj)
+            obj._last_modified = self.timestamp
+            obj._last_modified_by = self.user
+
     def __init__(
         self, entity_id, version: int, created=_now, created_by=_unknown_user,
     ) -> None:

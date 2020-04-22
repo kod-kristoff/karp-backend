@@ -4,10 +4,14 @@ from typing import Dict, Optional
 
 from karp.domain import common
 from karp.domain import constraints
+from karp.domain.model import event_handler
 from karp.domain.model.entity import TimestampedVersionedEntity
 
 
 class Entry(TimestampedVersionedEntity):
+    class Discarded(TimestampedVersionedEntity.Discarded):
+        pass
+
     def __init__(
         self,
         entry_id: str,
@@ -43,4 +47,20 @@ class Entry(TimestampedVersionedEntity):
         self._body = body
 
     def discard(self, *, user: str):
-        pass
+        event = Entry.Discarded(
+            entity_id=self.id,
+            entity_version=self.version,
+            user=user
+        )
+        event.mutate(self)
+        event_handler.publish(event)
+
+
+class Repository:
+    @abc.abstractmethod
+    def put(self, entry: Entry):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def entry_ids(self) -> List[str]:
+        raise NotImplementedError()
