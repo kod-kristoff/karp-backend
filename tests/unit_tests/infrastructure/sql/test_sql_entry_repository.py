@@ -15,6 +15,7 @@ def fixture_entry_repo():
 def test_create_entry_repository():
     entry_repo = SqlEntryRepository("sqlite:///")
     assert entry_repo.db_uri == "sqlite:///"
+    assert entry_repo.entry_ids() == []
 
 
 def test_put_entry(entry_repo):

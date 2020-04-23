@@ -1,6 +1,6 @@
 """Model for a lexical entry."""
 import abc
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from karp.domain import common
 from karp.domain import constraints
@@ -56,7 +56,7 @@ class Entry(TimestampedVersionedEntity):
         event_handler.publish(event)
 
 
-class Repository:
+class Repository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def put(self, entry: Entry):
         raise NotImplementedError()
