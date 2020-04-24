@@ -3,16 +3,16 @@ from unittest import mock
 import pytest
 
 from karp.domain.errors import DiscardedEntityError
-from karp.domain.model.entry import Entry
+from karp.domain.model.history_entry import HistoryEntry
 
 
-def test_entry_create():
+def test_history_entry_create():
     entry_id = "test..1"
     body = {"test": "test"}
     with mock.patch("karp.utility.time.utc_now", return_value=12345):
-        entry = Entry(entry_id, body)
+        entry = HistoryEntry(entry_id, body)
 
-    assert isinstance(entry, Entry)
+    assert isinstance(entry, HistoryEntry)
 
     assert entry.id == None
     assert entry.version == 0
@@ -24,8 +24,8 @@ def test_entry_create():
 
 
 @pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
-def test_entry_update_updates(field, value):
-    entry = Entry("test..2", {"a": ["1", "e"]})
+def test_history_entry_update_updates(field, value):
+    entry = HistoryEntry("test..2", {"a": ["1", "e"]})
 
     assert entry.version == 0
 
@@ -35,8 +35,8 @@ def test_entry_update_updates(field, value):
 
 
 @pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
-def test_entry_update_of_discarded_raises_(field, value):
-    entry = Entry("test..2", {"a": ["1", "e"]})
+def test_history_entry_update_of_discarded_raises_(field, value):
+    entry = HistoryEntry("test..2", {"a": ["1", "e"]})
 
     assert entry.version == 0
     previous_last_modified = entry.last_modified
