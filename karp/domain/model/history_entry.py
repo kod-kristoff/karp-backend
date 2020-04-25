@@ -8,7 +8,7 @@ from karp.domain.model import event_handler
 from karp.domain.model.entity import TimestampedVersionedEntity
 
 
-class Entry(TimestampedVersionedEntity):
+class HistoryEntry(TimestampedVersionedEntity):
     class Discarded(TimestampedVersionedEntity.Discarded):
         pass
 
@@ -47,7 +47,7 @@ class Entry(TimestampedVersionedEntity):
         self._body = body
 
     def discard(self, *, user: str):
-        event = Entry.Discarded(
+        event = HistoryEntry.Discarded(
             entity_id=self.id,
             entity_version=self.version,
             user=user
@@ -58,7 +58,7 @@ class Entry(TimestampedVersionedEntity):
 
 class Repository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def put(self, entry: Entry):
+    def put(self, entry: HistoryEntry):
         raise NotImplementedError()
 
     @abc.abstractmethod
