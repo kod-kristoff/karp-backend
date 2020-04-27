@@ -5,14 +5,27 @@ from typing import Dict, Any, Optional
 
 import attr
 import sqlalchemy
-from sqlalchemy import Table, Column, Integer, String, MetaData, Text, ForeignKey, event
+from sqlalchemy import (
+    Table,
+    Column,
+    Integer,
+    String,
+    MetaData,
+    Text,
+    ForeignKey,
+    event,
+    Unicode,
+    Enum,
+)
+from sqlalchemy.sql import insert
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import mapper
+from sqlalchemy.orm import mapper, aliased
 from sqlalchemy.orm.session import Session, sessionmaker
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.types import TypeDecorator, VARCHAR, Boolean
 from sqlalchemy.ext.mutable import Mutable
 
+from sqlalchemy_utils import UUIDType
 from sqlalchemy_json import NestedMutableJson
 
 
@@ -52,6 +65,29 @@ def metadata(_: str) -> MetaData:
 
 def get_table(table_name: str) -> Optional[Table]:
     return _metadata.tables.get(table_name)
+
+
+def map_class_to_some_table(cls, table: Table, entity_name: str, **mapper_kw):
+    """Use the EntityName-pattern to map a cls to several tables.
+
+    See https://github.com/sqlalchemy/sqlalchemy/wiki/EntityName for more information.
+
+    Arguments:
+        table {Table} -- the table to map to
+        entity_name {str} -- the name for the new class
+
+    Keyword arguments:
+    mapper_kw -- any keyword arguments passed to mapper
+
+    Raises:
+        ValueError: when?
+
+    Returns:
+        Any -- the new class constructed
+    """
+    newcls = type(entity_name, (cls,), {})
+    mapper(newcls, table, **mapper_kw)
+    return newcls
 
 
 _metadata = MetaData()

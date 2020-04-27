@@ -8,6 +8,8 @@ from karp.domain.common import _now, _unknown_user
 from karp.domain.model import event_handler
 from karp.domain.model.entity import TimestampedVersionedEntity
 
+from karp.utility import unique_id
+
 
 class EntryOp(enum.Enum):
     ADDED = "ADDED"
@@ -20,23 +22,25 @@ class Entry(TimestampedVersionedEntity):
         def mutate(self, entry):
             super().mutate(entry)
             entry._op = EntryOp.DELETED
-            entry._message = "Entry deleted."
+            entry._message = "Entry deleted." if self.message is None else self.message
 
     def __init__(
         self,
         entry_id: str,
         body: Dict,
-        entity_id: Optional[int] = None,
+        entity_id: unique_id.UniqueId,
         created: Optional[float] = _now,
         created_by: str = _unknown_user,
+        op: EntryOp = EntryOp.ADDED,
+        message: str = None,
     ):
         super().__init__(
             entity_id=entity_id, version=0, created=created, created_by=created_by
         )
         self._entry_id = entry_id
         self._body = body
-        self._op = EntryOp.ADDED
-        self._message = "Entry added."
+        self._op = op
+        self._message = "Entry added." if message is None else message
 
     @property
     def entry_id(self):
@@ -68,11 +72,9 @@ class Entry(TimestampedVersionedEntity):
         """The message for the latest operation of this entry."""
         return self._message
 
-    def discard(self, *, user: str):
+    def discard(self, *, user: str, message: str = None):
         event = Entry.Discarded(
-            entity_id=self.id,
-            entity_version=self.version,
-            user=user
+            entity_id=self.id, entity_version=self.version, user=user, message=message
         )
         event.mutate(self)
         event_handler.publish(event)
@@ -90,6 +92,13 @@ class Entry(TimestampedVersionedEntity):
         self._op = EntryOp.UPDATED
 
 
+# === Factories ===
+def create_entry(entry_id: str, body: Dict) -> Entry:
+    entry = Entry(entry_id=entry_id, body=body, entity_id=unique_id.make_unique_id())
+    return entry
+
+
+# === Repository ===
 class Repository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def put(self, entry: Entry):
@@ -97,4 +106,8 @@ class Repository(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def entry_ids(self) -> List[str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def by_entry_id(self, entry_id: str) -> Optional[Entry]:
         raise NotImplementedError()

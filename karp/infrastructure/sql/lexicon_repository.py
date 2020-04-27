@@ -87,6 +87,7 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         db.UniqueConstraint(
             "lexicon_id", "is_active", name="lexicon_is_active_unique_constraint"
         ),
+        mysql_character_set="utf8mb4"
         # extend_existing=True
     )
     db.mapper(
