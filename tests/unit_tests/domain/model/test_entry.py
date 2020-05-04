@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 from karp.domain.errors import DiscardedEntityError
-from karp.domain.model.entry import create_entry, Entry, EntryOp
+from karp.domain.model.entry import EntryStatus, create_entry, Entry, EntryOp
 
 
 def test_entry_create():
@@ -19,7 +19,7 @@ def test_entry_create():
 
     assert entry.id == uuid.UUID(str(entry.id), version=4)
     # assert entry.history_id == expected_history_id
-    assert entry.version == 0
+    assert entry.status == EntryStatus.IN_PROGRESS
     assert entry.entry_id == entry_id
     assert entry.body == body
 
@@ -30,11 +30,13 @@ def test_entry_create():
     assert entry.message == "Entry added."
 
 
-@pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
+@pytest.mark.parametrize(
+    "field,value",
+    [("entry_id", "new..1"), ("body", {"b": "r"}), ("status", EntryStatus.IN_REVIEW)],
+)
 def test_entry_update_updates(field, value):
     entry = create_entry("test..2", {"a": ["1", "e"]})
 
-    assert entry.version == 0
     previous_last_modified = entry.last_modified
     previous_last_modified_by = entry.last_modified_by
     message = f"Updated {field}"
@@ -50,20 +52,20 @@ def test_entry_update_updates(field, value):
     assert entry.last_modified_by == user
     assert entry.op == EntryOp.UPDATED
     assert entry.message == message
-    assert entry.version == 1
 
 
-@pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
+@pytest.mark.parametrize(
+    "field,value",
+    [("entry_id", "new..1"), ("body", {"b": "r"}), ("status", EntryStatus.IN_REVIEW)],
+)
 def test_entry_update_of_discarded_raises_(field, value):
     entry = create_entry("test..2", {"a": ["1", "e"]})
 
-    assert entry.version == 0
     previous_last_modified = entry.last_modified
 
     entry.discard(user="Admin")
 
     assert entry.discarded
-    assert entry.version == 1
     assert entry.last_modified > previous_last_modified
     assert entry.last_modified_by == "Admin"
     assert entry.op == EntryOp.DELETED

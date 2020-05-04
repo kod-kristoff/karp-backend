@@ -65,26 +65,26 @@ def test_put_entry_to_entry_repo2(entry_repo2):
 def test_discard_entry_from_entry_repo2(entry_repo2):
     with unit_of_work(using=entry_repo2) as uw:
         entry = create_entry("b", {})
+        previous_last_modified = entry.last_modified
         uw.put(entry)
         uw.commit()
 
         entry = uw.by_entry_id("b")
-        assert entry.version == 0
 
+        assert uw.entry_ids() == ["a", "b"]
         entry.discard(user="Test", message="Delete.")
         assert entry.discarded
+        assert entry.last_modified > previous_last_modified
         uw.update(entry)
         uw.commit()
 
         entry_copy = uw.by_entry_id("b")
 
         assert entry_copy.discarded
-        assert entry_copy.version == 1
 
         entry_history = uw.history_by_entry_id("b")
 
         assert len(entry_history) == 2
         assert not entry_history[0].discarded
-        assert entry_history[0].version == 0
         assert entry_history[1].discarded
-        assert entry_history[1].version == 1
+        assert uw.entry_ids() == ["a"]

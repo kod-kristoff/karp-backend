@@ -67,6 +67,54 @@ class VersionedEntity(Entity):
             )
 
 
+class TimestampedEntity(Entity):
+    class Discarded(Entity.Discarded):
+        def mutate(self, obj):
+            super().mutate(obj)
+            obj._last_modified = self.timestamp
+            obj._last_modified_by = self.user
+
+    def __init__(
+        self,
+        entity_id,
+        last_modified=_now,
+        last_modified_by=_unknown_user,
+        discarded: bool = False,
+    ) -> None:
+        super().__init__(entity_id, discarded=discarded)
+        self._last_modified = (
+            monotonic_utc_now() if last_modified is _now else last_modified
+        )
+        self._last_modified_by = (
+            _unknown_user if last_modified_by is _unknown_user else last_modified_by
+        )
+
+    @property
+    def last_modified(self):
+        """The time this entity was last modified."""
+        return self._last_modified
+
+    @last_modified.setter
+    def last_modified(self, timestamp):
+        self._check_not_discarded()
+        self._last_modified = timestamp
+
+    @property
+    def last_modified_by(self):
+        """The time this entity was last modified."""
+        return self._last_modified_by
+
+    @last_modified_by.setter
+    def last_modified_by(self, user):
+        self._check_not_discarded()
+        self._last_modified_by = user
+
+    def stamp(self, user, *, timestamp=_now):
+        self._check_not_discarded()
+        self._last_modified_by = user
+        self._last_modified = monotonic_utc_now() if timestamp is _now else timestamp
+
+
 class TimestampedVersionedEntity(VersionedEntity):
     class Discarded(VersionedEntity.Discarded):
         def mutate(self, obj):
@@ -83,7 +131,9 @@ class TimestampedVersionedEntity(VersionedEntity):
         discarded: bool = False,
     ) -> None:
         super().__init__(entity_id, version, discarded=discarded)
-        self._last_modified = monotonic_utc_now() if last_modified is _now else last_modified
+        self._last_modified = (
+            monotonic_utc_now() if last_modified is _now else last_modified
+        )
         self._last_modified_by = (
             _unknown_user if last_modified_by is _unknown_user else last_modified_by
         )

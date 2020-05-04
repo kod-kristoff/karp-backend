@@ -1,5 +1,5 @@
 """Common domain placeholders."""
 
-_now = object()
+_now = float("-inf")
 
 _unknown_user = "Unknown user"

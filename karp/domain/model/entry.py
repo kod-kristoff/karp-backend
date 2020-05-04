@@ -6,7 +6,7 @@ from typing import Dict, Optional, List
 from karp.domain import constraints
 from karp.domain.common import _now, _unknown_user
 from karp.domain.model import event_handler
-from karp.domain.model.entity import TimestampedVersionedEntity
+from karp.domain.model.entity import TimestampedEntity
 
 from karp.utility import unique_id
 
@@ -17,8 +17,14 @@ class EntryOp(enum.Enum):
     UPDATED = "UPDATED"
 
 
-class Entry(TimestampedVersionedEntity):
-    class Discarded(TimestampedVersionedEntity.Discarded):
+class EntryStatus(enum.Enum):
+    IN_PROGRESS = "IN-PROGRESS"
+    IN_REVIEW = "IN_REVIEW"
+    OK = "OK"
+
+
+class Entry(TimestampedEntity):
+    class Discarded(TimestampedEntity.Discarded):
         def mutate(self, entry):
             super().mutate(entry)
             entry._op = EntryOp.DELETED
@@ -28,25 +34,19 @@ class Entry(TimestampedVersionedEntity):
         self,
         entry_id: str,
         body: Dict,
-        entity_id: unique_id.UniqueId,
-        last_modified: Optional[float] = _now,
-        last_modified_by: str = _unknown_user,
-        op: EntryOp = EntryOp.ADDED,
-        message: str = None,
-        discarded: bool = False,
-        version: int = 0
+        message: str,
+        status: EntryStatus,  # IN-PROGRESS, IN-REVIEW, OK, PUBLISHED
+        op: EntryOp,
+        *pos,
+        **kwargs,
+        # version: int = 0
     ):
-        super().__init__(
-            entity_id=entity_id,
-            version=version,
-            last_modified=last_modified,
-            last_modified_by=last_modified_by,
-            discarded=discarded,
-        )
+        super().__init__(*pos, **kwargs)
         self._entry_id = entry_id
         self._body = body
         self._op = op
         self._message = "Entry added." if message is None else message
+        self._status = status
 
     @property
     def entry_id(self):
@@ -74,33 +74,44 @@ class Entry(TimestampedVersionedEntity):
         return self._op
 
     @property
+    def status(self):
+        """The workflow status of this entry."""
+        return self._status
+
+    @status.setter
+    def status(self, status: EntryStatus):
+        """The workflow status of this entry."""
+        self._check_not_discarded()
+        self._status = status
+
+    @property
     def message(self):
         """The message for the latest operation of this entry."""
         return self._message
 
     def discard(self, *, user: str, message: str = None):
-        event = Entry.Discarded(
-            entity_id=self.id, entity_version=self.version, user=user, message=message
-        )
+        event = Entry.Discarded(entity_id=self.id, user=user, message=message)
         event.mutate(self)
         event_handler.publish(event)
 
     def stamp(
-        self,
-        user: str,
-        *,
-        message: str = None,
-        timestamp: float = _now,
-        increment_version: bool = True
+        self, user: str, *, message: str = None, timestamp: float = _now,
     ):
-        super().stamp(user, timestamp=timestamp, increment_version=increment_version)
+        super().stamp(user, timestamp=timestamp)
         self._message = message
         self._op = EntryOp.UPDATED
 
 
 # === Factories ===
-def create_entry(entry_id: str, body: Dict) -> Entry:
-    entry = Entry(entry_id=entry_id, body=body, entity_id=unique_id.make_unique_id(), version=0)
+def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> Entry:
+    entry = Entry(
+        entry_id=entry_id,
+        body=body,
+        message="Entry added." if not message else message,
+        status=EntryStatus.IN_PROGRESS,
+        op=EntryOp.ADDED,
+        entity_id=unique_id.make_unique_id(),
+    )
     return entry
 
 
