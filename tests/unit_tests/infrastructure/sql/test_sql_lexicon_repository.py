@@ -19,6 +19,7 @@ def test_sql_lexicon_repo_empty(lexicon_repo):
     assert lexicon_repo.db_uri == db_uri
     with unit_of_work(using=lexicon_repo) as uw:
         assert uw.lexicon_ids() == []
+        assert uw.history_by_lexicon_id("test_id") == []
 
 
 def test_sql_lexicon_repo_put(lexicon_repo):
@@ -36,11 +37,13 @@ def test_sql_lexicon_repo_put(lexicon_repo):
 
     with unit_of_work(using=lexicon_repo) as uw:
         uw.put(lexicon)
-
+        uw.commit()
         assert uw.lexicon_ids() == [lexicon_id]
 
         assert lexicon.version == expected_version
         assert lexicon.id == expected_db_id
+        lexicon_id_history = uw.history_by_lexicon_id(lexicon_id)
+        assert len(lexicon_id_history) == 1
 
     with unit_of_work(using=lexicon_repo) as uw:
         test_lex = uw.lexicon_with_id_and_version(lexicon_id, expected_version)
