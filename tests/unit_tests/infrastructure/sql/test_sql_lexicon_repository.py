@@ -1,4 +1,6 @@
 """Tests for SQLLexiconRepository"""
+import uuid
+
 import pytest
 
 from karp.domain.model.lexicon import create_lexicon, Lexicon
@@ -41,7 +43,7 @@ def test_sql_lexicon_repo_put(lexicon_repo):
         assert uw.lexicon_ids() == [lexicon_id]
 
         assert lexicon.version == expected_version
-        assert lexicon.id == expected_db_id
+        assert lexicon.id == uuid.UUID(str(lexicon.id), version=4)
         lexicon_id_history = uw.history_by_lexicon_id(lexicon_id)
         assert len(lexicon_id_history) == 1
 

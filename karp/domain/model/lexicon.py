@@ -2,10 +2,11 @@
 import abc
 from typing import Dict, Any, Optional
 
-from karp.domain.model.entity import VersionedEntity
+from karp.domain.model.entity import TimestampedVersionedEntity
+from karp.utility import unique_id
 
 
-class Lexicon(VersionedEntity):
+class Lexicon(TimestampedVersionedEntity):
     def __init__(
         self,
         lexicon_id: str,
@@ -33,7 +34,13 @@ class Lexicon(VersionedEntity):
 def create_lexicon(config: Dict) -> Lexicon:
     lexicon_id = config.pop("lexicon_id")
     lexicon_name = config.pop("lexicon_name")
-    lexicon = Lexicon(lexicon_id, lexicon_name, config, entity_id=None, version=None,)
+    lexicon = Lexicon(
+        lexicon_id,
+        lexicon_name,
+        config,
+        entity_id=unique_id.make_unique_id(),
+        version=None,
+    )
     return lexicon
 
 

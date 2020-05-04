@@ -11,50 +11,50 @@ from karp.infrastructure.sql.sql_repository import SqlRepository
 class SqlLexiconRepository(LexiconRepository, SqlRepository):
     def __init__(self, db_uri: str):
         super().__init__(db_uri=db_uri)
-        self._table = None
-        if self._table is None:
+        self.table = None
+        if self.table is None:
             table_name = "lexicons"
             table = db.get_table(table_name)
             if table is None:
                 table = create_table(table_name, self.db_uri)
-            self._table = table
+            self.table = table
 
     def put(self, lexicon: Lexicon):
         self._check_has_session()
         if lexicon.version is None:
             lexicon._version = self.get_latest_version(lexicon.lexicon_id) + 1
         self._session.execute(
-            db.insert(self._table, values=self._lexicon_to_row(lexicon))
+            db.insert(self.table, values=self._lexicon_to_row(lexicon))
         )
 
     def lexicon_ids(self) -> List[str]:
         self._check_has_session()
-        query = self._session.query(self._table)
-        return [
-            row.lexicon_id for row in query.group_by(self._table.c.lexicon_id).all()
-        ]
+        query = self._session.query(self.table)
+        return [row.lexicon_id for row in query.group_by(self.table.c.lexicon_id).all()]
 
     def lexicons_with_id(self, lexicon_id: str):
         pass
 
     def lexicon_with_id_and_version(self, lexicon_id: str, version: int):
         self._check_has_session()
-        query = self._session.query(Lexicon)
-        return query.filter_by(_lexicon_id=lexicon_id, _version=version).first()
+        query = self._session.query(self.table)
+        return self._row_to_lexicon(
+            query.filter_by(lexicon_id=lexicon_id, version=version).first()
+        )
 
     def get_active_lexicon(self, lexicon_id: str) -> Optional[Lexicon]:
         self._check_has_session()
-        query = self._session.query(self._table)
+        query = self._session.query(self.table)
         return self._row_to_lexicon(
-            query.filter_by(_lexicon_id=lexicon_id, is_active=True).one_or_none()
+            query.filter_by(lexicon_id=lexicon_id, is_active=True).one_or_none()
         )
 
     def get_latest_version(self, lexicon_id: str) -> int:
         self._check_has_session()
         row = (
-            self._session.query(Lexicon)
-            .order_by(Lexicon._version.desc())
-            .filter_by(_lexicon_id=lexicon_id)
+            self._session.query(self.table)
+            .order_by(self.table.c.version.desc())
+            .filter_by(lexicon_id=lexicon_id)
             .first()
         )
         if row is None:
@@ -62,11 +62,16 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
         return row.version
 
     def history_by_lexicon_id(self, lexicon_id: str) -> List:
-        return []
+        self._check_has_session()
+        query = self._session.query(self.table)
+        return [
+            self._row_to_lexicon(row)
+            for row in query.filter_by(lexicon_id=lexicon_id).all()
+        ]
 
     def _lexicon_to_row(
         self, lexicon: Lexicon
-    ) -> Tuple[None, UUID, str, int, str, Dict, bool]:
+    ) -> Tuple[None, UUID, str, int, str, Dict, Optional[bool]]:
         return (
             None,
             lexicon.id,
@@ -74,7 +79,7 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
             lexicon.version,
             lexicon.name,
             lexicon.config,
-            lexicon.is_active,
+            lexicon.is_active if lexicon.is_active else None,
         )
 
     def _row_to_lexicon(self, row: Optional[Tuple]) -> Optional[Lexicon]:
@@ -82,12 +87,12 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
             return None
 
         return Lexicon(
-            row.id,
-            row.lexicon_id,
-            row.version,
-            row.name,
-            row.config,
-            is_active=row.is_active,
+            entity_id=row.id,
+            lexicon_id=row.lexicon_id,
+            version=row.version,
+            name=row.name,
+            config=row.config,
+            is_active=row.is_active is True,
         )
 
 
@@ -127,25 +132,25 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         mysql_character_set="utf8mb4"
         # extend_existing=True
     )
-    db.mapper(
-        Lexicon,
-        table,
-        properties={
-            "_id": table.c.id,
-            "_version": table.c.version,
-            "_name": table.c.name,
-            "_lexicon_id": table.c.lexicon_id,
-            # "_is_active": table.c.is_active,
-        },
-    )
+    # db.mapper(
+    #     Lexicon,
+    #     table,
+    #     properties={
+    #         "_id": table.c.id,
+    #         "_version": table.c.version,
+    #         "_name": table.c.name,
+    #         "_lexicon_id": table.c.lexicon_id,
+    #         # "_is_active": table.c.is_active,
+    #     },
+    # )
 
-    @db.event.listens_for(Lexicon.is_active, "set", retval=True)
-    def update_is_active(target, value, oldvalue, initiator):
-        if value:
-            value = True
-        else:
-            value = None
-        return value
+    # @db.event.listens_for(Lexicon.is_active, "set", retval=True)
+    # def update_is_active(target, value, oldvalue, initiator):
+    #     if value:
+    #         value = True
+    #     else:
+    #         value = None
+    #     return value
 
     table.create(db.get_engine(db_uri))
     return table
