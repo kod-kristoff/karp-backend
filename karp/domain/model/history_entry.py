@@ -21,7 +21,7 @@ class HistoryEntry(TimestampedVersionedEntity):
         created_by: str = common._unknown_user,
     ):
         super().__init__(
-            entity_id=entity_id, version=0, created=created, created_by=created_by
+            entity_id=entity_id, version=0, last_modified=created, last_modified_by=created_by
         )
         self._entry_id = entry_id
         self._body = body

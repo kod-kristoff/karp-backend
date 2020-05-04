@@ -9,11 +9,12 @@ from karp.utility.time import monotonic_utc_now
 class Entity:
     class Discarded(DomainEvent):
         def mutate(self, obj):
+            obj._validate_event_applicability(self)
             obj._discarded = True
 
-    def __init__(self, entity_id):
+    def __init__(self, entity_id, discarded: bool = False):
         self._id = entity_id
-        self._discarded = False
+        self._discarded = discarded
 
     @property
     def id(self):
@@ -43,8 +44,8 @@ class VersionedEntity(Entity):
             obj._discarded = True
             obj._increment_version()
 
-    def __init__(self, entity_id, version: int):
-        super().__init__(entity_id)
+    def __init__(self, entity_id, version: int, discarded: bool = False):
+        super().__init__(entity_id, discarded=discarded)
         self._version = version
 
     @property
@@ -74,12 +75,17 @@ class TimestampedVersionedEntity(VersionedEntity):
             obj._last_modified_by = self.user
 
     def __init__(
-        self, entity_id, version: int, created=_now, created_by=_unknown_user,
+        self,
+        entity_id,
+        version: int,
+        last_modified=_now,
+        last_modified_by=_unknown_user,
+        discarded: bool = False,
     ) -> None:
-        super().__init__(entity_id, version)
-        self._last_modified = monotonic_utc_now() if created is _now else created
+        super().__init__(entity_id, version, discarded=discarded)
+        self._last_modified = monotonic_utc_now() if last_modified is _now else last_modified
         self._last_modified_by = (
-            _unknown_user if created_by is _unknown_user else created_by
+            _unknown_user if last_modified_by is _unknown_user else last_modified_by
         )
 
     @property

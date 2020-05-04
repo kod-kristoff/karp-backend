@@ -17,7 +17,7 @@ from sqlalchemy import (
     Unicode,
     Enum,
 )
-from sqlalchemy.sql import insert
+from sqlalchemy.sql import insert, delete, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import mapper, aliased
 from sqlalchemy.orm.session import Session, sessionmaker

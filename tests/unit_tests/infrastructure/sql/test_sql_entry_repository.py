@@ -72,7 +72,8 @@ def test_discard_entry_from_entry_repo2(entry_repo2):
         assert entry.version == 0
 
         entry.discard(user="Test", message="Delete.")
-        uw.put(entry)
+        assert entry.discarded
+        uw.update(entry)
         uw.commit()
 
         entry_copy = uw.by_entry_id("b")

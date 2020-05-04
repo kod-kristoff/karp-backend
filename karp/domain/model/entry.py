@@ -29,13 +29,19 @@ class Entry(TimestampedVersionedEntity):
         entry_id: str,
         body: Dict,
         entity_id: unique_id.UniqueId,
-        created: Optional[float] = _now,
-        created_by: str = _unknown_user,
+        last_modified: Optional[float] = _now,
+        last_modified_by: str = _unknown_user,
         op: EntryOp = EntryOp.ADDED,
         message: str = None,
+        discarded: bool = False,
+        version: int = 0
     ):
         super().__init__(
-            entity_id=entity_id, version=0, created=created, created_by=created_by
+            entity_id=entity_id,
+            version=version,
+            last_modified=last_modified,
+            last_modified_by=last_modified_by,
+            discarded=discarded,
         )
         self._entry_id = entry_id
         self._body = body
@@ -94,7 +100,7 @@ class Entry(TimestampedVersionedEntity):
 
 # === Factories ===
 def create_entry(entry_id: str, body: Dict) -> Entry:
-    entry = Entry(entry_id=entry_id, body=body, entity_id=unique_id.make_unique_id())
+    entry = Entry(entry_id=entry_id, body=body, entity_id=unique_id.make_unique_id(), version=0)
     return entry
 
 
