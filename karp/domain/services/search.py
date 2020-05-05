@@ -4,7 +4,7 @@ from karp.util import convert as util_convert
 
 from karp import query_dsl, resourcemgr
 
-from . import errors
+from karp.domain import errors
 
 
 T = TypeVar("T", bool, int, str, List[str])
@@ -166,7 +166,7 @@ class Query:
         return "Query"
 
 
-class SearchInterface:
+class SearchService:
     def build_query(self, args, resource_str: str) -> Query:
         query = Query()
         query.parse_arguments(args, resource_str)

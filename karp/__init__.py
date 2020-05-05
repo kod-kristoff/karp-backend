@@ -64,7 +64,7 @@ def create_app(config_class=None):
         from karp.indexmgr.index import IndexInterface
         from karp.indexmgr import indexer
 
-        search.init(search.SearchInterface())
+        search.init(search.SearchService())
         indexer.init(IndexInterface())
 
     with app.app_context():

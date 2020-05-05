@@ -1,4 +1,4 @@
-from .search import SearchInterface, Query  # noqa: F401
+from karp.domain.services.search import SearchService, Query  # noqa: F401
 from . import errors  # noqa: F401
 
 _search = None
@@ -28,6 +28,6 @@ def statistics(resource_id: str, field: str):
     return _search.statistics(resource_id, field)
 
 
-def init(impl: SearchInterface):
+def init(impl: SearchService):
     global _search
     _search = impl

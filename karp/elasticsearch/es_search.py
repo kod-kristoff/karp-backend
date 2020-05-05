@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from karp.query_dsl import basic_ast as ast, op, is_a
 
 # from karp import query_dsl
-from karp import search
+from karp.domain.services import search
 from karp.search.errors import IncompleteQuery, UnsupportedQuery, UnsupportedField
 from .index import EsIndex
 from .es_observer import OnPublish
@@ -539,7 +539,7 @@ def create_es_query(node: ast.Node):
     return q
 
 
-class EsSearch(search.SearchInterface):
+class EsSearch(search.SearchService):
     class UpdateFieldsOnPublish(OnPublish):
         def __init__(self, outer):
             self.outer = outer
