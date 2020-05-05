@@ -15,3 +15,9 @@ class DiscardedEntityError(DomainError):
     """Raised when an attempt is made to use a discarded Entity."""
 
     pass
+
+
+class ConstraintsError(DomainError, ValueError):
+    """Raised when a constraint is not met."""
+
+    pass
