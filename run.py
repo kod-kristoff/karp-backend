@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=".env")
 
 from karp import create_app
-from karp.config import MariaDBConfig
+from karp.application.config import MariaDBConfig
 
 
 def usage():

@@ -1,7 +1,7 @@
 import os
 
 from karp import create_app
-from karp.config import MariaDBConfig
+from karp.application.config import MariaDBConfig
 
 user = os.environ["MARIADB_USER"]
 passwd = os.environ["MARIADB_PASSWORD"]

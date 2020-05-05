@@ -17,7 +17,7 @@ __version__ = "__version__ = '0.8.1'"
 # TODO handle settings correctly
 def create_app(config_class=None):
     app = Flask(__name__)
-    app.config.from_object("karp.config.DevelopmentConfig")
+    app.config.from_object("karp.application.config.DevelopmentConfig")
     if config_class:
         app.config.from_object(config_class)
     if os.getenv("KARP_CONFIG"):

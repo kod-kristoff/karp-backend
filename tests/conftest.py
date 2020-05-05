@@ -16,7 +16,7 @@ import elasticsearch_test  # pyre-ignore
 
 from karp import create_app  # noqa: E402
 from karp.database import db  # noqa: E402
-from karp.config import Config  # noqa: E402
+from karp.application.config import Config  # noqa: E402
 import karp.resourcemgr as resourcemgr  # noqa: E402
 import karp.indexmgr as indexmgr  # noqa: E402
 from karp.database import ResourceDefinition  # noqa: E402
