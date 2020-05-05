@@ -1,7 +1,7 @@
 from unittest import mock
 
-from karp.elasticsearch.index import _create_es_mapping, EsIndex
-from karp.elasticsearch.es_observer import OnPublish
+from karp.infrastructure.elasticsearch6.index import _create_es_mapping, EsIndex
+from karp.infrastructure.elasticsearch6.es_observer import OnPublish
 
 
 def test_create_es_mapping_empty():

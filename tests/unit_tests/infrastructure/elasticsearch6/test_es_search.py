@@ -3,8 +3,8 @@ from typing import List, Tuple
 
 import pytest
 
-from karp.elasticsearch import EsIndex, EsSearch
-from karp.elasticsearch.es_search import UnsupportedField
+from karp.infrastructure.elasticsearch6 import EsIndex, EsSearch
+from karp.infrastructure.elasticsearch6.es_search import UnsupportedField
 
 
 @pytest.fixture
