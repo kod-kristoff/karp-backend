@@ -41,7 +41,12 @@ class Entity:
 class VersionedEntity(Entity):
     class Discarded(Entity.Discarded):
         def mutate(self, obj):
-            obj._discarded = True
+            super().mutate(obj)
+            obj._increment_version()
+
+    class Stamped(DomainEvent):
+        def mutate(self, obj):
+            obj._validate_event_applicability(self)
             obj._increment_version()
 
     def __init__(self, entity_id, version: int, discarded: bool = False):
@@ -57,6 +62,7 @@ class VersionedEntity(Entity):
         self._version += 1
 
     def _validate_event_applicability(self, event):
+        print("VersionedEntity")
         if event.entity_id != self.id:
             raise ConsistencyError(
                 f"Event entity id mismatch: {event.entity_id} != {self.id}"
@@ -71,6 +77,12 @@ class TimestampedEntity(Entity):
     class Discarded(Entity.Discarded):
         def mutate(self, obj):
             super().mutate(obj)
+            obj._last_modified = self.timestamp
+            obj._last_modified_by = self.user
+
+    class Stamped(DomainEvent):
+        def mutate(self, obj):
+            obj._validate_event_applicability(self)
             obj._last_modified = self.timestamp
             obj._last_modified_by = self.user
 
@@ -114,13 +126,33 @@ class TimestampedEntity(Entity):
         self._last_modified_by = user
         self._last_modified = monotonic_utc_now() if timestamp is _now else timestamp
 
+    def _validate_event_applicability(self, event):
+        print("TimestampedEntity")
+        if event.entity_id != self.id:
+            raise ConsistencyError(
+                f"Event entity id mismatch: {event.entity_id} != {self.id}"
+            )
+        if event.entity_last_modified != self.last_modified:
+            raise ConsistencyError(
+                f"Event entity last_modified mismatch: {event.entity_last_modified} != {self.last_modified}"
+            )
 
-class TimestampedVersionedEntity(VersionedEntity):
-    class Discarded(VersionedEntity.Discarded):
+
+class TimestampedVersionedEntity(VersionedEntity, TimestampedEntity):
+    class Discarded(VersionedEntity.Discarded, TimestampedEntity.Discarded):
         def mutate(self, obj):
             super().mutate(obj)
+
+    class Stamped(VersionedEntity.Stamped, TimestampedEntity.Stamped):
+        def __init__(self, *, increment_version: bool = True, **kwargs):
+            super().__init__(increment_version=increment_version, **kwargs)
+
+        def mutate(self, obj):
+            obj._validate_event_applicability(self)
             obj._last_modified = self.timestamp
             obj._last_modified_by = self.user
+            if self.increment_version:
+                obj._increment_version()
 
     def __init__(
         self,
@@ -158,9 +190,21 @@ class TimestampedVersionedEntity(VersionedEntity):
         self._check_not_discarded()
         self._last_modified_by = user
 
-    def stamp(self, user, *, timestamp=_now, increment_version=True):
+    def stamp(self, user, *, increment_version=True):
         self._check_not_discarded()
-        self._last_modified_by = user
-        self._last_modified = monotonic_utc_now() if timestamp is _now else timestamp
-        if increment_version:
-            self._increment_version()
+        event = TimestampedVersionedEntity.Stamped(
+            entity_id=self.id,
+            entity_version=self.version,
+            entity_last_modified=self.last_modified,
+            user=user,
+            increment_version=increment_version,
+        )
+        event.mutate(self)
+        # self._last_modified_by = user
+        # self._last_modified = monotonic_utc_now() if timestamp is _now else timestamp
+        # if increment_version:
+        #     self._increment_version()
+
+    def _validate_event_applicability(self, event):
+        VersionedEntity._validate_event_applicability(self, event)
+        TimestampedEntity._validate_event_applicability(self, event)

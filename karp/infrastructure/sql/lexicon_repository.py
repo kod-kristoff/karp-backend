@@ -2,7 +2,11 @@
 from typing import Optional, List, Tuple, Dict
 from uuid import UUID
 
-from karp.domain.model.lexicon import Lexicon, Repository as LexiconRepository
+from karp.domain.model.lexicon import (
+    Lexicon,
+    LexiconOp,
+    Repository as LexiconRepository,
+)
 
 from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
@@ -73,7 +77,9 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
 
     def _lexicon_to_row(
         self, lexicon: Lexicon
-    ) -> Tuple[None, UUID, str, int, str, Dict, Optional[bool]]:
+    ) -> Tuple[
+        None, UUID, str, int, str, Dict, Optional[bool], float, str, str, LexiconOp
+    ]:
         return (
             None,
             lexicon.id,
@@ -82,9 +88,13 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
             lexicon.name,
             lexicon.config,
             lexicon.is_active if lexicon.is_active else None,
+            lexicon.last_modified,
+            lexicon.last_modified_by,
+            lexicon.message,
+            lexicon.op,
         )
 
-    def _row_to_lexicon(self, row: Optional[Tuple]) -> Optional[Lexicon]:
+    def _row_to_lexicon(self, row) -> Optional[Lexicon]:
         if row is None:
             return None
 
@@ -94,7 +104,11 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
             version=row.version,
             name=row.name,
             config=row.config,
+            message=row.message,
+            op=row.op,
             is_active=row.is_active is True,
+            last_modified=row.last_modified,
+            last_modified_by=row.last_modified_by,
         )
 
 
@@ -125,6 +139,10 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         db.Column("name", db.String(64), nullable=False,),
         db.Column("config", db.NestedMutableJson, nullable=False),
         db.Column("is_active", db.Boolean, index=True, nullable=True, default=None),
+        db.Column("last_modified", db.Float, nullable=False),
+        db.Column("last_modified_by", db.String, nullable=False),
+        db.Column("message", db.String, nullable=False),
+        db.Column("op", db.Enum(LexiconOp), nullable=False),
         db.UniqueConstraint(
             "lexicon_id", "version", name="lexicon_version_unique_constraint"
         ),

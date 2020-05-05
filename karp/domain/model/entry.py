@@ -90,7 +90,12 @@ class Entry(TimestampedEntity):
         return self._message
 
     def discard(self, *, user: str, message: str = None):
-        event = Entry.Discarded(entity_id=self.id, user=user, message=message)
+        event = Entry.Discarded(
+            entity_id=self.id,
+            entity_last_modified=self.last_modified,
+            user=user,
+            message=message,
+        )
         event.mutate(self)
         event_handler.publish(event)
 

@@ -21,7 +21,10 @@ class HistoryEntry(TimestampedVersionedEntity):
         created_by: str = common._unknown_user,
     ):
         super().__init__(
-            entity_id=entity_id, version=0, last_modified=created, last_modified_by=created_by
+            entity_id=entity_id,
+            version=0,
+            last_modified=created,
+            last_modified_by=created_by,
         )
         self._entry_id = entry_id
         self._body = body
@@ -50,7 +53,8 @@ class HistoryEntry(TimestampedVersionedEntity):
         event = HistoryEntry.Discarded(
             entity_id=self.id,
             entity_version=self.version,
-            user=user
+            entity_last_modified=self.last_modified,
+            user=user,
         )
         event.mutate(self)
         event_handler.publish(event)

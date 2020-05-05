@@ -1,22 +1,33 @@
 """Lexicon"""
 import abc
+import enum
 from typing import Dict, Any, Optional
 
 from karp.domain.model.entity import TimestampedVersionedEntity
-from karp.domain.model.event import DomainEvent
+from karp.domain.model.events import DomainEvent
 from karp.utility import unique_id
 
 
+class LexiconOp(enum.Enum):
+    ADDED = "ADDED"
+    UPDATED = "UPDATED"
+    DELETED = "DELETED"
+
+
 class Lexicon(TimestampedVersionedEntity):
-    class Updated(DomainEvent):
+    class Stamped(TimestampedVersionedEntity.Stamped):
         def mutate(self, obj):
             super().mutate(obj)
-            obj._
+            obj._message = self.message
+            obj._op = LexiconOp.UPDATED
+
     def __init__(
         self,
         lexicon_id: str,
         name: str,
         config: Dict[str, Any],
+        message: str,
+        op: LexiconOp,
         *args,
         is_active: bool = False,
         **kwargs
@@ -26,6 +37,8 @@ class Lexicon(TimestampedVersionedEntity):
         self._name = name
         self.is_active = is_active
         self.config = config
+        self._message = message
+        self._op = op
 
     @property
     def lexicon_id(self):
@@ -35,18 +48,25 @@ class Lexicon(TimestampedVersionedEntity):
     def name(self):
         return self._name
 
+    @property
+    def message(self):
+        return self._message
+
+    @property
+    def op(self):
+        return self._op
+
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()
-        event = Lexicon.Updated(
+        event = Lexicon.Stamped(
             entity_id=self.id,
             entity_version=self.version,
+            entity_last_modified=self.last_modified,
             user=user,
             message=message,
             increment_version=increment_version,
         )
         event.mutate(self)
-
-
 
 
 def create_lexicon(config: Dict) -> Lexicon:
@@ -56,8 +76,10 @@ def create_lexicon(config: Dict) -> Lexicon:
         lexicon_id,
         lexicon_name,
         config,
+        message="Lexicon added.",
+        op=LexiconOp.ADDED,
         entity_id=unique_id.make_unique_id(),
-        version=None,
+        version=1,
     )
     return lexicon
 
