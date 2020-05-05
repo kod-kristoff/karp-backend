@@ -12,9 +12,10 @@ class Entity:
             obj._validate_event_applicability(self)
             obj._discarded = True
 
-    def __init__(self, entity_id, discarded: bool = False):
+    def __init__(self, entity_id, discarded: bool = False, aggregate_root=None):
         self._id = entity_id
         self._discarded = discarded
+        self._root = aggregate_root
 
     @property
     def id(self):
@@ -26,6 +27,11 @@ class Entity:
         """True if this entity is marked as deleted, otherwise False.
         """
         return self._discarded
+
+    @property
+    def root(self):
+        """The aggregate root or self."""
+        return self if self._root is None else self._root
 
     def _check_not_discarded(self):
         if self._discarded:
@@ -62,7 +68,6 @@ class VersionedEntity(Entity):
         self._version += 1
 
     def _validate_event_applicability(self, event):
-        print("VersionedEntity")
         if event.entity_id != self.id:
             raise ConsistencyError(
                 f"Event entity id mismatch: {event.entity_id} != {self.id}"
@@ -127,7 +132,6 @@ class TimestampedEntity(Entity):
         self._last_modified = monotonic_utc_now() if timestamp is _now else timestamp
 
     def _validate_event_applicability(self, event):
-        print("TimestampedEntity")
         if event.entity_id != self.id:
             raise ConsistencyError(
                 f"Event entity id mismatch: {event.entity_id} != {self.id}"
