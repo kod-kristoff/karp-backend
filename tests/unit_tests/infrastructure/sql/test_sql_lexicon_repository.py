@@ -176,21 +176,21 @@ def test_sql_lexicon_repo_put_another_lexicon(lexicon_repo):
         assert lexicon.is_active is True
 
 
-def test_sql_lexicon_repo_deep_update_of_lexicon(lexicon_repo):
-    with unit_of_work(using=lexicon_repo) as uw:
-        lexicon = uw.get_active_lexicon("test_id_2")
-        assert lexicon is not None
+# def test_sql_lexicon_repo_deep_update_of_lexicon(lexicon_repo):
+#     with unit_of_work(using=lexicon_repo) as uw:
+#         lexicon = uw.get_active_lexicon("test_id_2")
+#         assert lexicon is not None
 
-        lexicon.config["fields"]["count"] = {"type": "int"}
-        lexicon.stamp(user="Admin", message="change")
-        assert lexicon.is_active
-        assert lexicon.version == 2
-        uw.update(lexicon)
-        # assert lexicon.name_id == "test_id_2Test 2"
+#         lexicon.config["fields"]["count"] = {"type": "int"}
+#         lexicon.stamp(user="Admin", message="change")
+#         assert lexicon.is_active
+#         assert lexicon.version == 2
+#         uw.update(lexicon)
+#         # assert lexicon.name_id == "test_id_2Test 2"
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        lexicon = uw.get_active_lexicon("test_id_2")
+#     with unit_of_work(using=lexicon_repo) as uw:
+#         lexicon = uw.get_active_lexicon("test_id_2")
 
-        assert lexicon is not None
-        assert "count" in lexicon.config["fields"]
-        assert lexicon.config["fields"]["count"] == {"type": "int"}
+#         assert lexicon is not None
+#         assert "count" in lexicon.config["fields"]
+#         assert lexicon.config["fields"]["count"] == {"type": "int"}
