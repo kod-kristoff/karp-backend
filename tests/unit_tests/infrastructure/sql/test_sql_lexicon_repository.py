@@ -35,7 +35,6 @@ def test_sql_lexicon_repo_put(lexicon_repo):
     lexicon = create_lexicon(lexicon_config)
 
     expected_version = 1
-    expected_db_id = 1
 
     with unit_of_work(using=lexicon_repo) as uw:
         uw.put(lexicon)
@@ -43,7 +42,6 @@ def test_sql_lexicon_repo_put(lexicon_repo):
         assert uw.lexicon_ids() == [lexicon_id]
 
         assert lexicon.version == expected_version
-        assert lexicon.id == uuid.UUID(str(lexicon.id), version=4)
         lexicon_id_history = uw.history_by_lexicon_id(lexicon_id)
         assert len(lexicon_id_history) == 1
 
@@ -53,7 +51,7 @@ def test_sql_lexicon_repo_put(lexicon_repo):
         assert isinstance(test_lex, Lexicon)
         assert isinstance(test_lex.config, dict)
         assert test_lex.lexicon_id == lexicon_id
-        assert test_lex.id == expected_db_id
+        assert test_lex.id == lexicon.id
         assert test_lex.name == lexicon_name
 
 
@@ -70,6 +68,8 @@ def test_sql_lexicon_repo_update_lexicon(lexicon_repo):
         lexicon.config["c"] = "added"
         lexicon.config["a"] = "changed"
         lexicon.is_active = True
+        lexicon.stamp(user="Test user")
+        uw.update(lexicon)
 
     with unit_of_work(using=lexicon_repo) as uw:
         test_lex = uw.lexicon_with_id_and_version(lexicon_id, lexicon_version)
@@ -97,7 +97,6 @@ def test_sql_lexicon_repo_put_another_version(lexicon_repo):
     lexicon = create_lexicon(lexicon_config)
 
     expected_version = 2
-    expected_db_id = 2
 
     with unit_of_work(using=lexicon_repo) as uw:
         uw.put(lexicon)
@@ -105,7 +104,6 @@ def test_sql_lexicon_repo_put_another_version(lexicon_repo):
         assert uw.lexicon_ids() == [lexicon_id]
 
         assert lexicon.version == expected_version
-        assert lexicon.id == expected_db_id
         assert not lexicon.is_active
 
 
@@ -119,7 +117,6 @@ def test_sql_lexicon_repo_put_yet_another_version(lexicon_repo):
     lexicon = create_lexicon(lexicon_config)
 
     expected_version = 3
-    expected_db_id = 3
 
     with unit_of_work(using=lexicon_repo) as uw:
         uw.put(lexicon)
@@ -127,7 +124,6 @@ def test_sql_lexicon_repo_put_yet_another_version(lexicon_repo):
         assert uw.lexicon_ids() == [lexicon_id]
 
         assert lexicon.version == expected_version
-        assert lexicon.id == expected_db_id
         assert not lexicon.is_active
 
 

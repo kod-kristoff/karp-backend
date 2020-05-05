@@ -27,6 +27,8 @@ class SqlLexiconRepository(LexiconRepository, SqlRepository):
             db.insert(self.table, values=self._lexicon_to_row(lexicon))
         )
 
+    update = put
+
     def lexicon_ids(self) -> List[str]:
         self._check_has_session()
         query = self._session.query(self.table)

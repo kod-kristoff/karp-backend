@@ -3,10 +3,15 @@ import abc
 from typing import Dict, Any, Optional
 
 from karp.domain.model.entity import TimestampedVersionedEntity
+from karp.domain.model.event import DomainEvent
 from karp.utility import unique_id
 
 
 class Lexicon(TimestampedVersionedEntity):
+    class Updated(DomainEvent):
+        def mutate(self, obj):
+            super().mutate(obj)
+            obj._
     def __init__(
         self,
         lexicon_id: str,
@@ -29,6 +34,19 @@ class Lexicon(TimestampedVersionedEntity):
     @property
     def name(self):
         return self._name
+
+    def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
+        self._check_not_discarded()
+        event = Lexicon.Updated(
+            entity_id=self.id,
+            entity_version=self.version,
+            user=user,
+            message=message,
+            increment_version=increment_version,
+        )
+        event.mutate(self)
+
+
 
 
 def create_lexicon(config: Dict) -> Lexicon:
