@@ -67,7 +67,7 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
         self._check_has_session()
         query = self._session.query(self.table)
         return self._row_to_resource(
-            query.filter_by(resource_id=resource_id, is_active=True).one_or_none()
+            query.filter_by(resource_id=resource_id, is_published=True).one_or_none()
         )
 
     def get_latest_version(self, resource_id: str) -> int:

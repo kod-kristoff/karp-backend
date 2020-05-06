@@ -5,7 +5,7 @@ from karp.infrastructure.elasticsearch6.es_search import Es6SearchService
 from karp.infrastructure.sql.resource_repository import SqlResourceRepository
 
 
-def test_sql_es6_context_create():
+def test_sql_es6_context_create(es):
     context = SqlEs6Context(Config())
 
     assert isinstance(context.resource_repo, SqlResourceRepository)

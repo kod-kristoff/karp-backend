@@ -25,7 +25,7 @@ def test_create_resource_creates_resource():
     assert resource.resource_id == resource_id
     assert resource.name == name
     assert not resource.discarded
-    assert not resource.is_active
+    assert not resource.is_published
     assert "resource_id" not in resource.config
     assert "resource_name" not in resource.config
     assert "sort" in resource.config

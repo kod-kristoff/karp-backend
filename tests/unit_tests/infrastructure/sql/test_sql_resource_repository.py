@@ -70,7 +70,7 @@ def test_sql_resource_repo_update_resource(resource_repo):
         assert resource.config == expected_config
         resource.config["c"] = "added"
         resource.config["a"] = "changed"
-        resource.is_active = True
+        resource.is_published = True
         resource.stamp(user="Test user", message="change config")
         uw.update(resource)
         assert resource.version == 2
@@ -83,7 +83,7 @@ def test_sql_resource_repo_update_resource(resource_repo):
         assert test_lex is not None
         assert test_lex.config["a"] == "changed"
         assert test_lex.config["c"] == "added"
-        assert test_lex.is_active is True
+        assert test_lex.is_published is True
 
     with unit_of_work(using=resource_repo) as uw:
         lex = uw.get_active_resource(resource_id)
@@ -112,7 +112,7 @@ def test_sql_resource_repo_put_another_version(resource_repo):
         assert uw.resource_ids() == [resource_id]
 
         assert resource.version == expected_version
-        assert not resource.is_active
+        assert not resource.is_published
 
 
 # def test_sql_resource_repo_put_yet_another_version(resource_repo):
@@ -132,7 +132,7 @@ def test_sql_resource_repo_put_another_version(resource_repo):
 #         assert uw.resource_ids() == [resource_id]
 
 #         assert resource.version == expected_version
-#         assert not resource.is_active
+#         assert not resource.is_published
 
 
 def test_sql_resource_repo_2nd_active_raises(resource_repo):
@@ -141,10 +141,10 @@ def test_sql_resource_repo_2nd_active_raises(resource_repo):
     with pytest.raises(Exception):
         with unit_of_work(using=resource_repo) as uw:
             resource = uw.resource_with_id_and_version(resource_id, resource_version)
-            resource.is_active = True
+            resource.is_published = True
             resource.stamp(user="Admin", message="make active")
             uw.update(resource)
-            assert resource.is_active is True
+            assert resource.is_published is True
 
 
 def test_sql_resource_repo_version_change_to_existing_raises(resource_repo):
@@ -168,13 +168,13 @@ def test_sql_resource_repo_put_another_resource(resource_repo):
 
     with unit_of_work(using=resource_repo) as uw:
         resource = create_resource(resource_config)
-        resource.is_active = True
+        resource.is_published = True
         uw.put(resource)
         uw.commit()
 
         assert resource.version == expected_version
 
-        assert resource.is_active is True
+        assert resource.is_published is True
 
 
 # def test_sql_resource_repo_deep_update_of_resource(resource_repo):
@@ -184,7 +184,7 @@ def test_sql_resource_repo_put_another_resource(resource_repo):
 
 #         resource.config["fields"]["count"] = {"type": "int"}
 #         resource.stamp(user="Admin", message="change")
-#         assert resource.is_active
+#         assert resource.is_published
 #         assert resource.version == 2
 #         uw.update(resource)
 #         # assert resource.name_id == "test_id_2Test 2"
