@@ -1,7 +1,9 @@
 """SQL Resource Repository"""
+import logging
 from typing import Optional, List, Tuple, Dict
 from uuid import UUID
 
+from karp.domain.errors import RepositoryStatusError
 from karp.domain.model.resource import (
     Resource,
     ResourceOp,
@@ -11,6 +13,8 @@ from karp.domain.model.resource import (
 from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
 
+_logger = logging.getLogger("karp")
+
 
 class SqlResourceRepository(ResourceRepository, SqlRepository):
     def __init__(self, db_uri: str):
@@ -18,10 +22,19 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
         self.table = None
         if self.table is None:
             table_name = "resources"
-            table = db.get_table(table_name)
+            table = db.get_table(db_uri, table_name)
+            print(f"table = {table}")
             if table is None:
                 table = create_table(table_name, self.db_uri)
             self.table = table
+
+    def check_status(self):
+        self._check_has_session()
+        try:
+            self._session.execute("SELECT 1")
+        except db.SQLAlchemyError as e:
+            _logger.exception(str(e))
+            raise RepositoryStatusError()
 
     def put(self, resource: Resource):
         self._check_has_session()
@@ -36,7 +49,9 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
     def resource_ids(self) -> List[str]:
         self._check_has_session()
         query = self._session.query(self.table)
-        return [row.resource_id for row in query.group_by(self.table.c.resource_id).all()]
+        return [
+            row.resource_id for row in query.group_by(self.table.c.resource_id).all()
+        ]
 
     def resources_with_id(self, resource_id: str):
         pass

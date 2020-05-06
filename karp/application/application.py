@@ -3,17 +3,14 @@ import logging
 
 import attr
 
+from karp.application.config import Config
+from karp.application.context import Context
+
 
 @attr.s(auto_attribs=True)
-class ApplicationConfig:
-    LOG_TO_SLACK: bool = False
-    SLACK_SECRET: str = None
-    CONSOLE_LOG_LEVEL: int = logging.DEBUG
-
-
-
 class Application:
-    pass
+    config: Config = attr.Factory(Config)
+    context: Context = attr.Factory(Context)
 
 
 def create_application() -> Application:

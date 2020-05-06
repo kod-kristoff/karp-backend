@@ -4,6 +4,7 @@ import enum
 from typing import Dict, Any, Optional
 
 from karp.domain import constraints
+from karp.domain.errors import RepositoryStatusError
 from karp.domain.model import event_handler
 from karp.domain.model.entity import Entity, TimestampedVersionedEntity
 from karp.domain.model.events import DomainEvent
@@ -177,6 +178,9 @@ def create_resource(config: Dict) -> Resource:
 
 
 class ResourceRepository(metaclass=abc.ABCMeta):
+    def check_status(self):
+        raise RepositoryStatusError()
+
     @abc.abstractmethod
     def put(self, resource: Resource):
         raise NotImplementedError()

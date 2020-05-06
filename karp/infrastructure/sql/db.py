@@ -17,6 +17,7 @@ from sqlalchemy import (
     Unicode,
     Enum,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import insert, delete, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import mapper, aliased
@@ -33,12 +34,14 @@ from sqlalchemy_json import NestedMutableJson
 class SQLEngineSessionfactory:
     engine: Engine = attr.ib()
     session_factory: sessionmaker = attr.ib()
+    metadata: MetaData = attr.ib()
 
     @classmethod
     def from_db_uri(cls, db_uri: str):
         engine = sqlalchemy.create_engine(db_uri)
         session_factory = sessionmaker(bind=engine)
-        return cls(engine, session_factory)
+        metadata = MetaData()
+        return cls(engine, session_factory, metadata)
 
 
 _db_handlers: Dict[str, SQLEngineSessionfactory] = dict()
@@ -59,12 +62,13 @@ def _assure_in_db_handlers(db_uri: str):
         _db_handlers[db_uri] = SQLEngineSessionfactory.from_db_uri(db_uri)
 
 
-def metadata(_: str) -> MetaData:
-    return _metadata
+def metadata(db_uri: str) -> MetaData:
+    _assure_in_db_handlers(db_uri)
+    return _db_handlers[db_uri].metadata
 
 
-def get_table(table_name: str) -> Optional[Table]:
-    return _metadata.tables.get(table_name)
+def get_table(db_uri: str, table_name: str) -> Optional[Table]:
+    return metadata(db_uri).tables.get(table_name)
 
 
 def map_class_to_some_table(cls, table: Table, entity_name: str, **mapper_kw):

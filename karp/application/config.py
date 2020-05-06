@@ -66,3 +66,7 @@ class MariaDBConfig(Config):
         self.SQLALCHEMY_DATABASE_URI = MYSQL_FORMAT.format(
             user=user, passwd=pwd, dbhost=host, dbname=dbname
         )
+
+
+def create_config() -> Config:
+    return Config()

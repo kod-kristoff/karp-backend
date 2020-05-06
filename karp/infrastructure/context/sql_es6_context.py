@@ -1,5 +1,3 @@
-import elasticsearch
-
 from karp.application.context import Context
 from karp.application.config import Config
 

@@ -166,6 +166,12 @@ class Query:
         return "Query"
 
 
+def create_query(resources: str) -> Query:
+    query = Query()
+    query.resources = resources.split(",")
+    return query
+
+
 class SearchService:
     def build_query(self, args, resource_str: str) -> Query:
         query = Query()

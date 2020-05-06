@@ -8,10 +8,11 @@ from flask import request  # pyre-ignore
 import flask_reverse_proxy
 import werkzeug.exceptions
 
+# from karp import application
 from karp.errors import KarpError
 import karp.util.logging.slack as slack_logging
 
-__version__ = "__version__ = '0.8.1'"
+__version__ = "0.8.1"
 
 
 # TODO handle settings correctly
@@ -24,6 +25,13 @@ def create_app(config_class=None):
         app.config.from_object(os.getenv("KARP_CONFIG"))
 
     logger = setup_logging(app)
+
+    from karp import application
+    from karp.infrastructure.sql.resource_repository import SqlResourceRepository
+
+    application.ctx.resource_repo = SqlResourceRepository(
+        config_class.SQLALCHEMY_DATABASE_URI
+    )
 
     from .api import (
         health_api,
@@ -56,7 +64,9 @@ def create_app(config_class=None):
     if app.config["ELASTICSEARCH_ENABLED"] and app.config.get("ELASTICSEARCH_HOST", ""):
         from karp.infrastructure.elasticsearch6 import init_es
 
-        init_es(app.config["ELASTICSEARCH_HOST"])
+        index_service, search_service = init_es(app.config["ELASTICSEARCH_HOST"])
+        application.ctx.index_service = index_service
+        application.ctx.search_service = search_service
     else:
         # TODO if an elasticsearch test runs before a non elasticsearch test this
         # is needed to reset the index and search modules
@@ -66,6 +76,8 @@ def create_app(config_class=None):
 
         search.init(search.SearchService())
         indexer.init(IndexService())
+        application.ctx.index_service = IndexService()
+        application.ctx.search_service = search.SearchService()
 
     with app.app_context():
         import karp.pluginmanager
@@ -96,14 +108,15 @@ def create_app(config_class=None):
 
     from karp.domain.services.auth import auth
 
+    application.ctx.auth_service = auth.Auth()
     if app.config["JWT_AUTH"]:
         from karp.domain.services.auth.jwt_authenticator import JWTAuthenticator
 
-        auth.auth.set_authenticator(JWTAuthenticator())
+        application.ctx.auth_service.set_authenticator(JWTAuthenticator())
     else:
         from karp.domain.services.auth.authenticator import Authenticator
 
-        auth.auth.set_authenticator(Authenticator())
+        application.ctx.auth_service.set_authenticator(Authenticator())
 
     CORS(app)
 

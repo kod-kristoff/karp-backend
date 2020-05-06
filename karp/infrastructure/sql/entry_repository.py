@@ -150,9 +150,9 @@ class SqlEntryRepositorySettings(EntryRepositorySettings):
 
 @create_entry_repository.register(SqlEntryRepositorySettings)
 def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
-    history_table = db.get_table(settings.table_name) or create_history_entry_table(
-        settings.table_name, settings.db_uri
-    )
+    history_table = db.get_table(
+        settings.db_uri, settings.table_name
+    ) or create_history_entry_table(settings.table_name, settings.db_uri)
 
     #     mapped_class = db.map_class_to_some_table(
     #         Entry,
@@ -171,9 +171,9 @@ def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
     #     )
     runtime_table_name = f"runtime_{settings.table_name}"
 
-    runtime_table = db.get_table(runtime_table_name) or create_entry_runtime_table(
-        runtime_table_name, settings.db_uri, history_table
-    )
+    runtime_table = db.get_table(
+        settings.db_uri, runtime_table_name
+    ) or create_entry_runtime_table(runtime_table_name, settings.db_uri, history_table)
     return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
 
 

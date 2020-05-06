@@ -1,11 +1,14 @@
+import abc
 import functools
 from flask import request  # pyre-ignore
 
+from karp.domain.model.user import User
 from karp.domain.services.auth.authenticator import Authenticator
 from karp.errors import KarpError, ClientErrorCodes
 
 
 class Auth:
+    # class AuthenticationService(metaclass=abc.ABCMeta):
     def __init__(self):
         self.impl = Authenticator()
 
@@ -27,6 +30,14 @@ class Auth:
             return wrapper
 
         return decorator
+
+    # @abc.abstractmethod
+    # def authenticate(self, request) -> User:
+    #     raise NotImplementedError()
+
+    # @abc.abstractmethod
+    # def authorize(self, level, user: User, kwargs) -> bool:
+    #     raise NotImplementedError()
 
     def set_authenticator(self, authenticator):
         self.impl = authenticator

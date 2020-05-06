@@ -1,26 +1,9 @@
 from itertools import zip_longest
 
-import pytest  # pyre-ignore
 
 from karp import search
 from karp.query_dsl import op
 
-
-@pytest.fixture
-def query():
-    return search.Query()
-
-
-def test_empty_arg_and_empty_resource_str(query):
-    with pytest.raises(search.errors.IncompleteQuery):
-        query.parse_arguments({}, None)
-
-
-def test_minimal(query):
-    query.parse_arguments({"sort": "quiet"}, "saldo")
-    assert isinstance(query.resources, list)
-    assert len(query.resources) == 1
-    assert query.resources[0] == "saldo"
 
 
 def _test_nodes(r, facit):
