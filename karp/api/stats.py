@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify  # pyre-ignore
 
 from karp import search
-import karp.auth.auth as auth
+import karp.domain.services.auth.auth as auth
 
 stats_api = Blueprint("stats_api", __name__)
 

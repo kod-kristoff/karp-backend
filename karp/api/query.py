@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify as flask_jsonify, request  # pyre-ignore
 from karp import resourcemgr
 
 from karp import search
-import karp.auth.auth as auth
+from karp.domain.services.auth import auth
 from karp import errors
 
 

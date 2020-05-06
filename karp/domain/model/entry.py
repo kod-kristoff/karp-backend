@@ -1,7 +1,9 @@
 """Model for a lexical entry."""
 import abc
 import enum
+from functools import singledispatch
 from typing import Dict, Optional, List
+from uuid import UUID
 
 from karp.domain import constraints
 from karp.domain.common import _now, _unknown_user
@@ -121,7 +123,7 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
 
 
 # === Repository ===
-class Repository(metaclass=abc.ABCMeta):
+class EntryRepository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def put(self, entry: Entry):
         raise NotImplementedError()
@@ -133,3 +135,14 @@ class Repository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def by_entry_id(self, entry_id: str) -> Optional[Entry]:
         raise NotImplementedError()
+
+
+class EntryRepositorySettings:
+    """Settings for an EntryRepository."""
+
+    pass
+
+
+@singledispatch
+def create_entry_repository(settings: EntryRepositorySettings) -> EntryRepository:
+    raise RuntimeError(f"Don't know how to handle {settings!r}")

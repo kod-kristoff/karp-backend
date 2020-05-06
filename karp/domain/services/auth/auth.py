@@ -1,7 +1,7 @@
 import functools
 from flask import request  # pyre-ignore
 
-from karp.auth.authenticator import Authenticator
+from karp.domain.services.auth.authenticator import Authenticator
 from karp.errors import KarpError, ClientErrorCodes
 
 

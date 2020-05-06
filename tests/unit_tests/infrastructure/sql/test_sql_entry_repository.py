@@ -1,20 +1,29 @@
 import pytest
 
-from karp.domain.model.entry import create_entry, Entry
+from karp.domain.model.entry import (
+    create_entry,
+    Entry,
+    EntryRepositorySettings,
+    create_entry_repository,
+)
 
 from karp.infrastructure.unit_of_work import unit_of_work
-from karp.infrastructure.sql.entry_repository import create_repository
+from karp.infrastructure.sql.entry_repository import SqlEntryRepositorySettings
 
 
 @pytest.fixture(name="entry_repo", scope="session")
 def fixture_entry_repo():
-    entry_repo = create_repository("sqlite:///", "test_name")
+    entry_repo = create_entry_repository(
+        SqlEntryRepositorySettings(db_uri="sqlite:///", table_name="test_name")
+    )
     return entry_repo
 
 
 @pytest.fixture(name="entry_repo2", scope="session")
 def fixture_entry_repo2():
-    entry_repo = create_repository("sqlite:///", "test_name2")
+    entry_repo = create_entry_repository(
+        SqlEntryRepositorySettings(db_uri="sqlite:///", table_name="test_name2")
+    )
     return entry_repo
 
 
@@ -88,3 +97,11 @@ def test_discard_entry_from_entry_repo2(entry_repo2):
         assert not entry_history[0].discarded
         assert entry_history[1].discarded
         assert uw.entry_ids() == ["a"]
+
+
+def test_sql_entry_repository_settings():
+    settings = SqlEntryRepositorySettings(db_uri="DB_URI", table_name="NAME")
+
+    assert isinstance(settings, EntryRepositorySettings)
+    assert settings.db_uri == "DB_URI"
+    assert settings.table_name == "NAME"

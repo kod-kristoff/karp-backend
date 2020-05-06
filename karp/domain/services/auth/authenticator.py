@@ -1,4 +1,4 @@
-from karp.auth.user import User
+from karp.domain.model.user import User
 
 
 class Authenticator:

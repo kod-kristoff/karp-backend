@@ -2,9 +2,9 @@ import jwt
 import time
 import jwt.exceptions as jwte  # pyre-ignore
 
-from .authenticator import Authenticator
+from karp.domain.services.auth.authenticator import Authenticator
 from karp import get_resource_string
-from karp.auth.user import User
+from karp.domain.model.user import User
 import karp.resourcemgr as resourcemgr
 from karp.errors import KarpError, ClientErrorCodes
 

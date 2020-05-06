@@ -61,11 +61,11 @@ def create_app(config_class=None):
         # TODO if an elasticsearch test runs before a non elasticsearch test this
         # is needed to reset the index and search modules
         from karp import search
-        from karp.indexmgr.index import IndexInterface
-        from karp.indexmgr import indexer
+        from karp.domain.services.indexmgr.index import IndexService
+        from karp.domain.services.indexmgr import indexer
 
         search.init(search.SearchService())
-        indexer.init(IndexInterface())
+        indexer.init(IndexService())
 
     with app.app_context():
         import karp.pluginmanager
@@ -94,14 +94,14 @@ def create_app(config_class=None):
             logger.exception("unhandled exception")
             return json.dumps({"error": "unknown error", "errorCode": 0}), 400
 
-    import karp.auth.auth as auth
+    from karp.domain.services.auth import auth
 
     if app.config["JWT_AUTH"]:
-        from karp.auth.jwt_authenticator import JWTAuthenticator
+        from karp.domain.services.auth.jwt_authenticator import JWTAuthenticator
 
         auth.auth.set_authenticator(JWTAuthenticator())
     else:
-        from karp.auth.authenticator import Authenticator
+        from karp.domain.services.auth.authenticator import Authenticator
 
         auth.auth.set_authenticator(Authenticator())
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request  # pyre-ignore
 
-import karp.auth.auth as auth
+import karp.domain.services.auth.auth as auth
 import karp.resourcemgr.entryread as entryread
 import karp.resourcemgr as resourcemgr
 import karp.errors as errors

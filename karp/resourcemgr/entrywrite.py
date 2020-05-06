@@ -11,7 +11,7 @@ from sb_json_tools import jsondiff
 from karp.errors import KarpError, ClientErrorCodes, EntryNotFoundError, UpdateConflict
 from karp.resourcemgr import get_resource
 from karp.database import db
-import karp.indexmgr as indexmgr
+import karp.domain.services.indexmgr as indexmgr
 from .resource import Resource
 import karp.resourcemgr.entrymetadata as entrymetadata
 

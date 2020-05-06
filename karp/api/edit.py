@@ -4,7 +4,8 @@ from flask import request  # pyre-ignore
 
 from karp.resourcemgr import entrywrite
 from karp.errors import KarpError
-import karp.auth.auth as auth
+from karp.domain.model.user import User
+import karp.domain.services.auth.auth as auth
 from karp.util import convert
 
 edit_api = Blueprint("edit_api", __name__)
@@ -12,7 +13,7 @@ edit_api = Blueprint("edit_api", __name__)
 
 @edit_api.route("/<resource_id>/add", methods=["POST"])
 @auth.auth.authorization("WRITE", add_user=True)
-def add_entry(user, resource_id):
+def add_entry(user: User, resource_id: str):
     data = request.get_json()
     new_id = entrywrite.add_entry(
         resource_id, data["entry"], user.identifier, message=data.get("message", "")
@@ -22,7 +23,7 @@ def add_entry(user, resource_id):
 
 @edit_api.route("/<resource_id>/<entry_id>/update", methods=["POST"])
 @auth.auth.authorization("WRITE", add_user=True)
-def update_entry(user, resource_id, entry_id):
+def update_entry(user: User, resource_id: str, entry_id: str):
     force_update = convert.str2bool(request.args.get("force", "false"))
     data = request.get_json()
     version = data.get("version")
@@ -47,11 +48,11 @@ def update_entry(user, resource_id, entry_id):
 
 @edit_api.route("/<resource_id>/<entry_id>/delete", methods=["DELETE"])
 @auth.auth.authorization("WRITE", add_user=True)
-def delete_entry(user, resource_id: str, entry_id: str):
+def delete_entry(user: User, resource_id: str, entry_id: str):
     """Delete a entry from a resource.
 
     Arguments:
-        user {karp.auth.user.User} -- [description]
+        user {karp.domain.model.user.User} -- [description]
         resource_id {str} -- [description]
         entry_id {str} -- [description]
 
@@ -64,7 +65,7 @@ def delete_entry(user, resource_id: str, entry_id: str):
 
 @edit_api.route("/<resource_id>/preview", methods=["POST"])
 @auth.auth.authorization("READ")
-def preview_entry(resource_id):
+def preview_entry(resource_id: str):
     data = request.get_json()
     preview = entrywrite.preview_entry(resource_id, data)
     return flask_jsonify(preview)

@@ -539,7 +539,7 @@ def create_es_query(node: ast.Node):
     return q
 
 
-class EsSearch(search.SearchService):
+class Es6SearchService(search.SearchService):
     class UpdateFieldsOnPublish(OnPublish):
         def __init__(self, outer):
             self.outer = outer
@@ -552,7 +552,7 @@ class EsSearch(search.SearchService):
         analyzed_fields, sortable_fields = self._init_field_mapping()
         self.analyzed_fields: Dict[str, List[str]] = analyzed_fields
         self.sortable_fields: Dict[str, Dict[str, List[str]]] = sortable_fields
-        self.update_fields_on_publish = EsSearch.UpdateFieldsOnPublish(self)
+        self.update_fields_on_publish = Es6SearchService.UpdateFieldsOnPublish(self)
         es_index.register_publish_observer(self.update_fields_on_publish)
 
     @staticmethod
@@ -563,7 +563,7 @@ class EsSearch(search.SearchService):
 
         for prop_name, prop_values in properties.items():
             if "properties" in prop_values:
-                res = EsSearch.get_analyzed_fields_from_mapping(
+                res = Es6SearchService.get_analyzed_fields_from_mapping(
                     prop_values["properties"]
                 )
                 analyzed_fields.extend([prop_name + "." + prop for prop in res])
@@ -600,10 +600,14 @@ class EsSearch(search.SearchService):
                 and "entry" in mapping[index]["mappings"]
                 and "properties" in mapping[index]["mappings"]["entry"]
             ):
-                field_mapping[alias] = EsSearch.get_analyzed_fields_from_mapping(
+                field_mapping[
+                    alias
+                ] = Es6SearchService.get_analyzed_fields_from_mapping(
                     mapping[index]["mappings"]["entry"]["properties"]
                 )
-                sortable_fields[alias] = EsSearch.create_sortable_map_from_mapping(
+                sortable_fields[
+                    alias
+                ] = Es6SearchService.create_sortable_map_from_mapping(
                     mapping[index]["mappings"]["entry"]["properties"]
                 )
         return field_mapping, sortable_fields
@@ -748,7 +752,7 @@ class EsSearch(search.SearchService):
 
     def search_ids(self, args, resource_id: str, entry_ids: str):
         logger.info(
-            "Called EsSearch.search_ids(self, args, resource_id, entry_ids) with:"
+            "Called Es6SearchService.search_ids(self, args, resource_id, entry_ids) with:"
         )
         logger.info("  resource_id = {}".format(resource_id))
         logger.info("  entry_ids = {}".format(entry_ids))
@@ -791,12 +795,12 @@ class EsSearch(search.SearchService):
         ):
             self.analyzed_fields[
                 alias_name
-            ] = EsSearch.get_analyzed_fields_from_mapping(
+            ] = Es6SearchService.get_analyzed_fields_from_mapping(
                 mapping[index_name]["mappings"]["entry"]["properties"]
             )
             self.sortable_fields[
                 alias_name
-            ] = EsSearch.create_sortable_map_from_mapping(
+            ] = Es6SearchService.create_sortable_map_from_mapping(
                 mapping[index_name]["mappings"]["entry"]["properties"]
             )
 

@@ -5,8 +5,10 @@ from uuid import UUID
 from karp.domain.model.entry import (
     Entry,
     EntryOp,
+    EntryRepositorySettings,
     EntryStatus,
-    Repository as EntryRepository,
+    EntryRepository,
+    create_entry_repository,
 )
 
 from karp.infrastructure.sql import db
@@ -139,9 +141,17 @@ class SqlEntryRepository(EntryRepository, SqlRepository):
         return (entry.entry_id, history_id, entry.id, entry.discarded)
 
 
-def create_repository(db_uri: str, table_name: str) -> SqlEntryRepository:
-    history_table = db.get_table(table_name) or create_history_entry_table(
-        table_name, db_uri
+# ===== Value objects =====
+class SqlEntryRepositorySettings(EntryRepositorySettings):
+    def __init__(self, *, db_uri: str, table_name: str):
+        self.db_uri = db_uri
+        self.table_name = table_name
+
+
+@create_entry_repository.register(SqlEntryRepositorySettings)
+def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
+    history_table = db.get_table(settings.table_name) or create_history_entry_table(
+        settings.table_name, settings.db_uri
     )
 
     #     mapped_class = db.map_class_to_some_table(
@@ -159,15 +169,12 @@ def create_repository(db_uri: str, table_name: str) -> SqlEntryRepository:
     #             "_op": table.c.op,
     #         },
     #     )
-    runtime_table_name = f"runtime_{table_name}"
+    runtime_table_name = f"runtime_{settings.table_name}"
 
     runtime_table = db.get_table(runtime_table_name) or create_entry_runtime_table(
-        f"runtime_{table_name}", db_uri, history_table
+        runtime_table_name, settings.db_uri, history_table
     )
-    return SqlEntryRepository(db_uri, history_table, runtime_table)
-
-
-_use_aliased = False
+    return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
 
 
 def create_history_entry_table(table_name: str, db_uri: str) -> db.Table:

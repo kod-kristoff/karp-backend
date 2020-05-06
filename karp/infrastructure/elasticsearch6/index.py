@@ -2,7 +2,7 @@ from datetime import datetime
 
 import elasticsearch.helpers  # pyre-ignore
 
-from karp.indexmgr.index import IndexInterface
+from karp.domain.services.indexmgr.index import IndexService
 from karp.util.notifier import Notifier
 from .es_observer import OnPublish
 
@@ -58,7 +58,7 @@ def _create_es_mapping(config):
     return es_mapping
 
 
-class EsIndex(IndexInterface):
+class EsIndex(IndexService):
     def __init__(self, es):
         self.es = es
         self.publish_notifier = Notifier()

@@ -121,7 +121,7 @@ def test_reindex(es, client_with_data_f):
         )
 
     with client.application.app_context():
-        import karp.indexmgr as indexmgr
+        import karp.domain.services.indexmgr as indexmgr
 
         indexmgr.publish_index("places")
 

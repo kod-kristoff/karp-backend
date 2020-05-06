@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 from karp.resourcemgr.entrymetadata import EntryMetadata
 
 
-class IndexInterface:
+class IndexService:
     def create_index(self, resource_id: str, config: Dict) -> str:
         raise NotImplementedError()
 
@@ -32,7 +32,7 @@ class IndexInterface:
 
 class IndexModule:
     def __init__(self):
-        self.impl = IndexInterface()
+        self.impl = IndexService()
 
-    def init(self, impl: IndexInterface):
+    def init(self, impl: IndexService):
         self.impl = impl
