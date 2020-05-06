@@ -4,163 +4,163 @@ import uuid
 import pytest
 
 from karp.domain.errors import ConsistencyError, DiscardedEntityError, ConstraintsError
-from karp.domain.model.lexicon import Lexicon, LexiconOp, Release, create_lexicon
+from karp.domain.model.resource import Resource, ResourceOp, Release, create_resource
 
 
-def test_create_lexicon_creates_lexicon():
-    lexicon_id = "test_lexicon"
-    name = "Test lexicon"
+def test_create_resource_creates_resource():
+    resource_id = "test_resource"
+    name = "Test resource"
     conf = {
-        "lexicon_id": lexicon_id,
-        "lexicon_name": name,
+        "resource_id": resource_id,
+        "resource_name": name,
         "sort": ["baseform"],
         "fields": {"baseform": {"type": "string", "required": True}},
     }
     with mock.patch("karp.utility.time.utc_now", return_value=12345):
-        lexicon = create_lexicon(conf)
+        resource = create_resource(conf)
 
-    assert isinstance(lexicon, Lexicon)
-    assert lexicon.id == uuid.UUID(str(lexicon.id), version=4)
-    assert lexicon.version == 1
-    assert lexicon.lexicon_id == lexicon_id
-    assert lexicon.name == name
-    assert not lexicon.discarded
-    assert not lexicon.is_active
-    assert "lexicon_id" not in lexicon.config
-    assert "lexicon_name" not in lexicon.config
-    assert "sort" in lexicon.config
-    assert lexicon.config["sort"] == conf["sort"]
-    assert "fields" in lexicon.config
-    assert lexicon.config["fields"] == conf["fields"]
-    assert int(lexicon.last_modified) == 12345
-    assert lexicon.message == "Lexicon added."
-    assert lexicon.op == LexiconOp.ADDED
+    assert isinstance(resource, Resource)
+    assert resource.id == uuid.UUID(str(resource.id), version=4)
+    assert resource.version == 1
+    assert resource.resource_id == resource_id
+    assert resource.name == name
+    assert not resource.discarded
+    assert not resource.is_active
+    assert "resource_id" not in resource.config
+    assert "resource_name" not in resource.config
+    assert "sort" in resource.config
+    assert resource.config["sort"] == conf["sort"]
+    assert "fields" in resource.config
+    assert resource.config["fields"] == conf["fields"]
+    assert int(resource.last_modified) == 12345
+    assert resource.message == "Resource added."
+    assert resource.op == ResourceOp.ADDED
 
 
-def test_lexicon_stamp_changes_last_modified_and_version():
-    lexicon_id = "test_lexicon"
-    name = "Test lexicon"
+def test_resource_stamp_changes_last_modified_and_version():
+    resource_id = "test_resource"
+    name = "Test resource"
     conf = {
-        "lexicon_id": lexicon_id,
-        "lexicon_name": name,
+        "resource_id": resource_id,
+        "resource_name": name,
         "sort": ["baseform"],
         "fields": {"baseform": {"type": "string", "required": True}},
     }
-    lexicon = create_lexicon(conf)
+    resource = create_resource(conf)
 
-    previous_last_modified = lexicon.last_modified
-    previous_version = lexicon.version
+    previous_last_modified = resource.last_modified
+    previous_version = resource.version
 
-    lexicon.stamp(user="Test")
+    resource.stamp(user="Test")
 
-    assert lexicon.last_modified > previous_last_modified
-    assert lexicon.last_modified_by == "Test"
-    assert lexicon.version == (previous_version + 1)
+    assert resource.last_modified > previous_last_modified
+    assert resource.last_modified_by == "Test"
+    assert resource.version == (previous_version + 1)
 
 
-def test_lexicon_add_new_release_creates_release():
-    lexicon = create_lexicon(
+def test_resource_add_new_release_creates_release():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
 
-    previous_last_modified = lexicon.last_modified
+    previous_last_modified = resource.last_modified
 
-    lexicon.add_new_release(name="v1.0.0", user="Admin", description="")
+    resource.add_new_release(name="v1.0.0", user="Admin", description="")
 
-    assert len(lexicon.releases) == 1
-    assert lexicon.releases[0].name == "v1.0.0"
-    assert lexicon.releases[0].publication_date == lexicon.last_modified
-    assert lexicon.releases[0].description == ""
-    assert lexicon.releases[0].root.id == lexicon.id
-    assert lexicon.last_modified > previous_last_modified
-    assert lexicon.last_modified_by == "Admin"
-    assert lexicon.message == "Release 'v1.0.0' created."
-    assert lexicon.version == 2
+    assert len(resource.releases) == 1
+    assert resource.releases[0].name == "v1.0.0"
+    assert resource.releases[0].publication_date == resource.last_modified
+    assert resource.releases[0].description == ""
+    assert resource.releases[0].root.id == resource.id
+    assert resource.last_modified > previous_last_modified
+    assert resource.last_modified_by == "Admin"
+    assert resource.message == "Release 'v1.0.0' created."
+    assert resource.version == 2
 
 
-def test_lexicon_release_with_name_on_discarded_raises_discarded_entity_error():
-    lexicon = create_lexicon(
+def test_resource_release_with_name_on_discarded_raises_discarded_entity_error():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
 
-    lexicon.discard(user="Test", message="Discard")
+    resource.discard(user="Test", message="Discard")
 
-    assert lexicon.discarded
+    assert resource.discarded
 
     with pytest.raises(DiscardedEntityError):
-        lexicon.release_with_name("test")
+        resource.release_with_name("test")
 
 
-def test_lexicon_add_new_release_on_discarded_raises_discarded_entity_error():
-    lexicon = create_lexicon(
+def test_resource_add_new_release_on_discarded_raises_discarded_entity_error():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
 
-    lexicon.discard(user="Test", message="Discard")
+    resource.discard(user="Test", message="Discard")
 
-    assert lexicon.discarded
+    assert resource.discarded
 
     with pytest.raises(DiscardedEntityError):
-        lexicon.add_new_release(name="test", user="TEST", description="")
+        resource.add_new_release(name="test", user="TEST", description="")
 
 
-def test_lexicon_add_new_release_with_invalid_name_raises_constraints_error():
-    lexicon = create_lexicon(
+def test_resource_add_new_release_with_invalid_name_raises_constraints_error():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
 
     with pytest.raises(ConstraintsError):
-        lexicon.add_new_release(name="", user="Test", description="")
+        resource.add_new_release(name="", user="Test", description="")
 
 
-def test_lexicon_new_release_added_with_wrong_version_raises_consistency_error():
-    lexicon = create_lexicon(
+def test_resource_new_release_added_with_wrong_version_raises_consistency_error():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
-    event = Lexicon.NewReleaseAdded(entity_id=lexicon.id, entity_version=12,)
+    event = Resource.NewReleaseAdded(entity_id=resource.id, entity_version=12,)
     with pytest.raises(ConsistencyError):
-        event.mutate(lexicon)
+        event.mutate(resource)
 
 
-def test_lexicon_new_release_added_with_wrong_last_modified_raises_consistency_error():
-    lexicon = create_lexicon(
+def test_resource_new_release_added_with_wrong_last_modified_raises_consistency_error():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
     )
-    event = Lexicon.NewReleaseAdded(
-        entity_id=lexicon.id, entity_version=lexicon.version, entity_last_modified=2
+    event = Resource.NewReleaseAdded(
+        entity_id=resource.id, entity_version=resource.version, entity_last_modified=2
     )
     with pytest.raises(ConsistencyError):
-        event.mutate(lexicon)
+        event.mutate(resource)
 
 
 def test_release_created_has_id():
@@ -175,11 +175,11 @@ def test_release_created_has_id():
     assert release.root.id == release.id
 
 
-def test_release_created_w_lexicon_has_id():
-    lexicon = create_lexicon(
+def test_release_created_w_resource_has_id():
+    resource = create_resource(
         {
-            "lexicon_id": "test_lexicon",
-            "lexicon_name": "Test lexicon",
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
         }
@@ -189,11 +189,11 @@ def test_release_created_w_lexicon_has_id():
         name="e-name",
         publication_date=12345.0,
         description="ee",
-        aggregate_root=lexicon,
+        aggregate_root=resource,
     )
 
     assert release.id == "e"
     assert release.name == "e-name"
     assert release.publication_date == 12345.0
     assert release.description == "ee"
-    assert release.root.id == lexicon.id
+    assert release.root.id == resource.id

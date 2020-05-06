@@ -1,196 +1,196 @@
-"""Tests for SQLLexiconRepository"""
+"""Tests for SQLResourceRepository"""
 import uuid
 
 import pytest
 
-from karp.domain.model.lexicon import LexiconOp, create_lexicon, Lexicon
+from karp.domain.model.resource import ResourceOp, create_resource, Resource
 from karp.infrastructure.unit_of_work import unit_of_work
-from karp.infrastructure.sql.lexicon_repository import SqlLexiconRepository
+from karp.infrastructure.sql.resource_repository import SqlResourceRepository
 
 
 db_uri = "sqlite:///"
 
 
-@pytest.fixture(name="lexicon_repo", scope="session")
-def fixture_lexicon_repo():
-    lexicon_repo = SqlLexiconRepository(db_uri)
-    return lexicon_repo
+@pytest.fixture(name="resource_repo", scope="session")
+def fixture_resource_repo():
+    resource_repo = SqlResourceRepository(db_uri)
+    return resource_repo
 
 
-def test_sql_lexicon_repo_empty(lexicon_repo):
-    assert lexicon_repo.db_uri == db_uri
-    with unit_of_work(using=lexicon_repo) as uw:
-        assert uw.lexicon_ids() == []
-        assert uw.history_by_lexicon_id("test_id") == []
+def test_sql_resource_repo_empty(resource_repo):
+    assert resource_repo.db_uri == db_uri
+    with unit_of_work(using=resource_repo) as uw:
+        assert uw.resource_ids() == []
+        assert uw.history_by_resource_id("test_id") == []
 
 
-def test_sql_lexicon_repo_put(lexicon_repo):
-    lexicon_id = "test_id"
-    lexicon_name = "Test"
-    lexicon_config = {
-        "lexicon_id": lexicon_id,
-        "lexicon_name": lexicon_name,
+def test_sql_resource_repo_put(resource_repo):
+    resource_id = "test_id"
+    resource_name = "Test"
+    resource_config = {
+        "resource_id": resource_id,
+        "resource_name": resource_name,
         "a": "b",
     }
-    lexicon = create_lexicon(lexicon_config)
+    resource = create_resource(resource_config)
 
     expected_version = 1
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        uw.put(lexicon)
+    with unit_of_work(using=resource_repo) as uw:
+        uw.put(resource)
         uw.commit()
-        assert uw.lexicon_ids() == [lexicon_id]
+        assert uw.resource_ids() == [resource_id]
 
-        assert lexicon.version == expected_version
-        assert lexicon.message == "Lexicon added."
-        assert lexicon.op == LexiconOp.ADDED
-        lexicon_id_history = uw.history_by_lexicon_id(lexicon_id)
-        assert len(lexicon_id_history) == 1
+        assert resource.version == expected_version
+        assert resource.message == "Resource added."
+        assert resource.op == ResourceOp.ADDED
+        resource_id_history = uw.history_by_resource_id(resource_id)
+        assert len(resource_id_history) == 1
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        test_lex = uw.lexicon_with_id_and_version(lexicon_id, expected_version)
+    with unit_of_work(using=resource_repo) as uw:
+        test_lex = uw.resource_with_id_and_version(resource_id, expected_version)
 
-        assert isinstance(test_lex, Lexicon)
+        assert isinstance(test_lex, Resource)
         assert isinstance(test_lex.config, dict)
-        assert test_lex.lexicon_id == lexicon_id
-        assert test_lex.id == lexicon.id
-        assert test_lex.name == lexicon_name
+        assert test_lex.resource_id == resource_id
+        assert test_lex.id == resource.id
+        assert test_lex.name == resource_name
 
 
-def test_sql_lexicon_repo_update_lexicon(lexicon_repo):
-    lexicon_id = "test_id"
-    lexicon_version = 1
+def test_sql_resource_repo_update_resource(resource_repo):
+    resource_id = "test_id"
+    resource_version = 1
 
     expected_config = {"a": "b"}
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        lexicon = uw.lexicon_with_id_and_version(lexicon_id, lexicon_version)
+    with unit_of_work(using=resource_repo) as uw:
+        resource = uw.resource_with_id_and_version(resource_id, resource_version)
 
-        assert lexicon.config == expected_config
-        lexicon.config["c"] = "added"
-        lexicon.config["a"] = "changed"
-        lexicon.is_active = True
-        lexicon.stamp(user="Test user", message="change config")
-        uw.update(lexicon)
-        assert lexicon.version == 2
+        assert resource.config == expected_config
+        resource.config["c"] = "added"
+        resource.config["a"] = "changed"
+        resource.is_active = True
+        resource.stamp(user="Test user", message="change config")
+        uw.update(resource)
+        assert resource.version == 2
 
-    lexicon_version += 1
+    resource_version += 1
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        test_lex = uw.lexicon_with_id_and_version(lexicon_id, lexicon_version)
+    with unit_of_work(using=resource_repo) as uw:
+        test_lex = uw.resource_with_id_and_version(resource_id, resource_version)
 
         assert test_lex is not None
         assert test_lex.config["a"] == "changed"
         assert test_lex.config["c"] == "added"
         assert test_lex.is_active is True
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        lex = uw.get_active_lexicon(lexicon_id)
+    with unit_of_work(using=resource_repo) as uw:
+        lex = uw.get_active_resource(resource_id)
 
         assert lex is not None
-        assert lex.lexicon_id == lexicon_id
-        assert lex.version == lexicon_version
-        assert uw.get_latest_version(lexicon_id) == lexicon_version
+        assert lex.resource_id == resource_id
+        assert lex.version == resource_version
+        assert uw.get_latest_version(resource_id) == resource_version
 
 
-def test_sql_lexicon_repo_put_another_version(lexicon_repo):
-    lexicon_id = "test_id"
-    lexicon_config = {
-        "lexicon_id": lexicon_id,
-        "lexicon_name": "Test",
+def test_sql_resource_repo_put_another_version(resource_repo):
+    resource_id = "test_id"
+    resource_config = {
+        "resource_id": resource_id,
+        "resource_name": "Test",
         "a": "b",
     }
-    lexicon = create_lexicon(lexicon_config)
+    resource = create_resource(resource_config)
 
     expected_version = 3
-    lexicon._version = 3
+    resource._version = 3
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        uw.put(lexicon)
+    with unit_of_work(using=resource_repo) as uw:
+        uw.put(resource)
 
-        assert uw.lexicon_ids() == [lexicon_id]
+        assert uw.resource_ids() == [resource_id]
 
-        assert lexicon.version == expected_version
-        assert not lexicon.is_active
+        assert resource.version == expected_version
+        assert not resource.is_active
 
 
-# def test_sql_lexicon_repo_put_yet_another_version(lexicon_repo):
-#     lexicon_id = "test_id"
-#     lexicon_config = {
-#         "lexicon_id": lexicon_id,
-#         "lexicon_name": "Test",
+# def test_sql_resource_repo_put_yet_another_version(resource_repo):
+#     resource_id = "test_id"
+#     resource_config = {
+#         "resource_id": resource_id,
+#         "resource_name": "Test",
 #         "a": "b",
 #     }
-#     lexicon = create_lexicon(lexicon_config)
+#     resource = create_resource(resource_config)
 
 #     expected_version = 3
 
-#     with unit_of_work(using=lexicon_repo) as uw:
-#         uw.put(lexicon)
+#     with unit_of_work(using=resource_repo) as uw:
+#         uw.put(resource)
 
-#         assert uw.lexicon_ids() == [lexicon_id]
+#         assert uw.resource_ids() == [resource_id]
 
-#         assert lexicon.version == expected_version
-#         assert not lexicon.is_active
+#         assert resource.version == expected_version
+#         assert not resource.is_active
 
 
-def test_sql_lexicon_repo_2nd_active_raises(lexicon_repo):
-    lexicon_id = "test_id"
-    lexicon_version = 2
+def test_sql_resource_repo_2nd_active_raises(resource_repo):
+    resource_id = "test_id"
+    resource_version = 2
     with pytest.raises(Exception):
-        with unit_of_work(using=lexicon_repo) as uw:
-            lexicon = uw.lexicon_with_id_and_version(lexicon_id, lexicon_version)
-            lexicon.is_active = True
-            lexicon.stamp(user="Admin", message="make active")
-            uw.update(lexicon)
-            assert lexicon.is_active is True
+        with unit_of_work(using=resource_repo) as uw:
+            resource = uw.resource_with_id_and_version(resource_id, resource_version)
+            resource.is_active = True
+            resource.stamp(user="Admin", message="make active")
+            uw.update(resource)
+            assert resource.is_active is True
 
 
-def test_sql_lexicon_repo_version_change_to_existing_raises(lexicon_repo):
-    lexicon_id = "test_id"
-    lexicon_version = 2
+def test_sql_resource_repo_version_change_to_existing_raises(resource_repo):
+    resource_id = "test_id"
+    resource_version = 2
     with pytest.raises(Exception):
-        with unit_of_work(using=lexicon_repo) as uw:
-            lexicon = uw.lexicon_with_id_and_version(lexicon_id, lexicon_version)
-            lexicon.version = 1
+        with unit_of_work(using=resource_repo) as uw:
+            resource = uw.resource_with_id_and_version(resource_id, resource_version)
+            resource.version = 1
 
 
-def test_sql_lexicon_repo_put_another_lexicon(lexicon_repo):
-    lexicon_id = "test_id_2"
-    lexicon_config = {
-        "lexicon_id": lexicon_id,
-        "lexicon_name": "Test",
+def test_sql_resource_repo_put_another_resource(resource_repo):
+    resource_id = "test_id_2"
+    resource_config = {
+        "resource_id": resource_id,
+        "resource_name": "Test",
         "fields": {"name": {"type": "string", "required": True}},
     }
 
     expected_version = 1
 
-    with unit_of_work(using=lexicon_repo) as uw:
-        lexicon = create_lexicon(lexicon_config)
-        lexicon.is_active = True
-        uw.put(lexicon)
+    with unit_of_work(using=resource_repo) as uw:
+        resource = create_resource(resource_config)
+        resource.is_active = True
+        uw.put(resource)
         uw.commit()
 
-        assert lexicon.version == expected_version
+        assert resource.version == expected_version
 
-        assert lexicon.is_active is True
+        assert resource.is_active is True
 
 
-# def test_sql_lexicon_repo_deep_update_of_lexicon(lexicon_repo):
-#     with unit_of_work(using=lexicon_repo) as uw:
-#         lexicon = uw.get_active_lexicon("test_id_2")
-#         assert lexicon is not None
+# def test_sql_resource_repo_deep_update_of_resource(resource_repo):
+#     with unit_of_work(using=resource_repo) as uw:
+#         resource = uw.get_active_resource("test_id_2")
+#         assert resource is not None
 
-#         lexicon.config["fields"]["count"] = {"type": "int"}
-#         lexicon.stamp(user="Admin", message="change")
-#         assert lexicon.is_active
-#         assert lexicon.version == 2
-#         uw.update(lexicon)
-#         # assert lexicon.name_id == "test_id_2Test 2"
+#         resource.config["fields"]["count"] = {"type": "int"}
+#         resource.stamp(user="Admin", message="change")
+#         assert resource.is_active
+#         assert resource.version == 2
+#         uw.update(resource)
+#         # assert resource.name_id == "test_id_2Test 2"
 
-#     with unit_of_work(using=lexicon_repo) as uw:
-#         lexicon = uw.get_active_lexicon("test_id_2")
+#     with unit_of_work(using=resource_repo) as uw:
+#         resource = uw.get_active_resource("test_id_2")
 
-#         assert lexicon is not None
-#         assert "count" in lexicon.config["fields"]
-#         assert lexicon.config["fields"]["count"] == {"type": "int"}
+#         assert resource is not None
+#         assert "count" in resource.config["fields"]
+#         assert resource.config["fields"]["count"] == {"type": "int"}

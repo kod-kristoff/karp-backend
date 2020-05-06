@@ -1,4 +1,4 @@
-"""Lexicon"""
+"""LexicalResource"""
 import abc
 import enum
 from typing import Dict, Any, Optional
@@ -10,13 +10,13 @@ from karp.domain.model.events import DomainEvent
 from karp.utility import unique_id
 
 
-class LexiconOp(enum.Enum):
+class ResourceOp(enum.Enum):
     ADDED = "ADDED"
     UPDATED = "UPDATED"
     DELETED = "DELETED"
 
 
-class Lexicon(TimestampedVersionedEntity):
+class Resource(TimestampedVersionedEntity):
     class Discarded(TimestampedVersionedEntity.Discarded):
         def mutate(self, obj):
             super().mutate(obj)
@@ -25,7 +25,7 @@ class Lexicon(TimestampedVersionedEntity):
         def mutate(self, obj):
             super().mutate(obj)
             obj._message = self.message
-            obj._op = LexiconOp.UPDATED
+            obj._op = ResourceOp.UPDATED
 
     class NewReleaseAdded(DomainEvent):
         def mutate(self, obj):
@@ -45,17 +45,17 @@ class Lexicon(TimestampedVersionedEntity):
 
     def __init__(
         self,
-        lexicon_id: str,
+        resource_id: str,
         name: str,
         config: Dict[str, Any],
         message: str,
-        op: LexiconOp,
+        op: ResourceOp,
         *args,
         is_active: bool = False,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self._lexicon_id = lexicon_id
+        self._resource_id = resource_id
         self._name = name
         self.is_active = is_active
         self.config = config
@@ -64,8 +64,8 @@ class Lexicon(TimestampedVersionedEntity):
         self._releases = []
 
     @property
-    def lexicon_id(self):
-        return self._lexicon_id
+    def resource_id(self):
+        return self._resource_id
 
     @property
     def name(self):
@@ -77,7 +77,7 @@ class Lexicon(TimestampedVersionedEntity):
 
     @property
     def releases(self):
-        """Releases for this lexicon."""
+        """Releases for this resource."""
         return self._releases
 
     @property
@@ -86,7 +86,7 @@ class Lexicon(TimestampedVersionedEntity):
 
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()
-        event = Lexicon.Stamped(
+        event = Resource.Stamped(
             entity_id=self.id,
             entity_version=self.version,
             entity_last_modified=self.last_modified,
@@ -99,7 +99,7 @@ class Lexicon(TimestampedVersionedEntity):
 
     def add_new_release(self, *, name: str, user: str, description: str):
         self._check_not_discarded()
-        event = Lexicon.NewReleaseAdded(
+        event = Resource.NewReleaseAdded(
             entity_id=self.id,
             entity_version=self.version,
             entity_last_modified=self.last_modified,
@@ -119,7 +119,7 @@ class Lexicon(TimestampedVersionedEntity):
 
     def discard(self, *, user: str, message: str):
         self._check_not_discarded()
-        event = Lexicon.Discarded(
+        event = Resource.Discarded(
             entity_id=self.id,
             entity_version=self.version,
             entity_last_modified=self.last_modified,
@@ -158,41 +158,41 @@ class Release(Entity):
 # ===== Factories =====
 
 
-def create_lexicon(config: Dict) -> Lexicon:
-    lexicon_id = config.pop("lexicon_id")
-    lexicon_name = config.pop("lexicon_name")
-    lexicon = Lexicon(
-        lexicon_id,
-        lexicon_name,
+def create_resource(config: Dict) -> Resource:
+    resource_id = config.pop("resource_id")
+    resource_name = config.pop("resource_name")
+    resource = Resource(
+        resource_id,
+        resource_name,
         config,
-        message="Lexicon added.",
-        op=LexiconOp.ADDED,
+        message="Resource added.",
+        op=ResourceOp.ADDED,
         entity_id=unique_id.make_unique_id(),
         version=1,
     )
-    return lexicon
+    return resource
 
 
 # ===== Repository =====
 
 
-class Repository(metaclass=abc.ABCMeta):
+class ResourceRepository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def put(self, lexicon: Lexicon):
+    def put(self, resource: Resource):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def lexicon_ids(self):
+    def resource_ids(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def lexicons_with_id(self, lexicon_id: str):
+    def resources_with_id(self, resource_id: str):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def lexicon_with_id_and_version(self, lexicon_id: str, version: int):
+    def resource_with_id_and_version(self, resource_id: str, version: int):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_active_lexicon(self, lexicon_id: str) -> Optional[Lexicon]:
+    def get_active_resource(self, resource_id: str) -> Optional[Resource]:
         raise NotImplementedError()

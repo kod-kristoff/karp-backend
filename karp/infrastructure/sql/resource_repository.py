@@ -1,106 +1,106 @@
-"""SQL Lexicon Repository"""
+"""SQL Resource Repository"""
 from typing import Optional, List, Tuple, Dict
 from uuid import UUID
 
-from karp.domain.model.lexicon import (
-    Lexicon,
-    LexiconOp,
-    Repository as LexiconRepository,
+from karp.domain.model.resource import (
+    Resource,
+    ResourceOp,
+    ResourceRepository,
 )
 
 from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
 
 
-class SqlLexiconRepository(LexiconRepository, SqlRepository):
+class SqlResourceRepository(ResourceRepository, SqlRepository):
     def __init__(self, db_uri: str):
         super().__init__(db_uri=db_uri)
         self.table = None
         if self.table is None:
-            table_name = "lexicons"
+            table_name = "resources"
             table = db.get_table(table_name)
             if table is None:
                 table = create_table(table_name, self.db_uri)
             self.table = table
 
-    def put(self, lexicon: Lexicon):
+    def put(self, resource: Resource):
         self._check_has_session()
-        if lexicon.version is None:
-            lexicon._version = self.get_latest_version(lexicon.lexicon_id) + 1
+        if resource.version is None:
+            resource._version = self.get_latest_version(resource.resource_id) + 1
         self._session.execute(
-            db.insert(self.table, values=self._lexicon_to_row(lexicon))
+            db.insert(self.table, values=self._resource_to_row(resource))
         )
 
     update = put
 
-    def lexicon_ids(self) -> List[str]:
+    def resource_ids(self) -> List[str]:
         self._check_has_session()
         query = self._session.query(self.table)
-        return [row.lexicon_id for row in query.group_by(self.table.c.lexicon_id).all()]
+        return [row.resource_id for row in query.group_by(self.table.c.resource_id).all()]
 
-    def lexicons_with_id(self, lexicon_id: str):
+    def resources_with_id(self, resource_id: str):
         pass
 
-    def lexicon_with_id_and_version(self, lexicon_id: str, version: int):
+    def resource_with_id_and_version(self, resource_id: str, version: int):
         self._check_has_session()
         query = self._session.query(self.table)
-        return self._row_to_lexicon(
-            query.filter_by(lexicon_id=lexicon_id, version=version).first()
+        return self._row_to_resource(
+            query.filter_by(resource_id=resource_id, version=version).first()
         )
 
-    def get_active_lexicon(self, lexicon_id: str) -> Optional[Lexicon]:
+    def get_active_resource(self, resource_id: str) -> Optional[Resource]:
         self._check_has_session()
         query = self._session.query(self.table)
-        return self._row_to_lexicon(
-            query.filter_by(lexicon_id=lexicon_id, is_active=True).one_or_none()
+        return self._row_to_resource(
+            query.filter_by(resource_id=resource_id, is_active=True).one_or_none()
         )
 
-    def get_latest_version(self, lexicon_id: str) -> int:
+    def get_latest_version(self, resource_id: str) -> int:
         self._check_has_session()
         row = (
             self._session.query(self.table)
             .order_by(self.table.c.version.desc())
-            .filter_by(lexicon_id=lexicon_id)
+            .filter_by(resource_id=resource_id)
             .first()
         )
         if row is None:
             return 0
         return row.version
 
-    def history_by_lexicon_id(self, lexicon_id: str) -> List:
+    def history_by_resource_id(self, resource_id: str) -> List:
         self._check_has_session()
         query = self._session.query(self.table)
         return [
-            self._row_to_lexicon(row)
-            for row in query.filter_by(lexicon_id=lexicon_id).all()
+            self._row_to_resource(row)
+            for row in query.filter_by(resource_id=resource_id).all()
         ]
 
-    def _lexicon_to_row(
-        self, lexicon: Lexicon
+    def _resource_to_row(
+        self, resource: Resource
     ) -> Tuple[
-        None, UUID, str, int, str, Dict, Optional[bool], float, str, str, LexiconOp
+        None, UUID, str, int, str, Dict, Optional[bool], float, str, str, ResourceOp
     ]:
         return (
             None,
-            lexicon.id,
-            lexicon.lexicon_id,
-            lexicon.version,
-            lexicon.name,
-            lexicon.config,
-            lexicon.is_active if lexicon.is_active else None,
-            lexicon.last_modified,
-            lexicon.last_modified_by,
-            lexicon.message,
-            lexicon.op,
+            resource.id,
+            resource.resource_id,
+            resource.version,
+            resource.name,
+            resource.config,
+            resource.is_active if resource.is_active else None,
+            resource.last_modified,
+            resource.last_modified_by,
+            resource.message,
+            resource.op,
         )
 
-    def _row_to_lexicon(self, row) -> Optional[Lexicon]:
+    def _row_to_resource(self, row) -> Optional[Resource]:
         if row is None:
             return None
 
-        return Lexicon(
+        return Resource(
             entity_id=row.id,
-            lexicon_id=row.lexicon_id,
+            resource_id=row.resource_id,
             version=row.version,
             name=row.name,
             config=row.config,
@@ -124,7 +124,7 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         ),
         db.Column("id", db.UUIDType, nullable=False),
         db.Column(
-            "lexicon_id",
+            "resource_id",
             db.String(64),
             # primary_key=True,
             nullable=False,
@@ -142,29 +142,29 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         db.Column("last_modified", db.Float, nullable=False),
         db.Column("last_modified_by", db.String, nullable=False),
         db.Column("message", db.String, nullable=False),
-        db.Column("op", db.Enum(LexiconOp), nullable=False),
+        db.Column("op", db.Enum(ResourceOp), nullable=False),
         db.UniqueConstraint(
-            "lexicon_id", "version", name="lexicon_version_unique_constraint"
+            "resource_id", "version", name="resource_version_unique_constraint"
         ),
         db.UniqueConstraint(
-            "lexicon_id", "is_active", name="lexicon_is_active_unique_constraint"
+            "resource_id", "is_active", name="resource_is_active_unique_constraint"
         ),
         mysql_character_set="utf8mb4"
         # extend_existing=True
     )
     # db.mapper(
-    #     Lexicon,
+    #     Resource,
     #     table,
     #     properties={
     #         "_id": table.c.id,
     #         "_version": table.c.version,
     #         "_name": table.c.name,
-    #         "_lexicon_id": table.c.lexicon_id,
+    #         "_resource_id": table.c.resource_id,
     #         # "_is_active": table.c.is_active,
     #     },
     # )
 
-    # @db.event.listens_for(Lexicon.is_active, "set", retval=True)
+    # @db.event.listens_for(Resource.is_active, "set", retval=True)
     # def update_is_active(target, value, oldvalue, initiator):
     #     if value:
     #         value = True
