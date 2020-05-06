@@ -33,24 +33,6 @@ def create_app(config_class=None):
         config_class.SQLALCHEMY_DATABASE_URI
     )
 
-    from .api import (
-        health_api,
-        edit_api,
-        query_api,
-        conf_api,
-        documentation,
-        stats_api,
-        history_api,
-    )
-
-    app.register_blueprint(edit_api)
-    app.register_blueprint(health_api)
-    app.register_blueprint(query_api)
-    app.register_blueprint(conf_api)
-    app.register_blueprint(documentation)
-    app.register_blueprint(stats_api)
-    app.register_blueprint(history_api)
-
     from .database import db
 
     db.init_app(app)
@@ -84,6 +66,36 @@ def create_app(config_class=None):
 
         karp.pluginmanager.init()
 
+    from karp.domain.services.auth import auth
+
+    application.ctx.auth_service = auth.Auth()
+    if app.config["JWT_AUTH"]:
+        from karp.domain.services.auth.jwt_authenticator import JWTAuthenticator
+
+        application.ctx.auth_service.set_authenticator(JWTAuthenticator())
+    else:
+        from karp.domain.services.auth.authenticator import Authenticator
+
+        application.ctx.auth_service.set_authenticator(Authenticator())
+
+    from .api import (
+        health_api,
+        edit_api,
+        query_api,
+        conf_api,
+        documentation,
+        stats_api,
+        history_api,
+    )
+
+    app.register_blueprint(edit_api)
+    app.register_blueprint(health_api)
+    app.register_blueprint(query_api)
+    app.register_blueprint(conf_api)
+    app.register_blueprint(documentation)
+    app.register_blueprint(stats_api)
+    app.register_blueprint(history_api)
+
     @app.errorhandler(Exception)
     def http_error_handler(error: Exception):
         error_str = "Exception on %s [%s]" % (request.path, request.method)
@@ -106,17 +118,6 @@ def create_app(config_class=None):
             logger.exception("unhandled exception")
             return json.dumps({"error": "unknown error", "errorCode": 0}), 400
 
-    from karp.domain.services.auth import auth
-
-    application.ctx.auth_service = auth.Auth()
-    if app.config["JWT_AUTH"]:
-        from karp.domain.services.auth.jwt_authenticator import JWTAuthenticator
-
-        application.ctx.auth_service.set_authenticator(JWTAuthenticator())
-    else:
-        from karp.domain.services.auth.authenticator import Authenticator
-
-        application.ctx.auth_service.set_authenticator(Authenticator())
 
     CORS(app)
 
