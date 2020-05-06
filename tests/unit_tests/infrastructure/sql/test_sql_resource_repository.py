@@ -1,4 +1,5 @@
 """Tests for SQLResourceRepository"""
+from karp.cli import publish_resource
 import uuid
 
 import pytest
@@ -194,3 +195,10 @@ def test_sql_resource_repo_put_another_resource(resource_repo):
 #         assert resource is not None
 #         assert "count" in resource.config["fields"]
 #         assert resource.config["fields"]["count"] == {"type": "int"}
+
+
+def test_get_published_resources(resource_repo):
+    with unit_of_work(using=resource_repo) as uw:
+        published_resources = uw.get_published_resources()
+
+        assert len(published_resources) == 2

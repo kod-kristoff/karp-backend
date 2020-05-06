@@ -90,6 +90,26 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             for row in query.filter_by(resource_id=resource_id).all()
         ]
 
+    def get_published_resources(self) -> List[Resource]:
+        self._check_has_session()
+        subq = (
+            self._session.query(
+                self.table.c.resource_id,
+                db.func.max(self.table.c.last_modified).label("maxdate"),
+            )
+            .group_by(self.table.c.resource_id)
+            .subquery("t2")
+        )
+        query = self._session.query(self.table).join(
+            subq,
+            db.and_(
+                self.table.c.resource_id == subq.c.resource_id,
+                self.table.c.last_modified == subq.c.maxdate,
+            ),
+        )
+
+        return [self._row_to_resource(row) for row in query if row is not None]
+
     def _resource_to_row(
         self, resource: Resource
     ) -> Tuple[
@@ -102,17 +122,14 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             resource.version,
             resource.name,
             resource.config,
-            resource.is_active if resource.is_active else None,
+            resource.is_published,
             resource.last_modified,
             resource.last_modified_by,
             resource.message,
             resource.op,
         )
 
-    def _row_to_resource(self, row) -> Optional[Resource]:
-        if row is None:
-            return None
-
+    def _row_to_resource(self, row) -> Resource:
         return Resource(
             entity_id=row.id,
             resource_id=row.resource_id,
@@ -121,7 +138,7 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             config=row.config,
             message=row.message,
             op=row.op,
-            is_active=row.is_active is True,
+            is_published=row.is_published,
             last_modified=row.last_modified,
             last_modified_by=row.last_modified_by,
         )
@@ -153,7 +170,7 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         ),
         db.Column("name", db.String(64), nullable=False,),
         db.Column("config", db.NestedMutableJson, nullable=False),
-        db.Column("is_active", db.Boolean, index=True, nullable=True, default=None),
+        db.Column("is_published", db.Boolean, index=True, nullable=True, default=None),
         db.Column("last_modified", db.Float, nullable=False),
         db.Column("last_modified_by", db.String, nullable=False),
         db.Column("message", db.String, nullable=False),
@@ -161,9 +178,9 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
         db.UniqueConstraint(
             "resource_id", "version", name="resource_version_unique_constraint"
         ),
-        db.UniqueConstraint(
-            "resource_id", "is_active", name="resource_is_active_unique_constraint"
-        ),
+        # db.UniqueConstraint(
+        #     "resource_id", "is_active", name="resource_is_active_unique_constraint"
+        # ),
         mysql_character_set="utf8mb4"
         # extend_existing=True
     )

@@ -1,7 +1,7 @@
 """LexicalResource"""
 import abc
 import enum
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from karp.domain import constraints
 from karp.domain.errors import RepositoryStatusError
@@ -52,13 +52,13 @@ class Resource(TimestampedVersionedEntity):
         message: str,
         op: ResourceOp,
         *args,
-        is_active: bool = False,
+        is_published: bool = False,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self._resource_id = resource_id
         self._name = name
-        self.is_active = is_active
+        self.is_published = is_published
         self.config = config
         self._message = message
         self._op = op
@@ -199,4 +199,8 @@ class ResourceRepository(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_active_resource(self, resource_id: str) -> Optional[Resource]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_published_resources(self) -> List[Resource]:
         raise NotImplementedError()

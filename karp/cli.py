@@ -8,10 +8,10 @@ import dotenv
 
 dotenv.load_dotenv(".env", verbose=True)
 
-from .config import MariaDBConfig
+from karp.application.config import MariaDBConfig
 from karp import resourcemgr
 from karp.resourcemgr import entrywrite
-from karp import indexmgr
+from karp.domain.services import indexmgr
 from karp import database
 from karp.errors import KarpError, ResourceNotFoundError
 
