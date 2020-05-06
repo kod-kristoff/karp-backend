@@ -8,7 +8,7 @@ from karp.domain.model.user import User
 import karp.resourcemgr as resourcemgr
 from karp.errors import KarpError, ClientErrorCodes
 
-jwt_key = get_resource_string("auth/pubkey.pem")
+jwt_key = get_resource_string("data_files/pubkey.pem")
 
 
 class JWTAuthenticator(Authenticator):
