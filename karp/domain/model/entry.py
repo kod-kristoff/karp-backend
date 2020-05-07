@@ -124,6 +124,11 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
 
 # === Repository ===
 class EntryRepository(metaclass=abc.ABCMeta):
+    @classmethod
+    def create(cls, repository_type: str, settings: Dict):
+        creator = cls.creator_map[repository_type]
+        return creator(settings)
+
     @abc.abstractmethod
     def put(self, entry: Entry):
         raise NotImplementedError()

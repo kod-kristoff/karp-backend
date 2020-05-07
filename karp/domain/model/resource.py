@@ -85,6 +85,10 @@ class Resource(TimestampedVersionedEntity):
     def op(self):
         return self._op
 
+    @property
+    def entry_repository_config(self):
+        return None
+
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()
         event = Resource.Stamped(

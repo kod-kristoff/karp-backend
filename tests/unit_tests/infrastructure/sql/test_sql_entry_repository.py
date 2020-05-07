@@ -3,6 +3,7 @@ import pytest
 from karp.domain.model.entry import (
     create_entry,
     Entry,
+    EntryRepository,
     EntryRepositorySettings,
     create_entry_repository,
 )
@@ -13,7 +14,7 @@ from karp.infrastructure.sql.entry_repository import SqlEntryRepositorySettings
 
 @pytest.fixture(name="entry_repo", scope="session")
 def fixture_entry_repo():
-    entry_repo = create_entry_repository(
+    entry_repo = EntryRepository.create("sql",
         SqlEntryRepositorySettings(db_uri="sqlite:///", table_name="test_name")
     )
     return entry_repo

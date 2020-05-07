@@ -105,6 +105,7 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             db.and_(
                 self.table.c.resource_id == subq.c.resource_id,
                 self.table.c.last_modified == subq.c.maxdate,
+                self.table.c.is_published == True,
             ),
         )
 

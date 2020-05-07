@@ -197,3 +197,14 @@ def test_release_created_w_resource_has_id():
     assert release.publication_date == 12345.0
     assert release.description == "ee"
     assert release.root.id == resource.id
+
+
+def test_resource_with_entry_repository_config():
+    conf = {
+        "resource_id": "test_id_4",
+        "resource_name": "a",
+
+    }
+    resource = create_resource(conf)
+
+    assert resource.entry_repository_config is None
