@@ -7,6 +7,7 @@ from karp.domain import constraints
 from karp.domain.errors import RepositoryStatusError
 from karp.domain.model import event_handler
 from karp.domain.model.entity import Entity, TimestampedVersionedEntity
+from karp.domain.model.entry import EntryRepository
 from karp.domain.model.events import DomainEvent
 from karp.utility import unique_id
 
@@ -84,6 +85,10 @@ class Resource(TimestampedVersionedEntity):
     @property
     def op(self):
         return self._op
+
+    @property
+    def entry_repository_type(self):
+        return self.config["entry_repository_type"]
 
     @property
     def entry_repository_config(self):
@@ -166,6 +171,8 @@ class Release(Entity):
 def create_resource(config: Dict) -> Resource:
     resource_id = config.pop("resource_id")
     resource_name = config.pop("resource_name")
+    if "entry_repository_type" not in config:
+        config["entry_repository_type"] = EntryRepository.get_default_repository_type()
     resource = Resource(
         resource_id,
         resource_name,

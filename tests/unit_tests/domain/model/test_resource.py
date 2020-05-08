@@ -1,3 +1,4 @@
+from karp.domain.model.entry import EntryRepository
 from unittest import mock
 import uuid
 
@@ -35,6 +36,10 @@ def test_create_resource_creates_resource():
     assert int(resource.last_modified) == 12345
     assert resource.message == "Resource added."
     assert resource.op == ResourceOp.ADDED
+    assert (
+        resource.entry_repository_type == EntryRepository.get_default_repository_type()
+    )
+    assert resource.entry_repository_config == {}
 
 
 def test_resource_stamp_changes_last_modified_and_version():
@@ -203,7 +208,6 @@ def test_resource_with_entry_repository_config():
     conf = {
         "resource_id": "test_id_4",
         "resource_name": "a",
-
     }
     resource = create_resource(conf)
 

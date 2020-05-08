@@ -149,10 +149,17 @@ class EntryRepository(metaclass=abc.ABCMeta):
         #     raise RuntimeError(f"A default EntryRepository is already set. Default type is {cls._registry[None]!r}")
         cls._registry[repository_type] = cls
         if is_default:
-            _logger.warn(
-                "Setting default EntryRepository type to '%s'", repository_type
-            )
+            if None in cls._registry:
+                _logger.warn(
+                    "Setting default EntryRepository type to '%s'", repository_type
+                )
             cls._registry[None] = repository_type
+        if None not in cls._registry:
+            cls._registry[None] = repository_type
+
+    @classmethod
+    def get_default_repository_type(cls) -> Optional[str]:
+        return cls._registry[None]
 
     @classmethod
     def create(cls, repository_type: Optional[str], settings: Dict):
