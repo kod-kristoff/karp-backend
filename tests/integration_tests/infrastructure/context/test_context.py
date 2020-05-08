@@ -1,3 +1,5 @@
+from unittest import mock
+
 from karp.application.config import Config
 from karp.infrastructure.context.sql_es6_context import SqlEs6Context
 
@@ -6,7 +8,8 @@ from karp.infrastructure.sql.resource_repository import SqlResourceRepository
 
 
 def test_sql_es6_context_create(es):
-    context = SqlEs6Context(Config())
+    with mock.patch("karp.infrastructure.elasticsearch6.init_es.es"):
+        context = SqlEs6Context(Config())
 
     assert isinstance(context.resource_repo, SqlResourceRepository)
     assert isinstance(context.search_service, Es6SearchService)
