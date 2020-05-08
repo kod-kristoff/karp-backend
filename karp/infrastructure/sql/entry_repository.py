@@ -15,7 +15,9 @@ from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
 
 
-class SqlEntryRepository(EntryRepository, SqlRepository):
+class SqlEntryRepository(
+    EntryRepository, SqlRepository, repository_type="sql", is_default=True
+):
     def __init__(
         self,
         db_uri: str,
@@ -27,6 +29,28 @@ class SqlEntryRepository(EntryRepository, SqlRepository):
         self.history_table = history_table
         self.runtime_table = runtime_table
         # self.mapped_class = mapped_class
+
+    @classmethod
+    def from_dict(cls, settings: Dict):
+        try:
+            db_uri = settings["db_uri"]
+        except KeyError:
+            raise ValueError("Missing 'db_uri' in settings.")
+        try:
+            table_name = settings["table_name"]
+        except KeyError:
+            raise ValueError("Missing 'table_name' in settings.")
+
+        history_table = db.get_table(db_uri, table_name) or create_history_entry_table(
+            db_uri, table_name
+        )
+
+        runtime_table_name = f"runtime_{table_name}"
+
+        runtime_table = db.get_table(
+            db_uri, runtime_table_name
+        ) or create_entry_runtime_table(db_uri, runtime_table_name, history_table)
+        return cls(db_uri, history_table, runtime_table)
 
     def put(self, entry: Entry):
         self._check_has_session()
@@ -177,8 +201,7 @@ def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
     return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
 
 
-def create_history_entry_table(table_name: str, db_uri: str) -> db.Table:
-    global _use_aliased
+def create_history_entry_table(db_uri: str, table_name: str) -> db.Table:
     table = db.Table(
         table_name,
         db.metadata(db_uri),
@@ -220,7 +243,7 @@ def create_history_entry_table(table_name: str, db_uri: str) -> db.Table:
 
 
 def create_entry_runtime_table(
-    table_name: str, db_uri: str, history_table: db.Table
+    db_uri: str, table_name: str, history_table: db.Table
 ) -> db.Table:
     table = db.Table(
         table_name,

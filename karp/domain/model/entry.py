@@ -2,8 +2,10 @@
 import abc
 import enum
 from functools import singledispatch
+import logging
 from typing import Dict, Optional, List
 from uuid import UUID
+from abc import abstractclassmethod
 
 from karp.domain import constraints
 from karp.domain.common import _now, _unknown_user
@@ -11,6 +13,9 @@ from karp.domain.model import event_handler
 from karp.domain.model.entity import TimestampedEntity
 
 from karp.utility import unique_id
+
+
+_logger = logging.getLogger("karp")
 
 
 class EntryOp(enum.Enum):
@@ -124,10 +129,43 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
 
 # === Repository ===
 class EntryRepository(metaclass=abc.ABCMeta):
+    _registry = {}
+
+    def __init_subclass__(
+        cls, repository_type: str, is_default: bool = False, **kwargs
+    ) -> None:
+        super().__init_subclass__(**kwargs)
+        print(
+            f"EntryRepository.__init_subclass__ called with repository_type={repository_type} and is_default={is_default}"
+        )
+        if repository_type is None:
+            raise RuntimeError("Unallowed repository_type: repository_type = None")
+        if repository_type in cls._registry:
+            raise RuntimeError(
+                f"A EntryRepository with type '{repository_type}' already exists: {cls._registry[repository_type]!r}"
+            )
+
+        # if is_default and None in cls._registry:
+        #     raise RuntimeError(f"A default EntryRepository is already set. Default type is {cls._registry[None]!r}")
+        cls._registry[repository_type] = cls
+        if is_default:
+            _logger.warn(
+                "Setting default EntryRepository type to '%s'", repository_type
+            )
+            cls._registry[None] = repository_type
+
     @classmethod
-    def create(cls, repository_type: str, settings: Dict):
-        creator = cls.creator_map[repository_type]
-        return creator(settings)
+    def create(cls, repository_type: Optional[str], settings: Dict):
+        print(f"_registry={cls._registry}")
+        if repository_type is None:
+            repository_type = cls._registry[None]
+        repository_cls = cls._registry[repository_type]
+        return repository_cls.from_dict(settings), repository_type
+
+    @classmethod
+    @abc.abstractmethod
+    def from_dict(cls, settings: Dict):
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def put(self, entry: Entry):
