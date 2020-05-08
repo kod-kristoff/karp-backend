@@ -199,14 +199,8 @@ def test_sql_resource_repo_put_another_resource(resource_repo):
 
 def test_get_published_resources(resource_repo):
     with unit_of_work(using=resource_repo) as uw:
-        uw.put(
-            create_resource(
-                {
-                    "resource_id": "test_id_3",
-                    "resource_name": "g"
-                }
-            )
-        )
+        uw.put(create_resource({"resource_id": "test_id_3", "resource_name": "g"}))
         published_resources = uw.get_published_resources()
 
-        assert len(published_resources) == 2
+        assert len(published_resources) == 1
+        assert published_resources[0].resource_id == "test_id_2"
