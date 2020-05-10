@@ -16,7 +16,7 @@ from karp.infrastructure.sql.sql_repository import SqlRepository
 
 
 class SqlEntryRepository(
-    EntryRepository, SqlRepository, repository_type="sql", is_default=True
+    EntryRepository, SqlRepository, repository_type="sql_v1", is_default=True
 ):
     def __init__(
         self,
@@ -51,6 +51,13 @@ class SqlEntryRepository(
             db_uri, runtime_table_name
         ) or create_entry_runtime_table(db_uri, runtime_table_name, history_table)
         return cls(db_uri, history_table, runtime_table)
+
+    @classmethod
+    def _create_repository_settings(cls, resource_id: str) -> Dict:
+        return {
+            "db_uri": None,
+            "table_name": resource_id
+        }
 
     def put(self, entry: Entry):
         self._check_has_session()

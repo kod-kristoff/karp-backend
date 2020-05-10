@@ -17,7 +17,16 @@ def test_create_resource_creates_resource():
         "sort": ["baseform"],
         "fields": {"baseform": {"type": "string", "required": True}},
     }
-    with mock.patch("karp.utility.time.utc_now", return_value=12345):
+    with mock.patch(
+        "karp.utility.time.utc_now",
+        return_value=12345
+    ), mock.patch(
+        "karp.domain.model.entry.EntryRepository.get_default_repository_type",
+        return_value="repository_type"
+    ), mock.patch(
+        "karp.domain.model.entry.EntryRepository.create_repository_settings",
+        return_value={}
+    ):
         resource = create_resource(conf)
 
     assert isinstance(resource, Resource)
@@ -29,6 +38,8 @@ def test_create_resource_creates_resource():
     assert not resource.is_published
     assert "resource_id" not in resource.config
     assert "resource_name" not in resource.config
+    assert "entry_repository_type" in resource.config
+    assert "entry_repository_settings" in resource.config
     assert "sort" in resource.config
     assert resource.config["sort"] == conf["sort"]
     assert "fields" in resource.config
@@ -36,10 +47,8 @@ def test_create_resource_creates_resource():
     assert int(resource.last_modified) == 12345
     assert resource.message == "Resource added."
     assert resource.op == ResourceOp.ADDED
-    assert (
-        resource.entry_repository_type == EntryRepository.get_default_repository_type()
-    )
-    assert resource.entry_repository_config == {}
+    assert resource.entry_repository_type == "repository_type"
+    assert resource.entry_repository_settings == {}
 
 
 def test_resource_stamp_changes_last_modified_and_version():
@@ -50,6 +59,8 @@ def test_resource_stamp_changes_last_modified_and_version():
         "resource_name": name,
         "sort": ["baseform"],
         "fields": {"baseform": {"type": "string", "required": True}},
+        "entry_repository_type": None,
+        "entry_repository_settings": {}
     }
     resource = create_resource(conf)
 
@@ -70,6 +81,8 @@ def test_resource_add_new_release_creates_release():
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
 
@@ -95,6 +108,8 @@ def test_resource_release_with_name_on_discarded_raises_discarded_entity_error()
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
 
@@ -113,6 +128,8 @@ def test_resource_add_new_release_on_discarded_raises_discarded_entity_error():
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
 
@@ -131,6 +148,8 @@ def test_resource_add_new_release_with_invalid_name_raises_constraints_error():
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
 
@@ -145,6 +164,8 @@ def test_resource_new_release_added_with_wrong_version_raises_consistency_error(
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
     event = Resource.NewReleaseAdded(entity_id=resource.id, entity_version=12,)
@@ -159,6 +180,8 @@ def test_resource_new_release_added_with_wrong_last_modified_raises_consistency_
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
     event = Resource.NewReleaseAdded(
@@ -187,6 +210,8 @@ def test_release_created_w_resource_has_id():
             "resource_name": "Test resource",
             "sort": ["baseform"],
             "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {}
         }
     )
     release = Release(
@@ -208,7 +233,9 @@ def test_resource_with_entry_repository_config():
     conf = {
         "resource_id": "test_id_4",
         "resource_name": "a",
+        "entry_repository_type": None,
+        "entry_repository_settings": {}
     }
     resource = create_resource(conf)
 
-    assert resource.entry_repository_config is None
+    assert resource.entry_repository_settings == {}

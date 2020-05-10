@@ -91,8 +91,8 @@ class Resource(TimestampedVersionedEntity):
         return self.config["entry_repository_type"]
 
     @property
-    def entry_repository_config(self):
-        return None
+    def entry_repository_settings(self):
+        return self.config["entry_repository_settings"]
 
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()
@@ -173,6 +173,10 @@ def create_resource(config: Dict) -> Resource:
     resource_name = config.pop("resource_name")
     if "entry_repository_type" not in config:
         config["entry_repository_type"] = EntryRepository.get_default_repository_type()
+    if "entry_repository_settings" not in config:
+        config["entry_repository_settings"] = EntryRepository.create_repository_settings(
+            config["entry_repository_type"]
+        )
     resource = Resource(
         resource_id,
         resource_name,

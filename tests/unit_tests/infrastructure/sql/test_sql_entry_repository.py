@@ -13,10 +13,10 @@ from karp.infrastructure.sql.entry_repository import SqlEntryRepository
 @pytest.fixture(name="entry_repo", scope="session")
 def fixture_entry_repo():
     entry_repo, repo_type = EntryRepository.create(
-        "sql", {"db_uri": "sqlite:///", "table_name": "test_name"}
+        "sql_v1", {"db_uri": "sqlite:///", "table_name": "test_name"}
     )
     assert isinstance(entry_repo, SqlEntryRepository)
-    assert repo_type == "sql"
+    assert repo_type == "sql_v1"
     return entry_repo
 
 
@@ -26,7 +26,7 @@ def fixture_entry_repo2():
         None, {"db_uri": "sqlite:///", "table_name": "test_name2"}
     )
     assert isinstance(entry_repo, SqlEntryRepository)
-    assert repo_type == "sql"
+    assert repo_type == "sql_v1"
     return entry_repo
 
 

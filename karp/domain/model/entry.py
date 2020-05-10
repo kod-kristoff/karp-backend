@@ -8,6 +8,7 @@ from uuid import UUID
 from abc import abstractclassmethod
 
 from karp.domain import constraints
+from karp.domain.errors import ConfigurationError
 from karp.domain.common import _now, _unknown_user
 from karp.domain.model import event_handler
 from karp.domain.model.entity import TimestampedEntity
@@ -166,12 +167,25 @@ class EntryRepository(metaclass=abc.ABCMeta):
         print(f"_registry={cls._registry}")
         if repository_type is None:
             repository_type = cls._registry[None]
-        repository_cls = cls._registry[repository_type]
+        try:
+            repository_cls = cls._registry[repository_type]
+        except KeyError:
+            raise ConfigurationError(f"Can't create an EntryRepository with type '{repository_type}'")
         return repository_cls.from_dict(settings), repository_type
+
+    @classmethod
+    def create_repository_settings(cls, repository_type: str, resource_id: str) -> Dict:
+        repository_cls = cls._registry[repository_type]
+        return repository_cls._create_repository_settings(resource_id)
 
     @classmethod
     @abc.abstractmethod
     def from_dict(cls, settings: Dict):
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def _create_repository_settings(cls, resource_id: str):
         raise NotImplementedError()
 
     @abc.abstractmethod

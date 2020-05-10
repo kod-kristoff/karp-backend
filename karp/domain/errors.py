@@ -9,6 +9,12 @@ class DomainError(errors.KarpError):
         super().__init__(*args, **kwargs)
 
 
+class ConfigurationError(DomainError):
+    """Raised when a problem with the system configuration is detected.
+    """
+    pass
+
+
 class ConsistencyError(DomainError):
     """Raised when an internal consistency problem is detected."""
 
