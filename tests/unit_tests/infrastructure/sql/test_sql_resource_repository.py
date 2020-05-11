@@ -5,6 +5,7 @@ import uuid
 import pytest
 
 from karp.domain.model.resource import ResourceOp, create_resource, Resource
+from karp.domain.model.lexical_resource import LexicalResource
 from karp.infrastructure.unit_of_work import unit_of_work
 from karp.infrastructure.sql.resource_repository import SqlResourceRepository
 
@@ -25,7 +26,7 @@ def test_sql_resource_repo_empty(resource_repo):
         assert uw.history_by_resource_id("test_id") == []
 
 
-def test_sql_resource_repo_put(resource_repo):
+def test_sql_resource_repo_put_resource(resource_repo):
     resource_id = "test_id"
     resource_name = "Test"
     resource_config = {
@@ -52,6 +53,40 @@ def test_sql_resource_repo_put(resource_repo):
         test_lex = uw.resource_with_id_and_version(resource_id, expected_version)
 
         assert isinstance(test_lex, Resource)
+        assert isinstance(test_lex.config, dict)
+        assert test_lex.resource_id == resource_id
+        assert test_lex.id == resource.id
+        assert test_lex.name == resource_name
+
+
+def test_sql_resource_repo_put_lexical_resource(resource_repo):
+    resource_id = "test_id"
+    resource_name = "Test"
+    resource_config = {
+        "resource_id": resource_id,
+        "resource_name": resource_name,
+        "a": "b",
+    }
+    resource = Resource.create_resource("lexical_resource", resource_config)
+
+    expected_version = 1
+
+    with unit_of_work(using=resource_repo) as uw:
+        uw.put(resource)
+        uw.commit()
+        assert uw.resource_ids() == [resource_id]
+
+        assert resource.version == expected_version
+        assert resource.message == "Resource added."
+        assert resource.op == ResourceOp.ADDED
+        resource_id_history = uw.history_by_resource_id(resource_id)
+        assert len(resource_id_history) == 1
+
+    with unit_of_work(using=resource_repo) as uw:
+        test_lex = uw.resource_with_id_and_version(resource_id, expected_version)
+
+        assert isinstance(test_lex, Resource)
+        assert isinstance(test_lex, LexicalResource)
         assert isinstance(test_lex.config, dict)
         assert test_lex.resource_id == resource_id
         assert test_lex.id == resource.id
