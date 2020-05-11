@@ -87,3 +87,7 @@ def test_entry_update_of_discarded_raises_(field, value):
 def test_entry_repository_create_raises_configuration_error_on_nonexisting_type():
     with pytest.raises(ConfigurationError):
         EntryRepository.create("non-existing", {})
+
+
+def test_entry_repository_has_class_attribute():
+    assert EntryRepository.type is None

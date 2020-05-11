@@ -47,8 +47,9 @@ def test_create_resource_creates_resource():
     assert int(resource.last_modified) == 12345
     assert resource.message == "Resource added."
     assert resource.op == ResourceOp.ADDED
+    assert resource.entry_repository is None
+    assert resource.entry_repository_id is None
     assert resource.entry_repository_type == "repository_type"
-    assert resource.entry_repository_settings == {}
 
 
 def test_resource_stamp_changes_last_modified_and_version():
@@ -229,13 +230,15 @@ def test_release_created_w_resource_has_id():
     assert release.root.id == resource.id
 
 
-def test_resource_with_entry_repository_config():
+def test_resource_with_entry_repository_settings():
     conf = {
         "resource_id": "test_id_4",
         "resource_name": "a",
-        "entry_repository_type": None,
-        "entry_repository_settings": {}
+        "entry_repository_type": "test_type",
+        "entry_repository_settings": {"settings": "test"}
     }
-    resource = create_resource(conf)
+    with mock.patch("karp.domain.model.entry.EntryRepository.create") as entry_repository_mock:
+        resource = create_resource(conf)
 
-    assert resource.entry_repository_settings == {}
+    assert resource.entry_repository.type == "test_type"
+    assert resource.entry_repository_id == resource.entry_repository.id

@@ -7,7 +7,7 @@ from karp.infrastructure.sql.legacy_entry_repository import SqlLegacyEntryReposi
 
 
 def test_create_sql_legacy_entry_repository():
-    entry_repo, repo_type = EntryRepository.create(
+    entry_repo = EntryRepository.create(
         "sql_legacy_v1",
         {
             "db_uri": "sqlite:///",
@@ -16,5 +16,5 @@ def test_create_sql_legacy_entry_repository():
         }
     )
 
-    assert repo_type == "sql_legacy_v1"
+    assert entry_repo.type == "sql_legacy_v1"
     assert isinstance(entry_repo, SqlLegacyEntryRepository)

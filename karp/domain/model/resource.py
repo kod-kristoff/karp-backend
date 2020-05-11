@@ -1,6 +1,7 @@
 """LexicalResource"""
 import abc
 import enum
+from uuid import UUID
 from typing import Dict, Any, Optional, List
 
 from karp.domain import constraints
@@ -50,6 +51,7 @@ class Resource(TimestampedVersionedEntity):
         resource_id: str,
         name: str,
         config: Dict[str, Any],
+        entry_repository: EntryRepository,
         message: str,
         op: ResourceOp,
         *args,
@@ -61,6 +63,7 @@ class Resource(TimestampedVersionedEntity):
         self._name = name
         self.is_published = is_published
         self.config = config
+        self._entry_repository = entry_repository
         self._message = message
         self._op = op
         self._releases = []
@@ -85,6 +88,16 @@ class Resource(TimestampedVersionedEntity):
     @property
     def op(self):
         return self._op
+
+    @property
+    def entry_repository(self) -> EntryRepository:
+        """The entry repository used by this resource."""
+        return self._entry_repository
+
+    @property
+    def entry_repository_id(self) -> UUID:
+        """The id for the entry repository used by this resource."""
+        return None
 
     @property
     def entry_repository_type(self):
@@ -168,19 +181,32 @@ class Release(Entity):
 # ===== Factories =====
 
 
-def create_resource(config: Dict) -> Resource:
+def create_resource(
+    config: Dict,
+    entry_repository: EntryRepository
+) -> Resource:
     resource_id = config.pop("resource_id")
     resource_name = config.pop("resource_name")
-    if "entry_repository_type" not in config:
-        config["entry_repository_type"] = EntryRepository.get_default_repository_type()
-    if "entry_repository_settings" not in config:
-        config["entry_repository_settings"] = EntryRepository.create_repository_settings(
-            config["entry_repository_type"]
-        )
+#     if "entry_repository_type" not in config:
+#         config["entry_repository_type"] = EntryRepository.get_default_repository_type()
+#     entry_repository_settings = config.get(
+#         "entry_repository_settings")
+#     if entry_repository_settings is None:
+#         entry_repository_settings = EntryRepository.create_repository_settings(
+#             config["entry_repository_type"],
+#             resource_id
+#         )
+#
+#     entry_repository = EntryRepository.create(
+#         config["entry_repository_type"],
+#         entry_repository_settings
+#     )
+
     resource = Resource(
         resource_id,
         resource_name,
         config,
+        entry_repository=entry_repository,
         message="Resource added.",
         op=ResourceOp.ADDED,
         entity_id=unique_id.make_unique_id(),

@@ -131,6 +131,7 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
 # === Repository ===
 class EntryRepository(metaclass=abc.ABCMeta):
     _registry = {}
+    type = None
 
     def __init_subclass__(
         cls, repository_type: str, is_default: bool = False, **kwargs
@@ -148,6 +149,7 @@ class EntryRepository(metaclass=abc.ABCMeta):
 
         # if is_default and None in cls._registry:
         #     raise RuntimeError(f"A default EntryRepository is already set. Default type is {cls._registry[None]!r}")
+        cls.type = repository_type
         cls._registry[repository_type] = cls
         if is_default:
             if None in cls._registry:
@@ -171,7 +173,7 @@ class EntryRepository(metaclass=abc.ABCMeta):
             repository_cls = cls._registry[repository_type]
         except KeyError:
             raise ConfigurationError(f"Can't create an EntryRepository with type '{repository_type}'")
-        return repository_cls.from_dict(settings), repository_type
+        return repository_cls.from_dict(settings)
 
     @classmethod
     def create_repository_settings(cls, repository_type: str, resource_id: str) -> Dict:
