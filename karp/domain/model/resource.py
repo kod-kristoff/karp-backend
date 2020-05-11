@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Dict, Any, Optional, List
 
 from karp.domain import constraints
-from karp.domain.errors import RepositoryStatusError
+from karp.domain.errors import ConfigurationError, RepositoryStatusError
 from karp.domain.model import event_handler
 from karp.domain.model.entity import Entity, TimestampedVersionedEntity
 from karp.domain.model.entry import EntryRepository
@@ -20,6 +20,61 @@ class ResourceOp(enum.Enum):
 
 
 class Resource(TimestampedVersionedEntity):
+    _registry = {}
+
+    def __init_subclass__(cls, resource_type: str, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if resource_type is None:
+            raise RuntimeError("Unallowed resource_type: resource_type = None")
+        if resource_type in cls._registry:
+            raise RuntimeError(
+                f"A Resource with type '{resource_type}' already exists: {cls._registry[resource_type]!r}"
+            )
+
+        cls.type = resource_type
+        cls._registry[resource_type] = cls
+
+    @classmethod
+    def create_resource(cls, resource_type: str, resource_config: Dict):
+        try:
+            resource_cls = cls._registry[resource_type]
+        except KeyError:
+            raise ConfigurationError(
+                f"Can't create a Resource of type '{resource_type}"
+            )
+        return resource_cls.from_dict(resource_config)
+
+    @classmethod
+    def from_dict(cls, config: Dict, **kwargs):
+        resource_id = config.pop("resource_id")
+        resource_name = config.pop("resource_name")
+        #     if "entry_repository_type" not in config:
+        #         config["entry_repository_type"] = EntryRepository.get_default_repository_type()
+        #     entry_repository_settings = config.get(
+        #         "entry_repository_settings")
+        #     if entry_repository_settings is None:
+        #         entry_repository_settings = EntryRepository.create_repository_settings(
+        #             config["entry_repository_type"],
+        #             resource_id
+        #         )
+        #
+        #     entry_repository = EntryRepository.create(
+        #         config["entry_repository_type"],
+        #         entry_repository_settings
+        #     )
+
+        resource = cls(
+            resource_id,
+            resource_name,
+            config,
+            message="Resource added.",
+            op=ResourceOp.ADDED,
+            entity_id=unique_id.make_unique_id(),
+            version=1,
+            **kwargs,
+        )
+        return resource
+
     class Discarded(TimestampedVersionedEntity.Discarded):
         def mutate(self, obj):
             super().mutate(obj)
@@ -51,7 +106,6 @@ class Resource(TimestampedVersionedEntity):
         resource_id: str,
         name: str,
         config: Dict[str, Any],
-        entry_repository: EntryRepository,
         message: str,
         op: ResourceOp,
         *args,
@@ -63,7 +117,6 @@ class Resource(TimestampedVersionedEntity):
         self._name = name
         self.is_published = is_published
         self.config = config
-        self._entry_repository = entry_repository
         self._message = message
         self._op = op
         self._releases = []
@@ -88,24 +141,6 @@ class Resource(TimestampedVersionedEntity):
     @property
     def op(self):
         return self._op
-
-    @property
-    def entry_repository(self) -> EntryRepository:
-        """The entry repository used by this resource."""
-        return self._entry_repository
-
-    @property
-    def entry_repository_id(self) -> UUID:
-        """The id for the entry repository used by this resource."""
-        return None
-
-    @property
-    def entry_repository_type(self):
-        return self.config["entry_repository_type"]
-
-    @property
-    def entry_repository_settings(self):
-        return self.config["entry_repository_settings"]
 
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()
@@ -181,32 +216,28 @@ class Release(Entity):
 # ===== Factories =====
 
 
-def create_resource(
-    config: Dict,
-    entry_repository: EntryRepository
-) -> Resource:
+def create_resource(config: Dict) -> Resource:
     resource_id = config.pop("resource_id")
     resource_name = config.pop("resource_name")
-#     if "entry_repository_type" not in config:
-#         config["entry_repository_type"] = EntryRepository.get_default_repository_type()
-#     entry_repository_settings = config.get(
-#         "entry_repository_settings")
-#     if entry_repository_settings is None:
-#         entry_repository_settings = EntryRepository.create_repository_settings(
-#             config["entry_repository_type"],
-#             resource_id
-#         )
-#
-#     entry_repository = EntryRepository.create(
-#         config["entry_repository_type"],
-#         entry_repository_settings
-#     )
+    #     if "entry_repository_type" not in config:
+    #         config["entry_repository_type"] = EntryRepository.get_default_repository_type()
+    #     entry_repository_settings = config.get(
+    #         "entry_repository_settings")
+    #     if entry_repository_settings is None:
+    #         entry_repository_settings = EntryRepository.create_repository_settings(
+    #             config["entry_repository_type"],
+    #             resource_id
+    #         )
+    #
+    #     entry_repository = EntryRepository.create(
+    #         config["entry_repository_type"],
+    #         entry_repository_settings
+    #     )
 
     resource = Resource(
         resource_id,
         resource_name,
         config,
-        entry_repository=entry_repository,
         message="Resource added.",
         op=ResourceOp.ADDED,
         entity_id=unique_id.make_unique_id(),
