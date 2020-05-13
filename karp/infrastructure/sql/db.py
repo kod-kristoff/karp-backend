@@ -26,7 +26,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import mapper, aliased
 from sqlalchemy.orm.session import Session, sessionmaker
 from sqlalchemy.schema import UniqueConstraint
-from sqlalchemy.types import TypeDecorator, VARCHAR, Boolean, Time, Float
+from sqlalchemy.types import TypeDecorator, VARCHAR, Boolean, Time, Float, DateTime
 from sqlalchemy.ext.mutable import Mutable
 
 from sqlalchemy_utils import UUIDType

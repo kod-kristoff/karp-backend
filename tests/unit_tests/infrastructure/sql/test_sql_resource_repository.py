@@ -1,10 +1,16 @@
 """Tests for SQLResourceRepository"""
-from karp.cli import publish_resource
+from unittest import mock
 import uuid
 
 import pytest
 
-from karp.domain.model.resource import ResourceOp, create_resource, Resource
+from karp.domain.model.entry_repository import EntryRepository
+from karp.domain.model.resource import (
+    ResourceCategory,
+    ResourceOp,
+    create_resource,
+    Resource,
+)
 from karp.domain.model.lexical_resource import LexicalResource
 from karp.infrastructure.unit_of_work import unit_of_work
 from karp.infrastructure.sql.resource_repository import SqlResourceRepository
@@ -60,21 +66,36 @@ def test_sql_resource_repo_put_resource(resource_repo):
 
 
 def test_sql_resource_repo_put_lexical_resource(resource_repo):
-    resource_id = "test_id"
+    resource_id = "test_lex_id"
     resource_name = "Test"
     resource_config = {
         "resource_id": resource_id,
         "resource_name": resource_name,
         "a": "b",
     }
-    resource = Resource.create_resource("lexical_resource", resource_config)
+    entry_repository_mock = mock.MagicMock(
+        spec=EntryRepository, type="repository_type", id=uuid.uuid4()
+    )
+    with mock.patch(
+        "karp.domain.model.entry_repository.EntryRepository.get_default_repository_type",
+        return_value="entry_repository_type",
+    ), mock.patch(
+        "karp.domain.model.entry_repository.EntryRepository.create_repository_settings",
+        return_value={},
+    ), mock.patch(
+        "karp.domain.model.entry_repository.EntryRepository.create",
+        return_value=entry_repository_mock,
+    ):
+        resource = Resource.create_resource(
+            ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", resource_config
+        )
 
     expected_version = 1
 
     with unit_of_work(using=resource_repo) as uw:
         uw.put(resource)
         uw.commit()
-        assert uw.resource_ids() == [resource_id]
+        assert uw.resource_ids() == ["test_id", resource_id]
 
         assert resource.version == expected_version
         assert resource.message == "Resource added."
@@ -144,7 +165,7 @@ def test_sql_resource_repo_put_another_version(resource_repo):
     with unit_of_work(using=resource_repo) as uw:
         uw.put(resource)
 
-        assert uw.resource_ids() == [resource_id]
+        assert uw.resource_ids() == [resource_id, "test_lex_id"]
 
         assert resource.version == expected_version
         assert not resource.is_published

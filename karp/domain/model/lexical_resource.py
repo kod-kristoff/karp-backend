@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Dict, Optional
 
+from karp.domain.errors import ConfigurationError
 from karp.domain.model.entry_repository import EntryRepository
 from karp.domain.model.resource import Resource, ResourceCategory, ResourceRepository
 
@@ -8,7 +9,7 @@ from karp.domain.model.resource import Resource, ResourceCategory, ResourceRepos
 class LexicalResource(
     Resource,
     resource_category=ResourceCategory.LEXICAL_RESOURCE,
-    resource_type="lexical_resource"
+    resource_type="lexical_resource_v1",
 ):
     """Model for a lexical resource.
     """
@@ -19,9 +20,7 @@ class LexicalResource(
 
     @classmethod
     def from_dict(
-        cls,
-        config: Dict,
-        resource_repository: Optional[ResourceRepository] = None
+        cls, config: Dict, resource_repository: Optional[ResourceRepository] = None
     ):
         resource_id = config["resource_id"]
         # resource_
@@ -30,8 +29,8 @@ class LexicalResource(
             if "entry_repository_id" in config:
                 if resource_repository:
                     entry_repository = resource_repository.by_id(
-                    config["entry_repository_id"]
-                )
+                        config["entry_repository_id"]
+                    )
                     if entry_repository is None:
                         raise ConfigurationError(
                             f"Can't load EntryRepository with id={config['entry_repository_id']}."
@@ -61,7 +60,8 @@ class LexicalResource(
                 "entry_repository_type"
             ] = EntryRepository.get_default_repository_type()
 
-        config["entry_repository_id"] = entry_repository.id
+        if entry_repository is not None:
+            config["entry_repository_id"] = str(entry_repository.id)
         resource = super().from_dict(config, entry_repository=entry_repository)
         # resource._entry_repository = entry_repository
         return resource

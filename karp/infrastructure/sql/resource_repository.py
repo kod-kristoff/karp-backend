@@ -6,6 +6,7 @@ from uuid import UUID
 from karp.domain.errors import RepositoryStatusError
 from karp.domain.model.resource import (
     Resource,
+    ResourceCategory,
     ResourceOp,
     ResourceRepository,
 )
@@ -120,6 +121,8 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             None,
             resource.id,
             resource.resource_id,
+            resource.category,
+            resource.type,
             resource.version,
             resource.name,
             resource.config,
@@ -131,7 +134,10 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
         )
 
     def _row_to_resource(self, row) -> Resource:
-        return Resource(
+        resource_cls = Resource.get_resource_class(
+            row.resource_category, row.resource_type
+        )
+        return resource_cls(
             entity_id=row.id,
             resource_id=row.resource_id,
             version=row.version,
@@ -162,6 +168,8 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
             # primary_key=True,
             nullable=False,
         ),
+        db.Column("resource_category", db.Enum(ResourceCategory)),
+        db.Column("resource_type", db.String(64)),
         db.Column(
             "version",
             db.Integer,

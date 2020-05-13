@@ -27,23 +27,23 @@ class EntryRepository(
     resource_category=ResourceCategory.ENTRY_REPOSITORY,
     resource_type="entry_repository",
 ):
-
     def __init_subclass__(
         cls, repository_type: str, is_default: bool = False, **kwargs
     ) -> None:
         super().__init_subclass__(
             resource_category=ResourceCategory.ENTRY_REPOSITORY,
             resource_type=repository_type,
-            **kwargs)
+            **kwargs,
+        )
         print(
             f"EntryRepository.__init_subclass__ called with repository_type={repository_type} and is_default={is_default}"
         )
         if repository_type is None:
             raise RuntimeError("Unallowed repository_type: repository_type = None")
-        if repository_type in cls._registry[ResourceCategory.ENTRY_REPOSITORY]:
-            raise RuntimeError(
-                f"An EntryRepository with type '{repository_type}' already exists: {cls._registry[ResourceCategory.ENTRY_REPOSITORY][repository_type]!r}"
-            )
+        # if repository_type in cls._registry[ResourceCategory.ENTRY_REPOSITORY]:
+        #     raise RuntimeError(
+        #         f"An EntryRepository with type '{repository_type}' already exists: {cls._registry[ResourceCategory.ENTRY_REPOSITORY][repository_type]!r}"
+        #     )
 
         # if is_default and None in cls._registry:
         #     raise RuntimeError(f"A default EntryRepository is already set. Default type is {cls._registry[None]!r}")
@@ -55,20 +55,22 @@ class EntryRepository(
                     "Setting default EntryRepository type to '%s'", repository_type
                 )
             cls._registry[ResourceCategory.ENTRY_REPOSITORY][None] = repository_type
-        if None not in cls._registry:
+        if None not in cls._registry[ResourceCategory.ENTRY_REPOSITORY]:
             cls._registry[ResourceCategory.ENTRY_REPOSITORY][None] = repository_type
 
     @classmethod
     def get_default_repository_type(cls) -> Optional[str]:
-        return cls._registry[None]
+        return cls._registry[ResourceCategory.ENTRY_REPOSITORY][None]
 
     @classmethod
     def create(cls, repository_type: Optional[str], settings: Dict):
         print(f"_registry={cls._registry}")
         if repository_type is None:
-            repository_type = cls._registry[None]
+            repository_type = cls._registry[ResourceCategory.ENTRY_REPOSITORY][None]
         try:
-            repository_cls = cls._registry[repository_type]
+            repository_cls = cls._registry[ResourceCategory.ENTRY_REPOSITORY][
+                repository_type
+            ]
         except KeyError:
             raise ConfigurationError(
                 f"Can't create an EntryRepository with type '{repository_type}'"
@@ -77,7 +79,9 @@ class EntryRepository(
 
     @classmethod
     def create_repository_settings(cls, repository_type: str, resource_id: str) -> Dict:
-        repository_cls = cls._registry[repository_type]
+        repository_cls = cls._registry[ResourceCategory.ENTRY_REPOSITORY][
+            repository_type
+        ]
         return repository_cls._create_repository_settings(resource_id)
 
     @classmethod
@@ -103,12 +107,12 @@ class EntryRepository(
         raise NotImplementedError()
 
 
-class EntryRepositorySettings:
-    """Settings for an EntryRepository."""
+# class EntryRepositorySettings:
+#     """Settings for an EntryRepository."""
 
-    pass
+#     pass
 
 
-@singledispatch
-def create_entry_repository(settings: EntryRepositorySettings) -> EntryRepository:
-    raise RuntimeError(f"Don't know how to handle {settings!r}")
+# @singledispatch
+# def create_entry_repository(settings: EntryRepositorySettings) -> EntryRepository:
+#     raise RuntimeError(f"Don't know how to handle {settings!r}")

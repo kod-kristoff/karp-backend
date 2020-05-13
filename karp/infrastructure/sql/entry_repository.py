@@ -5,14 +5,15 @@ from uuid import UUID
 from karp.domain.model.entry import (
     Entry,
     EntryOp,
-    EntryRepositorySettings,
     EntryStatus,
-    EntryRepository,
-    create_entry_repository,
 )
+from karp.domain.model.entry_repository import EntryRepository
+from karp.domain.model.resource import ResourceOp
 
 from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
+
+from karp.utility import unique_id
 
 
 class SqlEntryRepository(
@@ -20,12 +21,19 @@ class SqlEntryRepository(
 ):
     def __init__(
         self,
-        db_uri: str,
+        *,
+        config: Dict[str, str],
         history_table: db.Table,
         runtime_table: db.Table,
+        **kwargs
         # mapped_class: Any
     ):
-        super().__init__(db_uri)
+        EntryRepository.__init__(
+            self, config=config, **kwargs,
+        )
+        SqlRepository.__init__(
+            self, db_uri=config["db_uri"],
+        )
         self.history_table = history_table
         self.runtime_table = runtime_table
         # self.mapped_class = mapped_class
@@ -50,14 +58,22 @@ class SqlEntryRepository(
         runtime_table = db.get_table(
             db_uri, runtime_table_name
         ) or create_entry_runtime_table(db_uri, runtime_table_name, history_table)
-        return cls(db_uri, history_table, runtime_table)
+        return cls(
+            entity_id=unique_id.make_unique_id(),
+            version=1,
+            resource_id=table_name,
+            name=f"Entry repository for {table_name}",
+            config=settings,
+            message="EntryRepository created.",
+            op=ResourceOp.ADDED,
+            # db_uri=db_uri,
+            history_table=history_table,
+            runtime_table=runtime_table,
+        )
 
     @classmethod
     def _create_repository_settings(cls, resource_id: str) -> Dict:
-        return {
-            "db_uri": None,
-            "table_name": resource_id
-        }
+        return {"db_uri": None, "table_name": resource_id}
 
     def put(self, entry: Entry):
         self._check_has_session()
@@ -173,39 +189,39 @@ class SqlEntryRepository(
 
 
 # ===== Value objects =====
-class SqlEntryRepositorySettings(EntryRepositorySettings):
-    def __init__(self, *, db_uri: str, table_name: str):
-        self.db_uri = db_uri
-        self.table_name = table_name
+# class SqlEntryRepositorySettings(EntryRepositorySettings):
+#     def __init__(self, *, db_uri: str, table_name: str):
+#         self.db_uri = db_uri
+#         self.table_name = table_name
 
 
-@create_entry_repository.register(SqlEntryRepositorySettings)
-def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
-    history_table = db.get_table(
-        settings.db_uri, settings.table_name
-    ) or create_history_entry_table(settings.table_name, settings.db_uri)
+# @create_entry_repository.register(SqlEntryRepositorySettings)
+# def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
+#     history_table = db.get_table(
+#         settings.db_uri, settings.table_name
+#     ) or create_history_entry_table(settings.table_name, settings.db_uri)
 
-    #     mapped_class = db.map_class_to_some_table(
-    #         Entry,
-    #         history_table,
-    #         f"Entry_{table_name}",
-    #         properties={
-    #             "_id": table.c.id,
-    #             "_version": table.c.version,
-    #             "_entry_id": table.c.entry_id,
-    #             "_last_modified_by": table.c.user_id,
-    #             "_last_modified": table.c.timestamp,
-    #             "_body": table.c.body,
-    #             "_message": table.c.message,
-    #             "_op": table.c.op,
-    #         },
-    #     )
-    runtime_table_name = f"runtime_{settings.table_name}"
+#     #     mapped_class = db.map_class_to_some_table(
+#     #         Entry,
+#     #         history_table,
+#     #         f"Entry_{table_name}",
+#     #         properties={
+#     #             "_id": table.c.id,
+#     #             "_version": table.c.version,
+#     #             "_entry_id": table.c.entry_id,
+#     #             "_last_modified_by": table.c.user_id,
+#     #             "_last_modified": table.c.timestamp,
+#     #             "_body": table.c.body,
+#     #             "_message": table.c.message,
+#     #             "_op": table.c.op,
+#     #         },
+#     #     )
+#     runtime_table_name = f"runtime_{settings.table_name}"
 
-    runtime_table = db.get_table(
-        settings.db_uri, runtime_table_name
-    ) or create_entry_runtime_table(runtime_table_name, settings.db_uri, history_table)
-    return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
+#     runtime_table = db.get_table(
+#         settings.db_uri, runtime_table_name
+#     ) or create_entry_runtime_table(runtime_table_name, settings.db_uri, history_table)
+#     return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
 
 
 def create_history_entry_table(db_uri: str, table_name: str) -> db.Table:

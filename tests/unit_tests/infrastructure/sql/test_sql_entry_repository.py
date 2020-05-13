@@ -3,8 +3,8 @@ import pytest
 from karp.domain.model.entry import (
     create_entry,
     Entry,
-    EntryRepository,
 )
+from karp.domain.model.entry_repository import EntryRepository
 
 from karp.infrastructure.unit_of_work import unit_of_work
 from karp.infrastructure.sql.entry_repository import SqlEntryRepository
@@ -33,7 +33,7 @@ def fixture_entry_repo2():
 def test_create_entry_repository(entry_repo):
     assert entry_repo.db_uri == "sqlite:///"
     with unit_of_work(using=entry_repo) as uw:
-        uw.entry_ids() == []
+        assert uw.entry_ids() == []
 
 
 def test_put_entry_to_entry_repo(entry_repo):

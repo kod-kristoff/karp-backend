@@ -27,22 +27,24 @@ class ResourceCategory(enum.Enum):
 
 class Resource(TimestampedVersionedEntity):
     _registry = {c: {} for c in ResourceCategory}
+    type = None
+    category = None
 
     def __init_subclass__(
-        cls,
-        resource_category: ResourceCategory,
-        resource_type: str,
-        **kwargs
+        cls, resource_category: ResourceCategory, resource_type: str, **kwargs
     ):
         super().__init_subclass__(**kwargs)
         if resource_type is None:
             raise RuntimeError("Unallowed resource_type: resource_type = None")
+        if resource_category is None:
+            raise RuntimeError("Unallowed resource_category: resource_category = None")
         if resource_type in cls._registry[resource_category]:
             raise RuntimeError(
                 f"A Resource with type '{resource_type}' already exists in category '{resource_category}': {cls._registry[resource_type]!r}"
             )
 
         cls.type = resource_type
+        cls.category = resource_category
         cls._registry[resource_category][resource_type] = cls
 
     @classmethod
@@ -50,7 +52,7 @@ class Resource(TimestampedVersionedEntity):
         cls,
         resource_category: ResourceCategory,
         resource_type: str,
-        resource_config: Dict
+        resource_config: Dict,
     ):
         try:
             resource_cls = cls._registry[resource_category][resource_type]
@@ -59,6 +61,25 @@ class Resource(TimestampedVersionedEntity):
                 f"Can't create a Resource of type '{resource_type}' from category '{resource_category}'"
             )
         return resource_cls.from_dict(resource_config)
+
+    @classmethod
+    def get_resource_class(cls, category: ResourceCategory, resource_type: str):
+        if category is None and resource_type is None:
+            return Resource
+        elif category is None:
+            category = ResourceCategory.GENERAL_RESOURCE
+
+        try:
+            resource_cls = cls._registry[category][resource_type]
+            if isinstance(resource_cls, str):
+                resource_type = resource_cls
+                resource_cls = cls._registry[category][resource_type]
+        except KeyError:
+            raise ConfigurationError(
+                f"Can't find a class of type '{resource_type}' in category '{category}'."
+            )
+
+        return resource_cls
 
     @classmethod
     def from_dict(cls, config: Dict, **kwargs):

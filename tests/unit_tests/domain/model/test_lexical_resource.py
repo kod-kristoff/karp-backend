@@ -31,9 +31,7 @@ def create_resource(resource_id: str, name: str, config: Dict) -> LexicalResourc
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource(
-            ResourceCategory.LEXICAL_RESOURCE,
-            "lexical_resource",
-            config
+            ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", config
         )
 
     return resource
@@ -62,15 +60,13 @@ def test_resource_create_resource_creates_lexical_resource():
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource(
-            ResourceCategory.LEXICAL_RESOURCE,
-            "lexical_resource",
-            conf
+            ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", conf
         )
 
     assert isinstance(resource, Resource)
     assert isinstance(resource, LexicalResource)
-    assert resource.type == "lexical_resource"
-    assert LexicalResource.type == "lexical_resource"
+    assert resource.type == "lexical_resource_v1"
+    assert LexicalResource.type == "lexical_resource_v1"
     assert resource.id == uuid.UUID(str(resource.id), version=4)
     assert resource.version == 1
     assert resource.resource_id == resource_id
@@ -90,7 +86,10 @@ def test_resource_create_resource_creates_lexical_resource():
     assert resource.op == ResourceOp.ADDED
     assert resource.entry_repository is not None
     assert isinstance(resource.entry_repository, EntryRepository)
-    assert resource.entry_repository_id == resource.entry_repository.id
+    assert (
+        uuid.UUID(resource.entry_repository_id, version=4)
+        == resource.entry_repository.id
+    )
     assert resource.entry_repository_type == "repository_type"
 
 
@@ -307,9 +306,7 @@ def test_lexical_resource_with_entry_repository_settings():
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource(
-            ResourceCategory.LEXICAL_RESOURCE,
-            "lexical_resource",
-            conf
+            ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", conf
         )
     # with mock.patch(
     #     "karp.domain.model.entry.EntryRepository", spec=EntryRepository
@@ -320,10 +317,13 @@ def test_lexical_resource_with_entry_repository_settings():
     #     resource = Resource.create_resource("lexical_resource", conf)
 
     assert resource.entry_repository.type == "test_type"
-    assert resource.entry_repository_id == resource.entry_repository.id
+    assert (
+        uuid.UUID(resource.entry_repository_id, version=4)
+        == resource.entry_repository.id
+    )
 
 
-def test_lexical_resource_with_entry_repository_id():
+def test_lexical_resource_with_entry_repository_id_wo_resource_repository():
     entry_repository_id = uuid4()
     conf = {
         "resource_id": "test_id_4",
@@ -340,15 +340,9 @@ def test_lexical_resource_with_entry_repository_id():
     ), mock.patch(
         "karp.domain.model.entry_repository.EntryRepository.create_repository_settings",
         return_value={},
-    ), mock.patch(
-        "karp.domain.model.entry_repository.EntryRepository.repository",
-        # return_value=entry_repository_mock,
-    ) as entry_repository_repository_mock:
-        entry_repository_repository_mock.by_id.return_value = entry_repository_mock
+    ):
         resource = Resource.create_resource(
-            ResourceCategory.LEXICAL_RESOURCE,
-            "lexical_resource",
-            conf
+            ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", conf
         )
     # with mock.patch(
     #     "karp.domain.model.entry.EntryRepository", spec=EntryRepository
@@ -358,5 +352,5 @@ def test_lexical_resource_with_entry_repository_id():
     #     entry_repository_cls_mock.return_value = entry_repository_mock
     #     resource = Resource.create_resource("lexical_resource", conf)
 
-    assert resource.entry_repository.type == "test_type"
-    assert resource.entry_repository_id == resource.entry_repository.id
+    assert resource.entry_repository is None
+    assert resource.entry_repository_id == entry_repository_id
