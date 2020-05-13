@@ -4,7 +4,6 @@ import uuid
 import pytest
 
 from karp.domain.errors import (
-    ConfigurationError,
     DiscardedEntityError,
 )
 from karp.domain.model.entry import (
@@ -12,7 +11,6 @@ from karp.domain.model.entry import (
     create_entry,
     Entry,
     EntryOp,
-    EntryRepository,
 )
 
 
@@ -23,8 +21,6 @@ def test_entry_create():
         entry = create_entry(entry_id, body)
 
     assert isinstance(entry, Entry)
-
-    expected_history_id = None
 
     assert entry.id == uuid.UUID(str(entry.id), version=4)
     # assert entry.history_id == expected_history_id
@@ -82,12 +78,3 @@ def test_entry_update_of_discarded_raises_(field, value):
 
     with pytest.raises(DiscardedEntityError):
         setattr(entry, field, value)
-
-
-def test_entry_repository_create_raises_configuration_error_on_nonexisting_type():
-    with pytest.raises(ConfigurationError):
-        EntryRepository.create("non-existing", {})
-
-
-def test_entry_repository_has_class_attribute():
-    assert EntryRepository.type is None

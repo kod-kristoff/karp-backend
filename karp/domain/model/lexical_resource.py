@@ -1,11 +1,15 @@
 from uuid import UUID
-from typing import Dict
+from typing import Dict, Optional
 
-from karp.domain.model.entry import EntryRepository
-from karp.domain.model.resource import Resource
+from karp.domain.model.entry_repository import EntryRepository
+from karp.domain.model.resource import Resource, ResourceCategory, ResourceRepository
 
 
-class LexicalResource(Resource, resource_type="lexical_resource"):
+class LexicalResource(
+    Resource,
+    resource_category=ResourceCategory.LEXICAL_RESOURCE,
+    resource_type="lexical_resource"
+):
     """Model for a lexical resource.
     """
 
@@ -14,19 +18,26 @@ class LexicalResource(Resource, resource_type="lexical_resource"):
         self._entry_repository = entry_repository
 
     @classmethod
-    def from_dict(cls, config: Dict):
+    def from_dict(
+        cls,
+        config: Dict,
+        resource_repository: Optional[ResourceRepository] = None
+    ):
         resource_id = config["resource_id"]
         # resource_
         entry_repository = config.pop("entry_repository", None)
         if entry_repository is None:
             if "entry_repository_id" in config:
-                entry_repository = EntryRepository.repository.by_id(
+                if resource_repository:
+                    entry_repository = resource_repository.by_id(
                     config["entry_repository_id"]
                 )
-                if entry_repository is None:
-                    raise ConfigurationError(
-                        f"Can't create EntryRepository with id={config['entry_repository_id']}."
-                    )
+                    if entry_repository is None:
+                        raise ConfigurationError(
+                            f"Can't load EntryRepository with id={config['entry_repository_id']}."
+                        )
+                else:
+                    entry_repository = None
             else:
                 if "entry_repository_type" not in config:
                     config[

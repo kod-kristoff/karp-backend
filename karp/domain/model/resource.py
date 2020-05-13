@@ -8,7 +8,6 @@ from karp.domain import constraints
 from karp.domain.errors import ConfigurationError, RepositoryStatusError
 from karp.domain.model import event_handler
 from karp.domain.model.entity import Entity, TimestampedVersionedEntity
-from karp.domain.model.entry import EntryRepository
 from karp.domain.model.events import DomainEvent
 from karp.utility import unique_id
 
@@ -19,28 +18,45 @@ class ResourceOp(enum.Enum):
     DELETED = "DELETED"
 
 
-class Resource(TimestampedVersionedEntity):
-    _registry = {}
+class ResourceCategory(enum.Enum):
+    GENERAL_RESOURCE = "general_resource"
+    LEXICAL_RESOURCE = "lexical_resource"
+    ENTRY_REPOSITORY = "entry_repository"
+    MORPHOLOGY = "morphology"
 
-    def __init_subclass__(cls, resource_type: str, **kwargs):
+
+class Resource(TimestampedVersionedEntity):
+    _registry = {c: {} for c in ResourceCategory}
+
+    def __init_subclass__(
+        cls,
+        resource_category: ResourceCategory,
+        resource_type: str,
+        **kwargs
+    ):
         super().__init_subclass__(**kwargs)
         if resource_type is None:
             raise RuntimeError("Unallowed resource_type: resource_type = None")
-        if resource_type in cls._registry:
+        if resource_type in cls._registry[resource_category]:
             raise RuntimeError(
-                f"A Resource with type '{resource_type}' already exists: {cls._registry[resource_type]!r}"
+                f"A Resource with type '{resource_type}' already exists in category '{resource_category}': {cls._registry[resource_type]!r}"
             )
 
         cls.type = resource_type
-        cls._registry[resource_type] = cls
+        cls._registry[resource_category][resource_type] = cls
 
     @classmethod
-    def create_resource(cls, resource_type: str, resource_config: Dict):
+    def create_resource(
+        cls,
+        resource_category: ResourceCategory,
+        resource_type: str,
+        resource_config: Dict
+    ):
         try:
-            resource_cls = cls._registry[resource_type]
+            resource_cls = cls._registry[resource_category][resource_type]
         except KeyError:
             raise ConfigurationError(
-                f"Can't create a Resource of type '{resource_type}"
+                f"Can't create a Resource of type '{resource_type}' from category '{resource_category}'"
             )
         return resource_cls.from_dict(resource_config)
 

@@ -1,4 +1,3 @@
-from karp.domain.model.entry import EntryRepository
 from unittest import mock
 import uuid
 
