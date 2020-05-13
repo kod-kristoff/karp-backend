@@ -100,6 +100,20 @@ class SqlLegacyEntryRepository(
         result = self._session.execute(ins_stmt)
         print(f"history_table result: {result}")
 
+        updt_stmt = db.insert(self.runtime_table)
+        updt_stmt = updt_stmt.values(self._entry_to_runtime_row(entry))
+
+        result = self._session.execute(updt_stmt)
+        print(f"runtime_table result: {result}")
+
+    def update(self, entry: Entry):
+        self._check_has_session()
+        ins_stmt = db.insert(
+            self.history_table, values=self._entry_to_history_row(entry)
+        )
+        result = self._session.execute(ins_stmt)
+        print(f"history_table result: {result}")
+
         updt_stmt = db.update(self.runtime_table)
         updt_stmt = updt_stmt.where(self.runtime_table.c.entry_id == entry.entry_id)
         updt_stmt = updt_stmt.values(self._entry_to_runtime_row(entry))
@@ -108,6 +122,9 @@ class SqlLegacyEntryRepository(
         print(f"runtime_table result: {result}")
 
     def by_entry_id(self, entry_id: str) -> Optional[Entry]:
+        pass
+
+    def by_id(self, id: unique_id.UniqueId) -> Optional[Entry]:
         pass
 
     def entry_ids(self) -> List[str]:

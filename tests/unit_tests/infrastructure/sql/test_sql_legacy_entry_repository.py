@@ -65,3 +65,7 @@ def test_put_entry_to_legacy_entry_repo(entry_repo):
         uw.commit()
 
         assert uw.entry_ids() == ["a"]
+
+        entry_copy = uw.by_id(entry.id)
+
+        assert entry_copy.id == entry.id

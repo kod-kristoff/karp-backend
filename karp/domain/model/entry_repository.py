@@ -99,12 +99,21 @@ class EntryRepository(
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def update(self, entry: Entry):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def entry_ids(self) -> List[str]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def by_entry_id(self, entry_id: str) -> Optional[Entry]:
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def by_id(self, id: unique_id.UniqueId) -> Optional[Entry]:
+        raise NotImplementedError()
+
 
 
 # class EntryRepositorySettings:
