@@ -1,5 +1,7 @@
+from uuid import UUID
 import pytest
 
+from karp.domain.errors import EntryNotFound
 from karp.domain.model.resource import ResourceCategory
 from karp.domain.model.entry import Entry, EntryOp, create_entry
 from karp.domain.model.entry_repository import EntryRepository
@@ -56,6 +58,12 @@ def test_create_sql_legacy_entry_repository(entry_repo):
     assert entry_repo.lexicon_id == "test_legacy_lexicon"
     with unit_of_work(using=entry_repo) as uw:
         assert uw.entry_ids() == []
+
+
+def test_sql_legacy_entry_repository_by_id_raises_entry_not_found(entry_repo):
+    with unit_of_work(using=entry_repo) as uw:
+        with pytest.raises(EntryNotFound):
+            uw.by_id(UUID(bytes=b"__non-exisiting_", version=4))
 
 
 def test_put_entry_to_legacy_entry_repo(entry_repo):

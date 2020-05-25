@@ -2,9 +2,11 @@
 import datetime
 import enum
 from typing import Dict, List, Optional, Tuple
+import uuid
 
+from karp.domain.errors import EntryNotFound
 from karp.domain.model.entry_repository import EntryRepository
-from karp.domain.model.entry import Entry, EntryOp
+from karp.domain.model.entry import Entry, EntryOp, EntryStatus
 from karp.domain.model.resource import ResourceOp
 
 from karp.infrastructure.sql import db
@@ -126,11 +128,15 @@ class SqlLegacyEntryRepository(
 
     def by_id(self, id: unique_id.UniqueId) -> Optional[Entry]:
         self._check_has_session()
+        runtime_query = self._session.query(self.runtime_table)
+        runtime_entry = runtime_query.filter_by(id=str(id)).first()
+        if runtime_entry is None:
+            raise EntryNotFound(f"Entry with id='{id}' not found.")
         query = self._session.query(self.history_table)
         return self._history_row_to_optional_entry(
-            query.filter_by(id=str(id))
-            .order_by(self.history_table.c.date.desc())
-            .first()
+            query.filter_by(id=str(id), date=runtime_entry.date).first(),
+            entry_id=runtime_entry.entry_id,
+            status=runtime_entry.status,
         )
 
     def entry_ids(self) -> List[str]:
@@ -160,20 +166,24 @@ class SqlLegacyEntryRepository(
             entry.discarded,
         )
 
-    def _history_row_to_optional_entry(self, row) -> Optional[Entry]:
+    def _history_row_to_optional_entry(
+        self, row, entry_id: str, status: EntryStatus
+    ) -> Optional[Entry]:
         if row:
-            return self._history_row_to_entry(row)
+            return self._history_row_to_entry(row, entry_id=entry_id, status=status)
         return None
 
-    def _history_row_to_entry(self, row) -> Entry:
+    def _history_row_to_entry(self, row, entry_id: str, status: EntryStatus) -> Entry:
         return Entry(
-            entity_id=row.id,
+            entity_id=uuid.UUID(row.id, version=4),
+            entry_id=entry_id,
             body=row.source,
             last_modified=row.date,
             last_modified_by=row.user,
             message=row.msg,
             op=to_entry_op(row.status),
-                )
+            status=status,
+        )
 
 
 def create_history_table(db_uri: str, table_name: str) -> db.Table:
@@ -206,6 +216,7 @@ def create_runtime_table(
         db.Column("id", db.UUIDType, db.ForeignKey(history_table.c.id)),
         db.Column("date", db.DateTime, db.ForeignKey(history_table.c.date)),
         db.Column("discarded", db.Boolean),
+        db.Column("status", db.Enum(EntryStatus)),
     )
     table.create(db.get_engine(db_uri))
     return table

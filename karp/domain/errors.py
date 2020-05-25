@@ -12,6 +12,7 @@ class DomainError(errors.KarpError):
 class ConfigurationError(DomainError):
     """Raised when a problem with the system configuration is detected.
     """
+
     pass
 
 
@@ -34,6 +35,10 @@ class ConstraintsError(DomainError, ValueError):
 
 
 class RepositoryError(DomainError):
+    pass
+
+
+class EntryNotFound(RepositoryError):
     pass
 
 
