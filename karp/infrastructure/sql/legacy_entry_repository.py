@@ -125,7 +125,13 @@ class SqlLegacyEntryRepository(
         pass
 
     def by_id(self, id: unique_id.UniqueId) -> Optional[Entry]:
-        pass
+        self._check_has_session()
+        query = self._session.query(self.history_table)
+        return self._history_row_to_optional_entry(
+            query.filter_by(id=str(id))
+            .order_by(self.history_table.c.date.desc())
+            .first()
+        )
 
     def entry_ids(self) -> List[str]:
         self._check_has_session()
@@ -153,6 +159,21 @@ class SqlLegacyEntryRepository(
             datetime.datetime.fromtimestamp(entry.last_modified),
             entry.discarded,
         )
+
+    def _history_row_to_optional_entry(self, row) -> Optional[Entry]:
+        if row:
+            return self._history_row_to_entry(row)
+        return None
+
+    def _history_row_to_entry(self, row) -> Entry:
+        return Entry(
+            entity_id=row.id,
+            body=row.source,
+            last_modified=row.date,
+            last_modified_by=row.user,
+            message=row.msg,
+            op=to_entry_op(row.status),
+                )
 
 
 def create_history_table(db_uri: str, table_name: str) -> db.Table:

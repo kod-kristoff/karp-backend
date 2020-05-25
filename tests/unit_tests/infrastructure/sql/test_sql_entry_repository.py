@@ -46,7 +46,9 @@ def test_put_entry_to_entry_repo(entry_repo):
 
         entry_copy = uw.by_id(entry.id)
 
+        assert isinstance(entry_copy, Entry)
         assert entry_copy.id == entry.id
+        assert entry_copy.last_modified == entry.last_modified
 
         entry_copy_from_str = uw.by_id(str(entry.id))
 
@@ -57,6 +59,7 @@ def test_entry_repo_by_entry_id(entry_repo):
     with unit_of_work(using=entry_repo) as uw:
         entry = uw.by_entry_id("a")
 
+        assert isinstance(entry, Entry)
         assert entry.entry_id == "a"
 
 

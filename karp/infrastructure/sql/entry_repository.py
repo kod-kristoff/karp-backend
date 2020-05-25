@@ -139,7 +139,7 @@ class SqlEntryRepository(
     def by_id(self, id: str) -> Optional[Entry]:
         self._check_has_session()
         query = self._session.query(self.history_table)
-        return (
+        return self._history_row_to_optional_entry(
             query.filter_by(id=id)
             .order_by(self.history_table.c.last_modified.desc())
             .first()
@@ -168,6 +168,11 @@ class SqlEntryRepository(
             entry.op,  # op
             entry.discarded,
         )
+
+    def _history_row_to_optional_entry(self, row) -> Optional[Entry]:
+        if not row:
+            return None
+        return self._history_row_to_entry(row)
 
     def _history_row_to_entry(self, row) -> Entry:
         return Entry(

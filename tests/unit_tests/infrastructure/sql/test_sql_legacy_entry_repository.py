@@ -1,7 +1,7 @@
 import pytest
 
 from karp.domain.model.resource import ResourceCategory
-from karp.domain.model.entry import EntryOp, create_entry
+from karp.domain.model.entry import Entry, EntryOp, create_entry
 from karp.domain.model.entry_repository import EntryRepository
 
 from karp.infrastructure.unit_of_work import unit_of_work
@@ -68,4 +68,5 @@ def test_put_entry_to_legacy_entry_repo(entry_repo):
 
         entry_copy = uw.by_id(entry.id)
 
+        assert isinstance(entry_copy, Entry)
         assert entry_copy.id == entry.id
