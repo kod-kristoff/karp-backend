@@ -66,7 +66,7 @@ class ConfigTest(Config):
     SETUP_DATABASE = False
     JWT_AUTH = False
     ELASTICSEARCH_ENABLED = False
-    CONSOLE_LOG_LEVEL = "WARNING"
+    CONSOLE_LOG_LEVEL = "DEBUG"
 
     def __init__(self, use_elasticsearch=False):
         if use_elasticsearch:
@@ -404,6 +404,17 @@ def init(client, es_status_code, entries: Dict):
 def client_with_entries_scope_session(es, client_with_data_f_scope_session):
     client_with_data = init(
         client_with_data_f_scope_session,
+        es,
+        {"places": PLACES, "municipalities": MUNICIPALITIES},
+    )
+    time.sleep(5)
+    return client_with_data
+
+
+@pytest.fixture(scope="module")
+def client_with_entries_scope_module(es, client_with_data_f_scope_module):
+    client_with_data = init(
+        client_with_data_f_scope_module,
         es,
         {"places": PLACES, "municipalities": MUNICIPALITIES},
     )

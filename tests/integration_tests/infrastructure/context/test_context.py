@@ -8,7 +8,7 @@ from karp.infrastructure.sql.resource_repository import SqlResourceRepository
 
 
 def test_sql_es6_context_create(es):
-    with mock.patch("karp.infrastructure.elasticsearch6.init_es.es"):
+    with mock.patch("karp.infrastructure.elasticsearch6.Elasticsearch"):
         context = SqlEs6Context(Config())
 
     assert isinstance(context.resource_repo, SqlResourceRepository)
