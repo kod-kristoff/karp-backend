@@ -12,8 +12,9 @@ import fastjsonschema  # pyre-ignore
 from sb_json_tools import jsondiff
 
 from karp import get_resource_string
-from karp.database import db
-from karp import database
+
+# from karp.database import db
+# from karp import database
 from karp.util.json_schema import create_entry_json_schema
 from karp.errors import KarpError
 from karp.errors import ClientErrorCodes
@@ -23,8 +24,10 @@ from karp.errors import (
     ResourceConfigUpdateError,
 )
 from karp.errors import PluginNotFoundError
-from .resource import Resource
+
+# from .resource import Resource
 from karp.resourcemgr.entrymetadata import EntryMetadata
+from karp.domain.model import resource
 
 _logger = logging.getLogger("karp")
 
@@ -35,15 +38,17 @@ resource_versions = {}  # Dict[str, int]
 field_translations = {}  # Dict[str, Dict[str, List[str]]]
 
 
-def get_available_resources() -> List[database.ResourceDefinition]:
-    return database.ResourceDefinition.query.filter_by(active=True)
+def get_available_resources() -> List[resource.Resource]:
+    from karp.application import ctx
+
+    return ctx.resource_repo.get_published_resources()
 
 
 def get_field_translations(resource_id) -> Optional[Dict]:
     return field_translations.get(resource_id)
 
 
-def get_resource(resource_id: str, version: Optional[int] = None) -> Resource:
+def get_resource(resource_id: str, version: Optional[int] = None) -> resource.Resource:
     if not version:
         resource_def = database.get_active_resource_definition(resource_id)
         if not resource_def:
@@ -73,8 +78,10 @@ def get_resource(resource_id: str, version: Optional[int] = None) -> Resource:
         )
 
 
-def get_all_resources() -> List[database.ResourceDefinition]:
-    return database.ResourceDefinition.query.all()
+def get_all_resources() -> List[resource.Resource]:
+    from karp.application import ctx
+
+    return ctx.resource_repo.get_all_resources()
 
 
 def check_resource_published(resource_ids: List[str]) -> None:
@@ -408,30 +415,30 @@ def is_protected(resource_id, level):
     return level == "WRITE" or level == "ADMIN" or protection.get("read")
 
 
-def get_all_metadata(resource_obj: Resource) -> Dict[str, EntryMetadata]:
-    history_table = resource_obj.history_model
-    result = db.session.query(
-        history_table.entry_id,
-        history_table.user_id,
-        history_table.timestamp,
-        func.max(history_table.version),
-    ).group_by(history_table.entry_id)
-    result_ = {
-        row[0]: EntryMetadata(row[1], last_modified=row[2], version=row[3])
-        for row in result
-    }
-    return result_
+# def get_all_metadata(resource_obj: Resource) -> Dict[str, EntryMetadata]:
+#     history_table = resource_obj.history_model
+#     result = db.session.query(
+#         history_table.entry_id,
+#         history_table.user_id,
+#         history_table.timestamp,
+#         func.max(history_table.version),
+#     ).group_by(history_table.entry_id)
+#     result_ = {
+#         row[0]: EntryMetadata(row[1], last_modified=row[2], version=row[3])
+#         for row in result
+#     }
+#     return result_
 
 
-def get_metadata(resource_def: Resource, _id: int) -> EntryMetadata:
-    history_table = resource_def.history_model
-    result = (
-        db.session.query(
-            history_table.user_id,
-            history_table.timestamp,
-            func.max(history_table.version),
-        )
-        .filter(history_table.entry_id == _id)
-        .group_by(history_table.entry_id)
-    )
-    return EntryMetadata(result[0][0], last_modified=result[0][1], version=result[0][2])
+# def get_metadata(resource_def: Resource, _id: int) -> EntryMetadata:
+#     history_table = resource_def.history_model
+#     result = (
+#         db.session.query(
+#             history_table.user_id,
+#             history_table.timestamp,
+#             func.max(history_table.version),
+#         )
+#         .filter(history_table.entry_id == _id)
+#         .group_by(history_table.entry_id)
+#     )
+#     return EntryMetadata(result[0][0], last_modified=result[0][1], version=result[0][2])

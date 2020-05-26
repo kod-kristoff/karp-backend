@@ -15,11 +15,12 @@ load_dotenv(dotenv_path=".env")
 import elasticsearch_test  # pyre-ignore
 
 from karp import create_app  # noqa: E402
-from karp.database import db  # noqa: E402
+from karp.infrastructure.sql import db  # noqa: E402
 from karp.application.config import Config  # noqa: E402
 import karp.resourcemgr as resourcemgr  # noqa: E402
 import karp.domain.services.indexmgr as indexmgr  # noqa: E402
-from karp.database import ResourceDefinition  # noqa: E402
+
+# from karp.database import ResourceDefinition  # noqa: E402
 
 
 CONFIG_PLACES = """{
@@ -88,10 +89,10 @@ def fixture_app_f():
     def fun(**kwargs):
         app = create_app(ConfigTest(**kwargs))
         with app.app_context():
-            ResourceDefinition.__table__.create(bind=db.engine)
+            # ResourceDefinition.__table__.create(bind=db.engine)
             yield app
 
-            db.session.remove()
+            # db.session.remove()
             db.drop_all()
 
     return fun
@@ -102,10 +103,10 @@ def fixture_app_f_scope_module():
     def fun(**kwargs):
         app = create_app(ConfigTest(**kwargs))
         with app.app_context():
-            ResourceDefinition.__table__.create(bind=db.engine)
+            # ResourceDefinition.__table__.create(bind=db.engine)
             yield app
 
-            db.session.remove()
+            # db.session.remove()
             db.drop_all()
 
     return fun
@@ -116,10 +117,10 @@ def fixture_app_f_scope_session():
     def fun(**kwargs):
         app = create_app(ConfigTest(**kwargs))
         with app.app_context():
-            ResourceDefinition.__table__.create(bind=db.engine)
+            # ResourceDefinition.__table__.create(bind=db.engine)
             yield app
 
-            db.session.remove()
+            # db.session.remove()
             db.drop_all()
 
     return fun
@@ -129,10 +130,10 @@ def fixture_app_f_scope_session():
 def fixture_app_scope_module():
     app = create_app(ConfigTest)
     with app.app_context():
-        ResourceDefinition.__table__.create(bind=db.engine)
+        # ResourceDefinition.__table__.create(bind=db.engine)
         yield app
 
-        db.session.remove()
+        # db.session.remove()
         db.drop_all()
 
 

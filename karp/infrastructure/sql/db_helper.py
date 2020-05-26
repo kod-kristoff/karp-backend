@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Dict, Optional
 
-from flask_sqlalchemy import SQLAlchemy  # as _BaseSQLAlchemy  # pyre-ignore
+# from flask_sqlalchemy import SQLAlchemy  # as _BaseSQLAlchemy  # pyre-ignore
 from sqlalchemy.sql import func  # pyre-ignore
 from sqlalchemy.ext.declarative import declared_attr  # pyre-ignore
-
+from karp.infrastructure.sql import db
 
 # class SQLAlchemy(_BaseSQLAlchemy):
 
@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declared_attr  # pyre-ignore
 #         # options['echo'] = True
 
 
-db = SQLAlchemy()
+# db = SQLAlchemy()
 
 
 class ResourceDefinition(db.Model):
@@ -147,11 +147,16 @@ def get_next_resource_version(id: str) -> int:
 class_cache = {}
 
 
-def get_or_create_resource_model(config, version):
-    resource_id = config["resource_id"]
-    table_name = resource_id + "_" + str(version)
-    if table_name in class_cache:
-        return class_cache[table_name]
+def get_or_create_entry_repository_runtime_table(
+    db_uri: Optional[str], table_name: str, config: Dict[str]
+):
+    # resource_id = config["resource_id"]
+    # table_name = resource_id + "_" + str(version)
+    if not db_uri:
+        db_uri = db.get_default_uri()
+    runtime_table = db.get_table(db_uri, table_name)
+    if runtime_table:
+        return runtime_table
     else:
         if db.engine.driver == "pysqlite":
             ref_column = db.Unicode(100)
@@ -162,7 +167,12 @@ def get_or_create_resource_model(config, version):
             "__table_args__": (
                 db.UniqueConstraint("entry_id", name="entry_id_unique_constraint"),
             ),
-            "entry_id": db.Column(ref_column, nullable=False),
+            "entry_id": db.Column(
+                db.String(100),
+                nullable=False,
+                primary_key=True,
+                mysql_collation="utf8mb4_bin",
+            ),
         }
 
         child_tables = {}

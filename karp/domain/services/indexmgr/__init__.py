@@ -8,7 +8,9 @@ from .index import IndexModule
 import karp.resourcemgr as resourcemgr
 import karp.resourcemgr.entryread as entryread
 import karp.network as network
-from karp.resourcemgr.resource import Resource
+
+# from karp.resourcemgr.resource import Resource
+from karp.domain.model.resource import Resource
 from karp import errors
 from karp.resourcemgr.entrymetadata import EntryMetadata
 

@@ -313,3 +313,7 @@ class ResourceRepository(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_published_resources(self) -> List[Resource]:
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_all_resources(self) -> List[Resource]:
+        raise NotImplementedError()

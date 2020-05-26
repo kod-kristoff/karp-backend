@@ -48,6 +48,7 @@ class SQLEngineSessionfactory:
 
 
 _db_handlers: Dict[str, SQLEngineSessionfactory] = dict()
+_default_db_uri: Optional[str] = None
 
 
 def create_session(db_uri: str) -> Session:
@@ -70,8 +71,25 @@ def metadata(db_uri: str) -> MetaData:
     return _db_handlers[db_uri].metadata
 
 
+def drop_all():
+    for db_handler in _db_handlers.values():
+        db_handler.metadata.drop_all()
+
+
 def get_table(db_uri: str, table_name: str) -> Optional[Table]:
     return metadata(db_uri).tables.get(table_name)
+
+
+def get_default_uri() -> str:
+    if not _default_db_uri:
+        raise RuntimeError("No default db_uri is set.")
+
+    return _default_db_uri
+
+
+def set_default_uri(db_uri: Optional[str]) -> None:
+    global _default_db_uri
+    _default_db_uri = db_uri
 
 
 def map_class_to_some_table(cls, table: Table, entity_name: str, **mapper_kw):

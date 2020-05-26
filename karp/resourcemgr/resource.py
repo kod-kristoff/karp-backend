@@ -2,7 +2,7 @@ import json
 
 from typing import List, Dict, Optional
 
-from karp.database import ResourceDefinition
+# from karp.database import ResourceDefinition
 
 
 class Resource:

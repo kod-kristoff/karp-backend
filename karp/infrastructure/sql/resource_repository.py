@@ -112,6 +112,26 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
 
         return [self._row_to_resource(row) for row in query if row is not None]
 
+    def get_all_resources(self) -> List[Resource]:
+        self._check_has_session()
+        subq = (
+            self._session.query(
+                self.table.c.resource_id,
+                db.func.max(self.table.c.last_modified).label("maxdate"),
+            )
+            .group_by(self.table.c.resource_id)
+            .subquery("t2")
+        )
+        query = self._session.query(self.table).join(
+            subq,
+            db.and_(
+                self.table.c.resource_id == subq.c.resource_id,
+                self.table.c.last_modified == subq.c.maxdate,
+            ),
+        )
+
+        return [self._row_to_resource(row) for row in query if row is not None]
+
     def _resource_to_row(
         self, resource: Resource
     ) -> Tuple[

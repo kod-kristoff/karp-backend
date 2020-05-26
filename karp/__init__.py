@@ -33,9 +33,9 @@ def create_app(config_class=None):
         config_class.SQLALCHEMY_DATABASE_URI
     )
 
-    from .database import db
+    from karp.infrastructure.sql import db
 
-    db.init_app(app)
+    db.set_default_uri(config_class.SQLALCHEMY_DATABASE_URI)
 
     if app.config.get("SETUP_DATABASE", True):
         from .resourcemgr import setup_resource_classes
@@ -117,7 +117,6 @@ def create_app(config_class=None):
             logger.error(error_str)
             logger.exception("unhandled exception")
             return json.dumps({"error": "unknown error", "errorCode": 0}), 400
-
 
     CORS(app)
 
