@@ -28,7 +28,7 @@ class ResourceCategory(enum.Enum):
 class Resource(TimestampedVersionedEntity):
     _registry = {c: {} for c in ResourceCategory}
     type = None
-    category = None
+    category = ResourceCategory.GENERAL_RESOURCE
 
     def __init_subclass__(
         cls, resource_category: ResourceCategory, resource_type: str, **kwargs
@@ -40,7 +40,7 @@ class Resource(TimestampedVersionedEntity):
             raise RuntimeError("Unallowed resource_category: resource_category = None")
         if resource_type in cls._registry[resource_category]:
             raise RuntimeError(
-                f"A Resource with type '{resource_type}' already exists in category '{resource_category}': {cls._registry[resource_type]!r}"
+                f"A Resource with type '{resource_type}' already exists in category '{resource_category}': {cls._registry[resource_category][resource_type]!r}"
             )
 
         cls.type = resource_type
@@ -54,20 +54,18 @@ class Resource(TimestampedVersionedEntity):
         resource_type: str,
         resource_config: Dict,
     ):
-        try:
-            resource_cls = cls._registry[resource_category][resource_type]
-        except KeyError:
-            raise ConfigurationError(
-                f"Can't create a Resource of type '{resource_type}' from category '{resource_category}'"
-            )
+        resource_cls = cls.get_resource_class(resource_category, resource_type)
         return resource_cls.from_dict(resource_config)
 
     @classmethod
     def get_resource_class(cls, category: ResourceCategory, resource_type: str):
-        if category is None and resource_type is None:
-            return Resource
-        elif category is None:
-            category = ResourceCategory.GENERAL_RESOURCE
+        if resource_type is None and cls.category == category:
+            return cls
+        if category is None:
+            if resource_type is None:
+                return cls
+            else:
+                category = ResourceCategory.GENERAL_RESOURCE
 
         try:
             resource_cls = cls._registry[category][resource_type]

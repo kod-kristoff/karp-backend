@@ -96,7 +96,7 @@ def _update_references(resource_id: str, entry_ids: List[str]) -> None:
 
 
 def transform_to_index_entry(
-    resource: resourcemgr.Resource, src_entry: Dict, fields: Tuple[str, Dict]
+    resource: Resource, src_entry: Dict, fields: Tuple[str, Dict]
 ):
     """
     TODO This is very slow (for resources with references) because of db-lookups everywhere in the code
@@ -109,9 +109,7 @@ def transform_to_index_entry(
     return index_entry
 
 
-def _evaluate_function(
-    function_conf: Dict, src_entry: Dict, src_resource: resourcemgr.Resource
-):
+def _evaluate_function(function_conf: Dict, src_entry: Dict, src_resource: Resource):
     if "multi_ref" in function_conf:
         function_conf = function_conf["multi_ref"]
         target_field = function_conf["field"]
@@ -172,7 +170,7 @@ def _evaluate_function(
 
 
 def _transform_to_index_entry(
-    resource: resourcemgr.Resource, _src_entry: Dict, _index_entry, fields
+    resource: Resource, _src_entry: Dict, _index_entry, fields
 ):
     for field_name, field_conf in fields:
         if field_conf.get("virtual", False):

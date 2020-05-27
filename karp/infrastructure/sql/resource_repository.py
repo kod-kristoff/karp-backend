@@ -14,6 +14,8 @@ from karp.domain.model.resource import (
 from karp.infrastructure.sql import db
 from karp.infrastructure.sql.sql_repository import SqlRepository
 
+from karp.utility.unique_id import UniqueId
+
 _logger = logging.getLogger("karp")
 
 
@@ -135,7 +137,19 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
     def _resource_to_row(
         self, resource: Resource
     ) -> Tuple[
-        None, UUID, str, int, str, Dict, Optional[bool], float, str, str, ResourceOp
+        None,
+        UniqueId,
+        str,
+        ResourceCategory,
+        Optional[str],
+        int,
+        str,
+        Dict,
+        Optional[bool],
+        float,
+        str,
+        str,
+        ResourceOp,
     ]:
         return (
             None,
@@ -189,7 +203,7 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
             nullable=False,
         ),
         db.Column("resource_category", db.Enum(ResourceCategory)),
-        db.Column("resource_type", db.String(64)),
+        db.Column("resource_type", db.String(64), nullable=True),
         db.Column(
             "version",
             db.Integer,

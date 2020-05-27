@@ -4,6 +4,7 @@ from karp.domain.errors import ConsistencyError, DiscardedEntityError
 from karp.domain.model.events import DomainEvent
 
 from karp.utility.time import monotonic_utc_now
+from karp.utility import unique_id
 
 
 class Entity:
@@ -12,13 +13,18 @@ class Entity:
             obj._validate_event_applicability(self)
             obj._discarded = True
 
-    def __init__(self, entity_id, discarded: bool = False, aggregate_root=None):
+    def __init__(
+        self,
+        entity_id: unique_id.UniqueId,
+        discarded: bool = False,
+        aggregate_root=None,
+    ):
         self._id = entity_id
         self._discarded = discarded
         self._root = aggregate_root
 
     @property
-    def id(self):
+    def id(self) -> unique_id.UniqueId:
         """A unique identifier for the entity."""
         return self._id
 

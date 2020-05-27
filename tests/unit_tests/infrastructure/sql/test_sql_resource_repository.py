@@ -40,7 +40,7 @@ def test_sql_resource_repo_put_resource(resource_repo):
         "resource_name": resource_name,
         "a": "b",
     }
-    resource = create_resource(resource_config)
+    resource = Resource.create_resource(None, None, resource_config)
 
     expected_version = 1
 
@@ -95,11 +95,12 @@ def test_sql_resource_repo_put_lexical_resource(resource_repo):
     with unit_of_work(using=resource_repo) as uw:
         uw.put(resource)
         uw.commit()
-        assert uw.resource_ids() == ["test_id", resource_id]
+        assert resource_id in uw.resource_ids()
 
         assert resource.version == expected_version
         assert resource.message == "Resource added."
         assert resource.op == ResourceOp.ADDED
+        assert resource.entry_repository_id == str(entry_repository_mock.id)
         resource_id_history = uw.history_by_resource_id(resource_id)
         assert len(resource_id_history) == 1
 
@@ -112,6 +113,27 @@ def test_sql_resource_repo_put_lexical_resource(resource_repo):
         assert test_lex.resource_id == resource_id
         assert test_lex.id == resource.id
         assert test_lex.name == resource_name
+
+
+def test_sql_resource_repo_lexical_resource_with_entry_repository(resource_repo):
+    with unit_of_work(using=resource_repo) as uw:
+        entry_repository_settings = {}
+        entry_repository = EntryRepository.create("sql_v1", entry_repository_settings)
+
+        uw.put(entry_repository)
+        uw.commit()
+
+        resource_settings = {"entry_repository_id": str(entry_repository.id)}
+        lexical_resource = LexicalResource.create_resource(
+            None, None, resource_settings
+        )
+
+        uw.put(lexical_resource)
+        uw.commit()
+
+        init_resource(lexical_resource, resource_repo)
+
+        assert lexical_resource.entries.id == entry_repository.id
 
 
 def test_sql_resource_repo_update_resource(resource_repo):
@@ -159,7 +181,6 @@ def test_sql_resource_repo_put_another_version(resource_repo):
     }
     resource = create_resource(resource_config)
 
-    expected_version = 3
     resource._version = 3
 
     with unit_of_work(using=resource_repo) as uw:
@@ -167,6 +188,7 @@ def test_sql_resource_repo_put_another_version(resource_repo):
 
         assert uw.resource_ids() == [resource_id, "test_lex_id"]
 
+        expected_version = 3
         assert resource.version == expected_version
         assert not resource.is_published
 
@@ -192,10 +214,10 @@ def test_sql_resource_repo_put_another_version(resource_repo):
 
 
 def test_sql_resource_repo_2nd_active_raises(resource_repo):
-    resource_id = "test_id"
-    resource_version = 2
     with pytest.raises(Exception):
         with unit_of_work(using=resource_repo) as uw:
+            resource_id = "test_id"
+            resource_version = 2
             resource = uw.resource_with_id_and_version(resource_id, resource_version)
             resource.is_published = True
             resource.stamp(user="Admin", message="make active")
@@ -204,29 +226,29 @@ def test_sql_resource_repo_2nd_active_raises(resource_repo):
 
 
 def test_sql_resource_repo_version_change_to_existing_raises(resource_repo):
-    resource_id = "test_id"
-    resource_version = 2
     with pytest.raises(Exception):
         with unit_of_work(using=resource_repo) as uw:
+            resource_id = "test_id"
+            resource_version = 2
             resource = uw.resource_with_id_and_version(resource_id, resource_version)
             resource.version = 1
 
 
 def test_sql_resource_repo_put_another_resource(resource_repo):
-    resource_id = "test_id_2"
-    resource_config = {
-        "resource_id": resource_id,
-        "resource_name": "Test",
-        "fields": {"name": {"type": "string", "required": True}},
-    }
-
-    expected_version = 1
-
     with unit_of_work(using=resource_repo) as uw:
+        resource_id = "test_id_2"
+        resource_config = {
+            "resource_id": resource_id,
+            "resource_name": "Test",
+            "fields": {"name": {"type": "string", "required": True}},
+        }
+
         resource = create_resource(resource_config)
         resource.is_published = True
         uw.put(resource)
         uw.commit()
+
+        expected_version = 1
 
         assert resource.version == expected_version
 
