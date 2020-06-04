@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Dict, Optional
+from typing import Dict, Iterable, Optional
 
 from karp.domain.errors import ConfigurationError
 from karp.domain.model.entry_repository import EntryRepository
@@ -27,6 +27,8 @@ class LexicalResource(
         entry_repository = config.pop("entry_repository", None)
         if entry_repository is None:
             if "entry_repository_id" in config:
+                if isinstance(config["entry_repository_id"], UUID):
+                    config["entry_repository_id"] = str(config["entry_repository_id"])
                 if resource_repository:
                     entry_repository = resource_repository.by_id(
                         config["entry_repository_id"]
@@ -74,7 +76,7 @@ class LexicalResource(
     @property
     def entry_repository_id(self) -> UUID:
         """The id for the entry repository used by this resource."""
-        return self.config["entry_repository_id"]
+        return UUID(self.config["entry_repository_id"], version=4)
 
     @property
     def entry_repository_type(self):
@@ -83,3 +85,7 @@ class LexicalResource(
     @property
     def entry_repository_settings(self):
         return self.config["entry_repository_settings"]
+
+    @property
+    def _resource_dependencies(self) -> Iterable[UUID]:
+        yield self.entry_repository_id

@@ -12,8 +12,12 @@ from karp.domain.model.resource import (
     Resource,
 )
 from karp.domain.model.lexical_resource import LexicalResource
+
+from karp.domain.services.resource import init_resource
+
 from karp.infrastructure.unit_of_work import unit_of_work
 from karp.infrastructure.sql.resource_repository import SqlResourceRepository
+from karp.infrastructure.sql import entry_repository
 
 
 db_uri = "sqlite:///"
@@ -117,13 +121,20 @@ def test_sql_resource_repo_put_lexical_resource(resource_repo):
 
 def test_sql_resource_repo_lexical_resource_with_entry_repository(resource_repo):
     with unit_of_work(using=resource_repo) as uw:
-        entry_repository_settings = {}
+        entry_repository_settings = {
+            "db_uri": "sqlite:///",
+            "table_name": "random",
+        }
         entry_repository = EntryRepository.create("sql_v1", entry_repository_settings)
 
         uw.put(entry_repository)
         uw.commit()
 
-        resource_settings = {"entry_repository_id": str(entry_repository.id)}
+        resource_settings = {
+            "resource_id": "test_lex_2",
+            "resource_name": "Test lex 2",
+            "entry_repository_id": str(entry_repository.id),
+        }
         lexical_resource = LexicalResource.create_resource(
             None, None, resource_settings
         )
@@ -133,7 +144,7 @@ def test_sql_resource_repo_lexical_resource_with_entry_repository(resource_repo)
 
         init_resource(lexical_resource, resource_repo)
 
-        assert lexical_resource.entries.id == entry_repository.id
+        assert lexical_resource.entry_repository.id == entry_repository.id
 
 
 def test_sql_resource_repo_update_resource(resource_repo):

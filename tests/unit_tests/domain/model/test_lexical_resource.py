@@ -86,11 +86,9 @@ def test_resource_create_resource_creates_lexical_resource():
     assert resource.op == ResourceOp.ADDED
     assert resource.entry_repository is not None
     assert isinstance(resource.entry_repository, EntryRepository)
-    assert (
-        uuid.UUID(resource.entry_repository_id, version=4)
-        == resource.entry_repository.id
-    )
+    assert resource.entry_repository_id == resource.entry_repository.id
     assert resource.entry_repository_type == "repository_type"
+    assert list(resource.resource_dependencies) == [entry_repository_mock.id]
 
 
 def test_lexical_resource_stamp_changes_last_modified_and_version():
@@ -305,7 +303,7 @@ def test_lexical_resource_with_entry_repository_settings():
         "karp.domain.model.entry_repository.EntryRepository.create",
         return_value=entry_repository_mock,
     ):
-        resource = Resource.create_resource(
+        resource = LexicalResource.create_resource(
             ResourceCategory.LEXICAL_RESOURCE, "lexical_resource_v1", conf
         )
     # with mock.patch(
@@ -317,10 +315,7 @@ def test_lexical_resource_with_entry_repository_settings():
     #     resource = Resource.create_resource("lexical_resource", conf)
 
     assert resource.entry_repository.type == "test_type"
-    assert (
-        uuid.UUID(resource.entry_repository_id, version=4)
-        == resource.entry_repository.id
-    )
+    assert resource.entry_repository_id == resource.entry_repository.id
 
 
 def test_lexical_resource_with_entry_repository_id_wo_resource_repository():

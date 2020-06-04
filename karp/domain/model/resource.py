@@ -2,7 +2,7 @@
 import abc
 import enum
 from uuid import UUID
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Iterable, Optional, List
 
 from karp.domain import constraints
 from karp.domain.errors import ConfigurationError, RepositoryStatusError
@@ -176,6 +176,17 @@ class Resource(TimestampedVersionedEntity):
     @property
     def op(self):
         return self._op
+
+    @property
+    def resource_dependencies(self) -> Iterable[UUID]:
+        if hasattr(self, "_resource_dependencies"):
+            yield from self._resource_dependencies
+        else:
+            return []
+
+    @property
+    def _resource_dependencies(self) -> Iterable[UUID]:
+        return []
 
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()

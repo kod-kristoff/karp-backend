@@ -35,6 +35,7 @@ def test_create_resource_creates_resource():
     assert int(resource.last_modified) == 12345
     assert resource.message == "Resource added."
     assert resource.op == ResourceOp.ADDED
+    assert list(resource.resource_dependencies) == []
 
 
 def test_resource_stamp_changes_last_modified_and_version():
