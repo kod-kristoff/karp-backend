@@ -1,4 +1,4 @@
-from karp.app.context import Context
+from .context import Context
 
 
 context = Context()
