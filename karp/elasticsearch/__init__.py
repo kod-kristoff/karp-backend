@@ -1,8 +1,6 @@
 from elasticsearch import Elasticsearch  # pyre-ignore
-from .index import EsIndex
-from .es_search import EsSearch
-from karp import search
-from karp.indexmgr import indexer
+from karp.infrastructure.elasticsearch6.es_search_index import EsSearchIndex
+from karp import app
 
 
 def init_es(host):
@@ -14,7 +12,5 @@ def init_es(host):
         sniffer_timeout=60,
         sniff_timeout=10,
     )
-    index_module = EsIndex(es)
-    search_module = EsSearch(es, index_module)
-    search.init(search_module)
-    indexer.init(index_module)
+    es_search_index = EsSearchIndex(es)
+    app.config.init_search_index(es_search_index)
