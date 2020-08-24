@@ -15,10 +15,12 @@ load_dotenv(dotenv_path=".env")
 import elasticsearch_test  # pyre-ignore
 
 from karp import create_app  # noqa: E402
+from karp import app
 from karp.database import db  # noqa: E402
 from karp.config import Config  # noqa: E402
 import karp.resourcemgr as resourcemgr  # noqa: E402
-import karp.indexmgr as indexmgr  # noqa: E402
+
+# import karp.indexmgr as indexmgr  # noqa: E402
 from karp.database import ResourceDefinition  # noqa: E402
 
 
@@ -149,7 +151,7 @@ def fixture_app_with_data_f(app_f):
                     resource, version = resourcemgr.create_new_resource_from_file(fp)
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        indexmgr.publish_index(resource, version)
+                        app.context.search_index.publish_index(resource, version)
         return app
 
     yield fun
@@ -168,7 +170,7 @@ def fixture_app_with_data_f_scope_module(app_f_scope_module):
                     resource, version = resourcemgr.create_new_resource_from_file(fp)
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        indexmgr.publish_index(resource, version)
+                        app.context.search_index.publish_index(resource, version)
         return app
 
     yield fun
@@ -187,7 +189,7 @@ def fixture_app_with_data_f_scope_session(app_f_scope_session):
                     resource, version = resourcemgr.create_new_resource(fp)
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        indexmgr.publish_index(resource, version)
+                        app.context.search_index.publish_index(resource, version)
         return app
 
     yield fun
