@@ -9,7 +9,7 @@ from flask import Blueprint, jsonify as flask_jsonify, request  # pyre-ignore
 
 from karp import resourcemgr
 
-from karp.app import context
+from karp.application import context
 import karp.auth.auth as auth
 from karp import errors
 
