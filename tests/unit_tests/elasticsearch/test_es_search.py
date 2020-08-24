@@ -3,8 +3,9 @@ from typing import List, Tuple
 
 import pytest
 
-from karp.elasticsearch import EsIndex, EsSearch
-from karp.elasticsearch.es_search import UnsupportedField
+from karp.domain.errors import UnsupportedField
+
+from karp.infrastructure.elasticsearch6.es_search_index import EsSearchIndex
 
 
 @pytest.fixture
@@ -405,8 +406,7 @@ def es_mock():
 
 
 def test_create_empty(es_mock):
-    es_index_mock = mock.Mock(spec=EsIndex)
-    es_search = EsSearch(es_mock, es_index_mock)
+    es_search = EsSearchIndex(es_mock)
 
     assert "nordicon" in es_search.analyzed_fields
     assert "places" in es_search.analyzed_fields
@@ -417,7 +417,7 @@ def test_create_empty(es_mock):
 
 
 def test_translate_sort_fields(es_mock):
-    es_search = EsSearch(es_mock, mock.Mock())
+    es_search = EsSearchIndex(es_mock)
 
     result = es_search.translate_sort_fields(["places"], ["name"])
 
@@ -427,7 +427,7 @@ def test_translate_sort_fields(es_mock):
 
 
 def test_translate_sort_fields_raises(es_mock):
-    es_search = EsSearch(es_mock, mock.Mock())
+    es_search = EsSearchIndex(es_mock)
 
     with pytest.raises(UnsupportedField):
         es_search.translate_sort_fields(["places"], ["v_larger_place"])
@@ -508,7 +508,7 @@ def test_parse_mapping_empty(
     expected_mappings: List[Tuple[str, List[str]]],
     expected_non_mappings: List[str],
 ):
-    sortable_map = EsSearch.create_sortable_map_from_mapping(properties)
+    sortable_map = EsSearchIndex.create_sortable_map_from_mapping(properties)
 
     for field, mapped_field in expected_mappings:
         assert field in sortable_map
