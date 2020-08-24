@@ -5,9 +5,7 @@ from karp.resourcemgr.entrymetadata import EntryMetadata
 from karp.util import convert as util_convert
 
 
-from . import errors
-
-
+from karp.domain import errors
 
 
 class SearchIndex:
@@ -50,6 +48,7 @@ class SearchIndex:
 
     def statistics(self, resource_id: str, field: str):
         raise NotImplementedError()
+
 
 T = TypeVar("T", bool, int, str, List[str])
 
