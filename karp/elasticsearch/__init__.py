@@ -13,4 +13,4 @@ def init_es(host):
         sniff_timeout=10,
     )
     es_search_index = EsSearchIndex(es)
-    app.config.init_search_index(es_search_index)
+    app.context.init_search_index(es_search_index)

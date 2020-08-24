@@ -1,4 +1,4 @@
-from karp.app.config import Config
+from karp.app.context import Context
 
 
-config = Config()
+context = Context()

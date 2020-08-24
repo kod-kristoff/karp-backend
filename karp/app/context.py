@@ -2,7 +2,7 @@ from typing import Optional
 from karp.domain.models.search_index import SearchIndex
 
 
-class Config:
+class Context:
     def __init__(self) -> None:
         self.search_index = None
 
