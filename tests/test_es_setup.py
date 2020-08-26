@@ -2,8 +2,8 @@ import json
 import urllib.request
 import urllib.parse
 import pytest  # pyre-ignore
-from karp import search
-from karp.elasticsearch import es_search
+
+from karp.infrastructure.elasticsearch6 import es_query
 
 entries = [
     {
@@ -82,7 +82,7 @@ def test_es_search2(es, client_with_data_f):
     with client_with_data.application.app_context():
         args = {"q": "equals|population|3"}
         query = search.build_query(args, "places,municipalities")
-        assert isinstance(query, es_search.EsQuery)
+        assert isinstance(query, es_query.EsQuery)
         query.split_results = True
         result = search.search_with_query(query)
         assert "hits" in result

@@ -11,9 +11,11 @@ dotenv.load_dotenv(".env", verbose=True)
 from .config import MariaDBConfig
 from karp import resourcemgr
 from karp.resourcemgr import entrywrite
-from karp import indexmgr
 from karp import database
 from karp.errors import KarpError, ResourceNotFoundError
+
+from karp.application import context
+from karp.domain.services import indexing
 
 
 _logger = logging.getLogger("karp")
@@ -150,7 +152,7 @@ def publish_resource(resource_id, version):
     if resource.active:
         click.echo("Resource already published")
     else:
-        indexmgr.publish_index(resource_id, version=version)
+        indexing.publish_index(context.search_index, resource_id, version=version)
         click.echo(
             "Successfully indexed and published all data in {resource_id}, version {version}".format(
                 resource_id=resource_id, version=version
@@ -165,7 +167,7 @@ def publish_resource(resource_id, version):
 def reindex_resource(resource_id):
     try:
         resource = resourcemgr.get_resource(resource_id)
-        indexmgr.publish_index(resource_id)
+        indexing.publish_index(context.search_index, resource_id)
         click.echo(
             "Successfully reindexed all data in {resource_id}, version {version}".format(
                 resource_id=resource_id, version=resource.version
@@ -184,7 +186,7 @@ def reindex_resource(resource_id):
 def pre_process_resource(resource_id, version, filename):
     resource = resourcemgr.get_resource(resource_id, version=version)
     with open(filename, "wb") as fp:
-        processed = indexmgr.pre_process_resource(resource)
+        processed = indexing.pre_process_resource(context.search_index, resource)
         pickle.dump(processed, fp)
 
 
@@ -199,7 +201,12 @@ def index_processed(resource_id, version, data):
         try:
             loaded_data = pickle.load(fp)
             resourcemgr.publish_resource(resource_id, version)
-            indexmgr.reindex(resource_id, version=version, search_entries=loaded_data)
+            indexing.reindex(
+                context.search_index,
+                resource_id,
+                version=version,
+                search_entries=loaded_data,
+            )
         except EOFError:
             click.echo("Something wrong with file")
 
@@ -213,7 +220,9 @@ def reindex_preprocessed(resource_id, data):
     with open(data, "rb") as fp:
         try:
             loaded_data = pickle.load(fp)
-            indexmgr.reindex(resource_id, search_entries=loaded_data)
+            indexing.reindex(
+                context.search_index, resource_id, search_entries=loaded_data
+            )
         except EOFError:
             click.echo("Something wrong with file")
 

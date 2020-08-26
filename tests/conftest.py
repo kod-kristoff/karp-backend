@@ -2,6 +2,7 @@
 """Pytest entry point."""
 from distutils.util import strtobool
 import json
+from karp.domain.services import indexing
 import os
 import time
 from typing import Dict
@@ -15,13 +16,15 @@ load_dotenv(dotenv_path=".env")
 import elasticsearch_test  # pyre-ignore
 
 from karp import create_app  # noqa: E402
-from karp import application
+from karp.application import context
 from karp.database import db  # noqa: E402
 from karp.config import Config  # noqa: E402
 import karp.resourcemgr as resourcemgr  # noqa: E402
 
 # import karp.indexmgr as indexmgr  # noqa: E402
 from karp.database import ResourceDefinition  # noqa: E402
+from karp.domain.services import indexing
+from karp.infrastructure.elasticsearch6 import es_search_index
 
 
 CONFIG_PLACES = """{
@@ -151,9 +154,7 @@ def fixture_app_with_data_f(app_f):
                     resource, version = resourcemgr.create_new_resource_from_file(fp)
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        application.context.search_index.publish_index(
-                            resource, version
-                        )
+                        indexing.publish_index(context.search_index, resource, version)
         return app
 
     yield fun
@@ -172,9 +173,7 @@ def fixture_app_with_data_f_scope_module(app_f_scope_module):
                     resource, version = resourcemgr.create_new_resource_from_file(fp)
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        application.context.search_index.publish_index(
-                            resource, version
-                        )
+                        indexing.publish_index(context.search_index, resource, version)
         return app
 
     yield fun
@@ -185,17 +184,21 @@ def fixture_app_with_data_f_scope_session(app_f_scope_session):
     def fun(**kwargs):
         app = next(app_f_scope_session(**kwargs))
         with app.app_context():
-            for file in [
+            for filename in [
                 "tests/data/config/places.json",
                 "tests/data/config/municipalities.json",
             ]:
-                with open(file) as fp:
+                with open(filename) as fp:
                     resource, version = resourcemgr.create_new_resource(fp)
+                    assert resource in filename
+                    assert version == 1
                     resourcemgr.setup_resource_class(resource, version)
                     if kwargs.get("use_elasticsearch", False):
-                        application.context.search_index.publish_index(
-                            resource, version
+                        assert context is not None
+                        assert isinstance(
+                            context.search_index, es_search_index.EsSearchIndex
                         )
+                        indexing.publish_index(context.search_index, resource, version)
         return app
 
     yield fun
@@ -400,11 +403,12 @@ def init(client, es_status_code, entries: Dict):
 
     for resource, _entries in entries.items():
         for entry in _entries:
-            client_with_data.post(
+            rv = client_with_data.post(
                 "{resource}/add".format(resource=resource),
                 data=json.dumps({"entry": entry}),
                 content_type="application/json",
             )
+            assert rv.status_code == 200
     return client_with_data
 
 

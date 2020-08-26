@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Union, List, Tuple, Dict
 
 import elasticsearch_dsl as es_dsl  # pyre-ignore

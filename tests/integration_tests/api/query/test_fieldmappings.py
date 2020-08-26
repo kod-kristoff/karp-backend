@@ -2,8 +2,8 @@ import pytest  # pyre-ignore
 
 from elasticsearch_dsl.query import Bool, Exists, Match, Range, Regexp  # pyre-ignore
 
-from karp import search
-from karp.elasticsearch.es_search import EsQuery
+from karp.application import context
+from karp.infrastructure.elasticsearch6.es_query import EsQuery
 
 from tests.utils import get_json
 
@@ -224,7 +224,7 @@ def test_build_query_field_mapping(
     args = {"sort": "shut up"}
     if query:
         args["q"] = query
-    q = search.build_query(args, resources)
+    q = context.search_index.build_query(args, resources)
 
     print("q = {q}".format(q=q))
     assert isinstance(q, EsQuery)

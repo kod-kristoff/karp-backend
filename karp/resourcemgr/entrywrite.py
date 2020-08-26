@@ -1,4 +1,5 @@
 import json
+from karp.infrastructure.elasticsearch6.es_search_index import logger
 import fastjsonschema  # pyre-ignore
 import logging
 from datetime import datetime, timezone
@@ -14,6 +15,8 @@ from karp.database import db
 import karp.indexmgr as indexmgr
 from .resource import Resource
 import karp.resourcemgr.entrymetadata as entrymetadata
+from karp.application import context
+from karp.domain.services import indexing
 
 _logger = logging.getLogger("karp")
 
@@ -93,7 +96,9 @@ def update_entry(
         entry, db_entry_json, resource.model, resource.config
     )
     if resource.active and str(kwargs["entry_id"]) != current_db_entry.entry_id:
-        indexmgr.delete_entry(resource_id, current_db_entry.entry_id)
+        indexing.delete_entry(
+            context.search_index, resource_id, current_db_entry.entry_id
+        )
     for key, value in kwargs.items():
         setattr(current_db_entry, key, value)
 
@@ -102,7 +107,8 @@ def update_entry(
 
     if resource.active:
         index_entry_json = _src_entry_to_index_entry(resource, entry)
-        indexmgr.add_entries(
+        indexing.add_entries(
+            context.search_index,
             resource_id,
             [
                 (
@@ -196,7 +202,10 @@ def add_entries(
         )
 
     if resource.active:
-        indexmgr.add_entries(
+        logger.warning("About to add entries to index")
+        assert type(context.search_index) == "EsSearchIndex"
+        indexing.add_entries(
+            context.search_index,
             resource_id,
             [
                 (
@@ -207,6 +216,8 @@ def add_entries(
                 for db_entry, entry, history_entry in created_history_entries
             ],
         )
+    else:
+        logger.warning("Resource '%s' is not active", resource_id)
 
     return [db_entry.entry_id for db_entry, _, _ in created_db_entries]
 
@@ -255,15 +266,15 @@ def delete_entry(resource_id: str, entry_id: str, user_id: str):
     )
     db.session.add(history_entry)
     db.session.commit()
-    indexmgr.delete_entry(resource_id, entry.entry_id)
+    indexing.delete_entry(context.search_index, resource_id, entry.entry_id)
 
 
 def _src_entry_to_index_entry(resource: Resource, src_entry: Dict):
     """
     Make a "src entry" into an "index entry"
     """
-    return indexmgr.transform_to_index_entry(
-        resource, src_entry, resource.config["fields"].items()
+    return indexing.transform_to_index_entry(
+        context.search_index, resource, src_entry, resource.config["fields"].items()
     )
 
 
