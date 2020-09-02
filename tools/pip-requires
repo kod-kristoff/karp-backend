@@ -17,3 +17,9 @@ python-dotenv
 flask-reverse-proxy
 sqlalchemy-json
 sqlalchemy-utils
+fastapi
+starlette
+pydantic
+uvicorn
+aiosqlite
+
