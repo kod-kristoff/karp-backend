@@ -1,7 +1,7 @@
 flask
 sqlalchemy
-flask-sqlalchemy
-# mysqlclient
+#flask-sqlalchemy
+mysqlclient
 gunicorn
 click
 fastjsonschema
