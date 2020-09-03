@@ -1,5 +1,7 @@
 """Schemas used by the app."""
 from enum import Enum
+
+# from karp.application.services.system_monitor import SystemMonitorResponse
 from typing import Optional
 
 from pydantic import BaseModel, UUID4, Json
@@ -30,3 +32,7 @@ class Resource(ResourceBase):
 
     class Config:
         orm_mode = True
+
+
+class SystemMonitorResponse(BaseModel):
+    database: str

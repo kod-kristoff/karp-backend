@@ -1,3 +1,4 @@
 def test_healthz(client):
     response = client.get("/healthz")
-    assert response.status == "200 OK"
+    assert response.status_code == 200
+    assert "database" in response.json()

@@ -1,7 +1,40 @@
-from typing import Optional
+"""Database access"""
+import logging
+from typing import Dict, Optional
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from pydantic import BaseModel
+
 from karp import models
+
+logger = logging.getLogger("karp")
+
+
+class SystemResponse(BaseModel):
+    message: str = "ok"
+
+    def __bool__(self):
+        return True
+
+
+class SystemOk(SystemResponse):
+    pass
+
+
+class SystemNotOk(SystemResponse):
+    def __bool__(self):
+        return False
+
+
+def check_database_status(db: Session) -> SystemResponse:
+    try:
+        db.execute("SELECT 1")
+        return SystemOk()
+    except SQLAlchemyError as e:
+        logger.exception(e)
+        return SystemNotOk(message=str(e))
 
 
 def get_latest_resource_by_resource_id(
