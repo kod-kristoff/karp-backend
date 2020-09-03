@@ -68,7 +68,8 @@ lint-syntax-errors: install-dev
 	${INVENV} flake8 karp tests setup.py run.py cli.py --count --select=E9,F63,F7,F82 --show-source --statistics ${FLAKE8_FLAGS}
 
 test: install-dev clean-pyc
-	${INVENV} pytest -vv tests/unit_tests
+	# ${INVENV} pytest -vv tests/unit_tests
+	${INVENV} pytest -vv tests/fastapi
 
 test-w-coverage: install-dev clean-pyc
 	${INVENV} pytest -vv --cov-config=setup.cfg --cov=karp --cov-report=term-missing tests
