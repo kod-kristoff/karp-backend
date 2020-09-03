@@ -1,15 +1,22 @@
 import json
-from flask import Blueprint  # pyre-ignore
-from flask import jsonify as flask_jsonify  # pyre-ignore
+from typing import List
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-import karp.resourcemgr as resourcemgr
+from karp.fastapi_app.utilities import get_db
+from karp import crud, schemas
 
-conf_api = Blueprint("conf_api", __name__)
+# from flask import Blueprint  # pyre-ignore
+# from flask import jsonify as flask_jsonify  # pyre-ignore
+
+# import karp.resourcemgr as resourcemgr
+
+router = APIRouter()
 
 
-@conf_api.route("/resources", methods=["GET"])
-def get_resources():
-    resources = resourcemgr.get_available_resources()
+@router.get("/resources", response_model=List[schemas.ResourceOut])
+def get_resources(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    resources = crud.get_resources(db, skip=skip, limit=limit)
     result = []
     for resource in resources:
         resource_obj = {"resource_id": resource.resource_id}
@@ -29,4 +36,8 @@ def get_resources():
             resource_obj["protected"] = protected
         result.append(resource_obj)
 
-    return flask_jsonify(result)
+    return result
+
+
+def init_app(app):
+    app.include_router(router, tags=["config"])

@@ -421,7 +421,7 @@ from karp.fastapi_app import main as fastapi_main
 
 
 @pytest.fixture
-def fastapi_client():
+def client():
     alembic_main(["--raiseerr", "upgrade", "head"])
 
     with TestClient(fastapi_main.create_app()) as client:
