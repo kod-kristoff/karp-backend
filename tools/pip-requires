@@ -1,6 +1,6 @@
 flask
 sqlalchemy
-flask-sqlalchemy
+# flask-sqlalchemy
 mysqlclient
 gunicorn
 click
