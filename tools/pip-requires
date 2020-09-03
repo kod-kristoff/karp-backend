@@ -18,7 +18,7 @@ flask-reverse-proxy
 sqlalchemy-json
 sqlalchemy-utils
 fastapi
-starlette
+#starlette
 pydantic
 uvicorn
 aiosqlite
