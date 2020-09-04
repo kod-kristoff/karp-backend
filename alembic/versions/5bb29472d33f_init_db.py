@@ -17,6 +17,22 @@ depends_on = None
 
 
 def upgrade():
+    print("upgrade called.")
+    op.create_table(
+        "resources",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("resource_id", sa.String(length=30), nullable=False),
+        sa.Column("version", sa.Integer(), nullable=True),
+        sa.Column("timestamp", sa.Float(), nullable=False),
+        sa.Column("config_file", sa.Text(), nullable=False),
+        sa.Column("entry_json_schema", sa.Text(), nullable=False),
+        sa.Column("active", sa.Boolean(), nullable=True),
+        sa.Column("deleted", sa.Boolean(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "resource_id", "version", name="resource_version_unique_constraint"
+        ),
+    )
     op.create_table(
         "dummy_entry",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -39,21 +55,6 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "entry_id", "version", name="entry_id_version_unique_constraint"
-        ),
-    )
-    op.create_table(
-        "resource_definition",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("resource_id", sa.String(length=30), nullable=False),
-        sa.Column("version", sa.Integer(), nullable=True),
-        sa.Column("timestamp", sa.Float(), nullable=False),
-        sa.Column("config_file", sa.Text(), nullable=False),
-        sa.Column("entry_json_schema", sa.Text(), nullable=False),
-        sa.Column("active", sa.Boolean(), nullable=True),
-        sa.Column("deleted", sa.Boolean(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "resource_id", "version", name="resource_version_unique_constraint"
         ),
     )
 

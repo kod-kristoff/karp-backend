@@ -17,4 +17,4 @@ python-dotenv
 flask-reverse-proxy
 fastapi
 uvicorn
-
+pydantic

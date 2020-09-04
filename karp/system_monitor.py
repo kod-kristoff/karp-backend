@@ -1,17 +1,27 @@
-from typing import Tuple
+"""System monitor."""
+import logging
 
-from karp.database import db
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from karp import schemas
+
+logger = logging.getLogger("karp")
 
 
-def check_database_status() -> Tuple[bool, str]:
-    is_database_working = True
-    output = "database is ok"
+def check_database_status(db: Session) -> schemas.SystemResponse:
+    """Check database status.
 
+    Args:
+        db (Session): the session to use
+
+    Returns:
+        schemas.SystemResponse: the response
+    """
     try:
         # to check database we will execute raw query
-        db.engine.execute("SELECT 1")
-    except Exception as e:
-        output = str(e)
-        is_database_working = False
-
-    return is_database_working, output
+        db.execute("SELECT 1")
+        return schemas.SystemOk()
+    except SQLAlchemyError as e:
+        logger.exception(e)
+        return schemas.SystemNotOk(message=str(e))
