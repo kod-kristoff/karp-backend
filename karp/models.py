@@ -1,21 +1,13 @@
-from typing import Optional
-
-from flask_sqlalchemy import SQLAlchemy  # as _BaseSQLAlchemy  # pyre-ignore
-from sqlalchemy.sql import func  # pyre-ignore
+import sqlalchemy as db
 from sqlalchemy.ext.declarative import declared_attr  # pyre-ignore
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func  # pyre-ignore
 
 
-# class SQLAlchemy(_BaseSQLAlchemy):
-
-#     def apply_pool_defaults(self, app, options):
-#         super(SQLAlchemy, self).apply_pool_defaults(app, options)
-#         # options['echo'] = True
+from karp.database import Base, engine
 
 
-db = SQLAlchemy()
-
-
-class ResourceDefinition(db.Model):
+class ResourceDefinition(Base):
     id = db.Column(db.Integer, primary_key=True)
     resource_id = db.Column(db.String(30), nullable=False)
     version = db.Column(db.Integer)
@@ -53,7 +45,7 @@ class BaseEntry:
     deleted = db.Column(db.Boolean, default=False)
 
 
-class DummyEntry(db.Model, BaseEntry):
+class DummyEntry(Base, BaseEntry):
     """
     This table is created so that Alembic can help us autodetect what changes have been made to
     the concrete resource tables (s.a. places_1)
@@ -81,11 +73,11 @@ class BaseHistory:
         )
 
 
-class DummyHistory(db.Model, BaseHistory):
+class DummyHistory(Base, BaseHistory):
     """
-        This table is created so that Alembic can help us autodetect what changes have been made to
-        the concrete resource history tables (s.a. places_1_history)
-        """
+    This table is created so that Alembic can help us autodetect what changes have been made to
+    the concrete resource history tables (s.a. places_1_history)
+    """
 
     pass
 
@@ -106,42 +98,17 @@ def get_or_create_history_model(resource_id, version):
         "__table_args__": (foreign_key_constraint,) + BaseHistory.__table_args__,
     }
 
-    sqlalchemy_class = type(history_table_name, (db.Model, BaseHistory,), attributes)
+    sqlalchemy_class = type(
+        history_table_name,
+        (
+            Base,
+            BaseHistory,
+        ),
+        attributes,
+    )
     class_cache[history_table_name] = sqlalchemy_class
 
     return sqlalchemy_class
-
-
-def get_latest_resource_definition(id: str) -> Optional[ResourceDefinition]:
-    return (
-        ResourceDefinition.query.filter_by(resource_id=id)
-        .order_by(ResourceDefinition.version.desc())
-        .first()
-    )
-
-
-def get_resource_definition(id: str, version: int) -> Optional[ResourceDefinition]:
-    return ResourceDefinition.query.filter_by(resource_id=id, version=version).first()
-
-
-def get_active_resource_definition(id: str) -> Optional[ResourceDefinition]:
-    return ResourceDefinition.query.filter_by(resource_id=id, active=True).first()
-
-
-def get_active_or_latest_resource_definition(id: str) -> Optional[ResourceDefinition]:
-    rd = get_active_resource_definition(id)
-    if not rd:
-        rd = get_latest_resource_definition(id)
-    return rd
-
-
-def get_next_resource_version(id: str) -> int:
-    latest_resource = get_latest_resource_definition(id)
-
-    if latest_resource:
-        return latest_resource.version + 1
-    else:
-        return 1
 
 
 class_cache = {}
@@ -153,7 +120,7 @@ def get_or_create_resource_model(config, version):
     if table_name in class_cache:
         return class_cache[table_name]
     else:
-        if db.engine.driver == "pysqlite":
+        if engine.driver == "pysqlite":
             ref_column = db.Unicode(100)
         else:
             ref_column = db.Unicode(100, collation="utf8_bin")
@@ -182,7 +149,7 @@ def get_or_create_resource_model(config, version):
                 attributes[field_name] = db.Column(column_type)
             else:
                 child_table_name = table_name + "_" + field_name
-                attributes[field_name] = db.relationship(
+                attributes[field_name] = relationship(
                     child_table_name,
                     backref=table_name,
                     cascade="save-update, merge,delete, delete-orphan",
@@ -207,10 +174,17 @@ def get_or_create_resource_model(config, version):
                 else:
                     raise NotImplementedError()
                 child_attributes[field_name] = db.Column(child_db_column_type)
-                child_class = type(child_table_name, (db.Model,), child_attributes)
+                child_class = type(child_table_name, (Base,), child_attributes)
                 child_tables[field_name] = child_class
 
-        sqlalchemy_class = type(resource_id, (db.Model, BaseEntry,), attributes)
+        sqlalchemy_class = type(
+            resource_id,
+            (
+                Base,
+                BaseEntry,
+            ),
+            attributes,
+        )
         sqlalchemy_class.child_tables = child_tables
 
         class_cache[table_name] = sqlalchemy_class
