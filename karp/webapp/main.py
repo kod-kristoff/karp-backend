@@ -13,7 +13,7 @@ __version__ = "0.8.1"
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Karp TNG backend", redoc_url="/", version=__version__)
+    app = FastAPI(title="Karp API", redoc_url="/", version=__version__)
 
     load_modules(app)
     return app
