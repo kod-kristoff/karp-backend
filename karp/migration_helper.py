@@ -1,18 +1,26 @@
-from karp.database import ResourceDefinition
-from karp import create_app
-from karp.config import MariaDBConfig
+import logging
+from typing import List, Tuple
 
-app = create_app(MariaDBConfig(setup_database=False))
+from karp import models
+from karp.database import SessionLocal
 
-with app.app_context():
+
+logger = logging.getLogger("karp")
+
+
+def find_tables() -> Tuple[List[str], List[str]]:
+    db = SessionLocal()
+    entry_tables = []
+    history_tables = []
     try:
-        entry_tables = [
-            resource.resource_id + "_" + str(resource.version)
-            for resource in ResourceDefinition.query.all()
-        ]
-        history_tables = [table_name + "_history" for table_name in entry_tables]
-    except Exception:
-        entry_tables = []
-        history_tables = []
+        for resource in db.query(models.ResourceDefinition).all():
+            entry_table_name = f"{resource.resource_id}_{resource.version}"
+            entry_tables.append(entry_table_name)
+            history_tables.append(entry_table_name + "_history")
+        return entry_tables, history_tables
+    except Exception as e:
+        logger.exception(e)
+        return [], []
 
-database_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+
+entry_tables, history_tables = find_tables()

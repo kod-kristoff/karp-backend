@@ -8,10 +8,11 @@ from karp.database import Base, engine
 
 
 class ResourceDefinition(Base):
+    __tablename__ = "resources"
     id = db.Column(db.Integer, primary_key=True)
     resource_id = db.Column(db.String(30), nullable=False)
     version = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    timestamp = db.Column(db.Float, nullable=False, server_default=func.now())
     config_file = db.Column(db.Text, nullable=False)
     entry_json_schema = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=False)
@@ -51,14 +52,14 @@ class DummyEntry(Base, BaseEntry):
     the concrete resource tables (s.a. places_1)
     """
 
-    pass
+    __tablename__ = "dummy_entry"
 
 
 class BaseHistory:
     id = db.Column(db.Integer, primary_key=True)
     entry_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.Float, nullable=False)
     body = db.Column(db.Text)
     op = db.Column(db.Enum("ADD", "DELETE", "UPDATE"), nullable=False)
     version = db.Column(db.Integer, nullable=False)
@@ -79,7 +80,7 @@ class DummyHistory(Base, BaseHistory):
     the concrete resource history tables (s.a. places_1_history)
     """
 
-    pass
+    __tablename__ = "dummy_history"
 
 
 def get_or_create_history_model(resource_id, version):

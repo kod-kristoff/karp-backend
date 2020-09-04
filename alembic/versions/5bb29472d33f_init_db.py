@@ -31,9 +31,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("entry_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Text(), nullable=False),
-        sa.Column(
-            "timestamp", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("timestamp", sa.Float(), nullable=False),
         sa.Column("body", sa.Text(), nullable=True),
         sa.Column("op", sa.Enum("ADD", "DELETE", "UPDATE"), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False),
@@ -48,9 +46,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("resource_id", sa.String(length=30), nullable=False),
         sa.Column("version", sa.Integer(), nullable=True),
-        sa.Column(
-            "timestamp", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("timestamp", sa.Float(), nullable=False),
         sa.Column("config_file", sa.Text(), nullable=False),
         sa.Column("entry_json_schema", sa.Text(), nullable=False),
         sa.Column("active", sa.Boolean(), nullable=True),

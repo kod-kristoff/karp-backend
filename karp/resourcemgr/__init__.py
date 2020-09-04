@@ -5,6 +5,7 @@ import collections
 import os
 import re
 
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 import fastjsonschema  # pyre-ignore
@@ -12,8 +13,10 @@ import fastjsonschema  # pyre-ignore
 from sb_json_tools import jsondiff
 
 from karp import get_resource_string
-from karp.database import db
-from karp import database
+
+# from karp.database import db
+from karp import models, crud
+from karp.database import engine as db_engine
 from karp.util.json_schema import create_entry_json_schema
 from karp.errors import KarpError
 from karp.errors import ClientErrorCodes
@@ -35,21 +38,23 @@ resource_versions = {}  # Dict[str, int]
 field_translations = {}  # Dict[str, Dict[str, List[str]]]
 
 
-def get_available_resources() -> List[database.ResourceDefinition]:
-    return database.ResourceDefinition.query.filter_by(active=True)
+def get_available_resources(db: Session) -> List[models.ResourceDefinition]:
+    return db.query(models.ResourceDefinition).filter_by(active=True)
 
 
 def get_field_translations(resource_id) -> Optional[Dict]:
     return field_translations.get(resource_id)
 
 
-def get_resource(resource_id: str, version: Optional[int] = None) -> Resource:
+def get_resource(
+    db: Session, resource_id: str, version: Optional[int] = None
+) -> Resource:
     if not version:
-        resource_def = database.get_active_resource_definition(resource_id)
+        resource_def = crud.get_active_resource_definition(db, resource_id)
         if not resource_def:
             raise ResourceNotFoundError(resource_id)
         if resource_id not in resource_models:
-            setup_resource_class(resource_id)
+            setup_resource_class(db, resource_id)
         return Resource(
             model=resource_models[resource_id],
             history_model=history_models[resource_id],
@@ -58,12 +63,12 @@ def get_resource(resource_id: str, version: Optional[int] = None) -> Resource:
             config=resource_configs[resource_id],
         )
     else:
-        resource_def = database.get_resource_definition(resource_id, version)
+        resource_def = crud.get_resource_definition(db, resource_id, version)
         if not resource_def:
             raise ResourceNotFoundError(resource_id, version=version)
         config = json.loads(resource_def.config_file)
-        cls = database.get_or_create_resource_model(config, version)
-        history_cls = database.get_or_create_history_model(resource_id, version)
+        cls = models.get_or_create_resource_model(config, version)
+        history_cls = models.get_or_create_history_model(resource_id, version)
         return Resource(
             model=cls,
             history_model=history_cls,
@@ -73,13 +78,13 @@ def get_resource(resource_id: str, version: Optional[int] = None) -> Resource:
         )
 
 
-def get_all_resources() -> List[database.ResourceDefinition]:
-    return database.ResourceDefinition.query.all()
+def get_all_resources(db: Session) -> List[models.ResourceDefinition]:
+    return db.query(models.ResourceDefinition).all()
 
 
-def check_resource_published(resource_ids: List[str]) -> None:
+def check_resource_published(db: Session, resource_ids: List[str]) -> None:
     published_resources = [
-        resource_def.resource_id for resource_def in get_available_resources()
+        resource_def.resource_id for resource_def in get_available_resources(db)
     ]
     for resource_id in resource_ids:
         if resource_id not in published_resources:
@@ -92,8 +97,8 @@ def check_resource_published(resource_ids: List[str]) -> None:
 
 
 def create_and_update_caches(id: str, version: int, config: Dict) -> None:
-    resource_models[id] = database.get_or_create_resource_model(config, version)
-    history_models[id] = database.get_or_create_history_model(id, version)
+    resource_models[id] = models.get_or_create_resource_model(config, version)
+    history_models[id] = models.get_or_create_history_model(id, version)
     resource_versions[id] = version
     resource_configs[id] = config
     if "field_mapping" in config:
@@ -109,17 +114,17 @@ def remove_from_caches(id: str) -> None:
         del field_translations[id]
 
 
-def setup_resource_classes() -> None:
-    for resource in get_available_resources():
+def setup_resource_classes(db: Session) -> None:
+    for resource in get_available_resources(db):
         config = json.loads(resource.config_file)
         create_and_update_caches(config["resource_id"], resource.version, config)
 
 
-def setup_resource_class(resource_id, version=None):
+def setup_resource_class(db: Session, resource_id, version=None):
     if version:
-        resource_def = database.get_resource_definition(resource_id, version)
+        resource_def = crud.get_resource_definition(db, resource_id, version)
     else:
-        resource_def = database.get_active_resource_definition(resource_id)
+        resource_def = crud.get_active_resource_definition(db, resource_id)
     if not resource_def:
         raise ResourceNotFoundError(resource_id, version)
     config = json.loads(resource_def.config_file)
@@ -142,24 +147,28 @@ def create_new_resource_from_dir(config_dir: str) -> List[Tuple[str, int]]:
     return _read_and_process_resources_from_dir(config_dir, create_new_resource)
 
 
-def create_new_resource_from_file(config_file: BinaryIO) -> Tuple[str, int]:
-    return create_new_resource(config_file)
+def create_new_resource_from_file(
+    db: Session, config_file: BinaryIO
+) -> Tuple[str, int]:
+    return create_new_resource(db, config_file)
 
 
 def update_resource_from_dir(config_dir: str) -> List[Tuple[str, int]]:
     return _read_and_process_resources_from_dir(config_dir, update_resource)
 
 
-def update_resource_from_file(config_file: BinaryIO) -> Tuple[str, int]:
-    return update_resource(config_file)
+def update_resource_from_file(db: Session, config_file: BinaryIO) -> Tuple[str, int]:
+    return update_resource(db, config_file)
 
 
-def create_new_resource(config_file: BinaryIO, config_dir=None) -> Tuple[str, int]:
+def create_new_resource(
+    db: Session, config_file: BinaryIO, config_dir=None
+) -> Tuple[str, int]:
     config = load_and_validate_config(config_file)
 
     resource_id = config["resource_id"]
 
-    version = database.get_next_resource_version(resource_id)
+    version = crud.get_next_resource_version(db, resource_id)
 
     entry_json_schema = create_entry_json_schema(config)
 
@@ -172,16 +181,16 @@ def create_new_resource(config_file: BinaryIO, config_dir=None) -> Tuple[str, in
         "entry_json_schema": json.dumps(entry_json_schema),
     }
 
-    new_resource = database.ResourceDefinition(**resource)
-    db.session.add(new_resource)
-    db.session.commit()
+    new_resource = models.ResourceDefinition(**resource)
+    db.add(new_resource)
+    db.commit()
 
-    sqlalchemyclass = database.get_or_create_resource_model(config, version)
-    history_model = database.get_or_create_history_model(resource_id, version)
-    sqlalchemyclass.__table__.create(bind=db.engine)
+    sqlalchemyclass = models.get_or_create_resource_model(config, version)
+    history_model = models.get_or_create_history_model(resource_id, version)
+    sqlalchemyclass.__table__.create(bind=db_engine)
     for child_class in sqlalchemyclass.child_tables.values():
-        child_class.__table__.create(bind=db.engine)
-    history_model.__table__.create(bind=db.engine)
+        child_class.__table__.create(bind=db_engine)
+    history_model.__table__.create(bind=db_engine)
 
     return resource["resource_id"], resource["version"]
 
@@ -214,13 +223,15 @@ def load_plugins_to_config(config: Dict, version, config_dir) -> Dict:
     return config
 
 
-def update_resource(config_file: BinaryIO, config_dir=None) -> Tuple[str, int]:
+def update_resource(
+    db: Session, config_file: BinaryIO, config_dir=None
+) -> Tuple[str, Optional[int]]:
     config = load_and_validate_config(config_file)
 
     resource_id = config["resource_id"]
     entry_json_schema = create_entry_json_schema(config)
 
-    resource_def = database.get_active_or_latest_resource_definition(resource_id)
+    resource_def = crud.get_active_or_latest_resource_definition(db, resource_id)
     if not resource_def:
         raise RuntimeError(
             "Could not find a resource_definition with id '{resource_id}".format(
@@ -293,64 +304,66 @@ def update_resource(config_file: BinaryIO, config_dir=None) -> Tuple[str, int]:
     resource_def.config_file = json.dumps(config)
     resource_def.entry_json_schema = json.dumps(entry_json_schema)
     # db.session.update(resource_def)
-    db.session.commit()
+    db.commit()
     if resource_def.active:
         create_and_update_caches(resource_id, resource_def.version, config)
 
     return resource_id, resource_def.version
 
 
-def publish_resource(resource_id, version):
-    resource = database.get_resource_definition(resource_id, version)
-    old_active = database.get_active_resource_definition(resource_id)
+def publish_resource(db: Session, resource_id, version):
+    resource = crud.get_resource_definition(db, resource_id, version)
+    old_active = crud.get_active_resource_definition(db, resource_id)
     if old_active:
         old_active.active = False
     resource.active = True
-    db.session.commit()
+    db.commit()
 
     config = json.loads(resource.config_file)
     # this stuff doesn't matter right now since we are not modifying the state of the actual app, only the CLI
     create_and_update_caches(resource_id, resource.version, config)
 
 
-def unpublish_resource(resource_id):
-    resource = database.get_active_resource_definition(resource_id)
+def unpublish_resource(db: Session, resource_id):
+    resource = crud.get_active_resource_definition(db, resource_id)
     if resource:
         resource.active = False
-        db.session.update(resource)
-        db.session.commit()
+        db.update(resource)
+        db.commit()
     remove_from_caches(resource_id)
 
 
-def delete_resource(resource_id, version):
-    resource = database.get_resource_definition(resource_id, version)
+def delete_resource(db: Session, resource_id, version):
+    resource = crud.get_resource_definition(db, resource_id, version)
     resource.deleted = True
     resource.active = False
-    db.session.update(resource)
-    db.session.commit()
+    db.update(resource)
+    db.commit()
 
 
-def set_permissions(resource_id: str, version: int, permissions: Dict[str, bool]):
-    resource_def = database.get_resource_definition(resource_id, version)
+def set_permissions(
+    db: Session, resource_id: str, version: int, permissions: Dict[str, bool]
+):
+    resource_def = crud.get_resource_definition(db, resource_id, version)
     config = json.loads(resource_def.config_file)
     config["protected"] = permissions
     resource_def.config_file = json.dumps(config)
     # db.session.update(resource_def)
-    db.session.commit()
+    db.commit()
 
 
-def get_refs(resource_id, version=None):
+def get_refs(db: Session, resource_id, version=None):
     """
     Goes through all other resource configs finding resources and fields that refer to this resource
     """
     resource_backrefs = collections.defaultdict(lambda: collections.defaultdict(dict))
     resource_refs = collections.defaultdict(lambda: collections.defaultdict(dict))
 
-    src_resource = get_resource(resource_id, version=version)
+    src_resource = get_resource(db, resource_id, version=version)
 
     all_other_resources = [
         resource_def
-        for resource_def in get_available_resources()
+        for resource_def in get_available_resources(db)
         if resource_def.resource_id != resource_id or resource_def.version != version
     ]
 
@@ -375,7 +388,7 @@ def get_refs(resource_id, version=None):
 
     for resource_def in all_other_resources:
         other_resource = get_resource(
-            resource_def.resource_id, version=resource_def.version
+            db, resource_def.resource_id, version=resource_def.version
         )
         for field_name, field in other_resource.config["fields"].items():
             ref = field.get("ref")
@@ -399,18 +412,18 @@ def get_refs(resource_id, version=None):
     return flatten_dict(resource_refs), flatten_dict(resource_backrefs)
 
 
-def is_protected(resource_id, level):
+def is_protected(db: Session, resource_id, level):
     """
     Level can be READ, WRITE or ADMIN
     """
-    resource = get_resource(resource_id)
+    resource = get_resource(db, resource_id)
     protection = resource.config.get("protected", {})
     return level == "WRITE" or level == "ADMIN" or protection.get("read")
 
 
-def get_all_metadata(resource_obj: Resource) -> Dict[str, EntryMetadata]:
+def get_all_metadata(db: Session, resource_obj: Resource) -> Dict[str, EntryMetadata]:
     history_table = resource_obj.history_model
-    result = db.session.query(
+    result = db.query(
         history_table.entry_id,
         history_table.user_id,
         history_table.timestamp,
@@ -423,10 +436,10 @@ def get_all_metadata(resource_obj: Resource) -> Dict[str, EntryMetadata]:
     return result_
 
 
-def get_metadata(resource_def: Resource, _id: int) -> EntryMetadata:
+def get_metadata(db: Session, resource_def: Resource, _id: int) -> EntryMetadata:
     history_table = resource_def.history_model
     result = (
-        db.session.query(
+        db.query(
             history_table.user_id,
             history_table.timestamp,
             func.max(history_table.version),
