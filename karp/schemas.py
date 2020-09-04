@@ -19,3 +19,11 @@ class SystemNotOk(SystemResponse):
 
 class SystemMonitorResponse(BaseModel):
     database: str
+
+
+class EntryCreated(BaseModel):
+    newID: str
+
+
+class Entry(BaseModel):
+    message: str

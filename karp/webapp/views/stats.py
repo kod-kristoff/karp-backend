@@ -1,12 +1,19 @@
-from flask import Blueprint, jsonify  # pyre-ignore
+from fastapi import APIRouter, Response, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from karp.application import context
 import karp.auth.auth as auth
 
-stats_api = Blueprint("stats_api", __name__)
+router = APIRouter()
+
+auth_scheme = HTTPBearer()
 
 
-@stats_api.route("/<resource_id>/stats/<field>", methods=["GET"])
+@router.get("/<resource_id>/stats/<field>")
 @auth.auth.authorization("READ")
-def get_field_values(resource_id: str, field: str):
-    return jsonify(context.search_index.statistics(resource_id, field))
+def get_field_values(resource_id: str, field: str, user: ):
+    return context.search_index.statistics(resource_id, field)
+
+
+def init_app(app):
+    app.include_router(router, tags="stats")

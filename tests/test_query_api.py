@@ -6,7 +6,7 @@ import pytest  # pyre-ignore
 # import time
 
 
-from tests.conftest import PLACES as ENTRIES
+from tests.common_data import PLACES as ENTRIES
 from tests.utils import get_json
 
 

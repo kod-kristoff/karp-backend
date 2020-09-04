@@ -26,6 +26,15 @@ DB_URL = config(
     ),
 )
 
+LOG_TO_SLACK = config("LOG_TO_SLACK", cast=bool, default=False)
+SLACK_SECRET = config("SLACK_SECRET", cast=Secret, default=None)
+
+
+def get_logging_level(level: str):
+    return getattr(logging, level)
+
+
+LOG_LEVEL = config("LOG_LEVEL", cast=get_logging_level, default="INFO")
 # MYSQL_FORMAT = "mysql://{user}:{passwd}@{dbhost}/{dbname}"
 
 
