@@ -2,7 +2,7 @@
 import collections
 from typing import Callable, Dict, Set
 
-from karp.domain.model.events import DomainEvent
+from karp.domain.models.events import DomainEvent
 
 EventPredicate = Callable[[DomainEvent], bool]
 EventSubscriber = Callable[[DomainEvent], None]
@@ -14,27 +14,16 @@ class EventHandler:
     def __init__(self):
         self._event_handlers = collections.defaultdict(set)
 
-    def subscribe(
-        self,
-        predicate: EventPredicate,
-        subscriber: EventSubscriber
-    ):
+    def subscribe(self, predicate: EventPredicate, subscriber: EventSubscriber):
         self._event_handlers[predicate].add(subscriber)
 
-    def unsubscribe(
-        self,
-        predicate: EventPredicate,
-        subscriber: EventSubscriber
-    ):
+    def unsubscribe(self, predicate: EventPredicate, subscriber: EventSubscriber):
         if predicate in self._event_handlers:
             self._event_handlers[predicate].discard(subscriber)
             if len(self._event_handlers[predicate]) == 0:
                 del self._event_handlers[predicate]
 
-    def unsubscribe_all(
-        self,
-        subscriber: EventSubscriber
-    ):
+    def unsubscribe_all(self, subscriber: EventSubscriber):
         predicates_for_removal = []
         for predicate, subscribers in self._event_handlers.items():
             subscribers.discard(subscriber)

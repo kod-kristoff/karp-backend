@@ -4,7 +4,7 @@ from flask import request  # pyre-ignore
 
 from karp.resourcemgr import entrywrite
 from karp.errors import KarpError
-from karp.domain.model.user import User
+from karp.domain.models.user import User
 import karp.domain.services.auth.auth as auth
 from karp.util import convert
 
@@ -52,7 +52,7 @@ def delete_entry(user: User, resource_id: str, entry_id: str):
     """Delete a entry from a resource.
 
     Arguments:
-        user {karp.domain.model.user.User} -- [description]
+        user {karp.domain.models.user.User} -- [description]
         resource_id {str} -- [description]
         entry_id {str} -- [description]
 

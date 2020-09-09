@@ -1,7 +1,7 @@
 # from functools import singledispatch
 
 # from karp.application.config import Config
-from karp.domain.model.resource import ResourceRepository
+from karp.domain.models.resource import ResourceRepository
 
 from karp.domain.services.auth.auth import Auth
 from karp.domain.services.search import SearchService

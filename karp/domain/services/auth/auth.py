@@ -2,7 +2,7 @@ import abc
 import functools
 from flask import request  # pyre-ignore
 
-from karp.domain.model.user import User
+from karp.domain.models.user import User
 from karp.domain.services.auth.authenticator import Authenticator
 from karp.errors import KarpError, ClientErrorCodes
 

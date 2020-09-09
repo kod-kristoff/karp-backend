@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple, Dict
 from uuid import UUID
 
 from karp.domain.errors import RepositoryStatusError
-from karp.domain.model.resource import (
+from karp.domain.models.resource import (
     Resource,
     ResourceOp,
     ResourceRepository,

@@ -6,10 +6,10 @@ from typing import Dict, Any, Optional, List
 
 from karp.domain import constraints
 from karp.domain.errors import ConfigurationError, RepositoryStatusError
-from karp.domain.model import event_handler
-from karp.domain.model.entity import Entity, TimestampedVersionedEntity
-from karp.domain.model.entry import EntryRepository
-from karp.domain.model.events import DomainEvent
+from karp.domain.models import event_handler
+from karp.domain.models.entity import Entity, TimestampedVersionedEntity
+from karp.domain.models.entry import EntryRepository
+from karp.domain.models.events import DomainEvent
 from karp.utility import unique_id
 
 

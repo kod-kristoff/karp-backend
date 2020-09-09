@@ -1,13 +1,12 @@
 from uuid import UUID
 from typing import Dict
 
-from karp.domain.model.entry import EntryRepository
-from karp.domain.model.resource import Resource
+from karp.domain.models.entry import EntryRepository
+from karp.domain.models.resource import Resource
 
 
 class LexicalResource(Resource, resource_type="lexical_resource"):
-    """Model for a lexical resource.
-    """
+    """Model for a lexical resource."""
 
     def __init__(self, *args, entry_repository: EntryRepository = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,8 +37,10 @@ class LexicalResource(Resource, resource_type="lexical_resource"):
                 )
 
                 if entry_respository_settings is None:
-                    entry_respository_settings = EntryRepository.create_repository_settings(
-                        config["entry_repository_type"], resource_id
+                    entry_respository_settings = (
+                        EntryRepository.create_repository_settings(
+                            config["entry_repository_type"], resource_id
+                        )
                     )
                 entry_repository = EntryRepository.create(
                     config["entry_repository_type"], entry_respository_settings

@@ -4,8 +4,8 @@ from typing import Dict, Optional, List
 
 from karp.domain import common
 from karp.domain import constraints
-from karp.domain.model import event_handler
-from karp.domain.model.entity import TimestampedVersionedEntity
+from karp.domain.models import event_handler
+from karp.domain.models.entity import TimestampedVersionedEntity
 
 
 class HistoryEntry(TimestampedVersionedEntity):

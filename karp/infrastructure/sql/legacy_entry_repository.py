@@ -1,6 +1,6 @@
 from typing import Dict
 
-from karp.domain.model.entry import EntryRepository
+from karp.domain.models.entry import EntryRepository
 
 
 class SqlLegacyEntryRepository(EntryRepository, repository_type="sql_legacy_v1"):

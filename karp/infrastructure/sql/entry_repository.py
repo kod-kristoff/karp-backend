@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from karp.domain.model.entry import (
+from karp.domain.models.entry import (
     Entry,
     EntryOp,
     EntryRepositorySettings,

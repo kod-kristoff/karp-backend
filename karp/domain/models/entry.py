@@ -10,8 +10,8 @@ from abc import abstractclassmethod
 from karp.domain import constraints
 from karp.domain.errors import ConfigurationError
 from karp.domain.common import _now, _unknown_user
-from karp.domain.model import event_handler
-from karp.domain.model.entity import TimestampedEntity
+from karp.domain.models import event_handler
+from karp.domain.models.entity import TimestampedEntity
 
 from karp.utility import unique_id
 
@@ -108,7 +108,11 @@ class Entry(TimestampedEntity):
         event_handler.publish(event)
 
     def stamp(
-        self, user: str, *, message: str = None, timestamp: float = _now,
+        self,
+        user: str,
+        *,
+        message: str = None,
+        timestamp: float = _now,
     ):
         super().stamp(user, timestamp=timestamp)
         self._message = message

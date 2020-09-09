@@ -1,7 +1,7 @@
 """Entity"""
 from karp.domain.common import _now, _unknown_user
 from karp.domain.errors import ConsistencyError, DiscardedEntityError
-from karp.domain.model.events import DomainEvent
+from karp.domain.models.events import DomainEvent
 
 from karp.utility.time import monotonic_utc_now
 
@@ -24,8 +24,7 @@ class Entity:
 
     @property
     def discarded(self) -> bool:
-        """True if this entity is marked as deleted, otherwise False.
-        """
+        """True if this entity is marked as deleted, otherwise False."""
         return self._discarded
 
     @property
