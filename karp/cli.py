@@ -8,7 +8,7 @@ import dotenv
 
 dotenv.load_dotenv(".env", verbose=True)
 
-from karp.application.config import MariaDBConfig
+# from karp.application.config import MariaDBConfig
 from karp import resourcemgr
 from karp.resourcemgr import entrywrite
 from karp.domain.services import indexmgr
@@ -23,7 +23,7 @@ def create_app():
 
     from karp import create_app
 
-    return create_app(MariaDBConfig())
+    return create_app()  # MariaDBConfig())
 
 
 @click.group(cls=FlaskGroup, create_app=create_app)

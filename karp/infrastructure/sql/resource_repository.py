@@ -17,15 +17,15 @@ _logger = logging.getLogger("karp")
 
 
 class SqlResourceRepository(ResourceRepository, SqlRepository):
-    def __init__(self, db_uri: str):
-        super().__init__(db_uri=db_uri)
+    def __init__(self):
+        super().__init__()
         self.table = None
         if self.table is None:
             table_name = "resources"
-            table = db.get_table(db_uri, table_name)
+            table = db.get_table(table_name)
             print(f"table = {table}")
             if table is None:
-                table = create_table(table_name, self.db_uri)
+                table = create_table(table_name)
             self.table = table
 
     def check_status(self):
@@ -56,7 +56,9 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
     def resources_with_id(self, resource_id: str):
         pass
 
-    def resource_with_id_and_version(self, resource_id: str, version: int):
+    def resource_with_id_and_version(
+        self, resource_id: str, version: int
+    ) -> Optional[Resource]:
         self._check_has_session()
         query = self._session.query(self.table)
         return self._row_to_resource(
@@ -130,25 +132,29 @@ class SqlResourceRepository(ResourceRepository, SqlRepository):
             resource.op,
         )
 
-    def _row_to_resource(self, row) -> Resource:
-        return Resource(
-            entity_id=row.id,
-            resource_id=row.resource_id,
-            version=row.version,
-            name=row.name,
-            config=row.config,
-            message=row.message,
-            op=row.op,
-            is_published=row.is_published,
-            last_modified=row.last_modified,
-            last_modified_by=row.last_modified_by,
+    def _row_to_resource(self, row) -> Optional[Resource]:
+        return (
+            Resource(
+                entity_id=row.id,
+                resource_id=row.resource_id,
+                version=row.version,
+                name=row.name,
+                config=row.config,
+                message=row.message,
+                op=row.op,
+                is_published=row.is_published,
+                last_modified=row.last_modified,
+                last_modified_by=row.last_modified_by,
+            )
+            if row
+            else None
         )
 
 
-def create_table(table_name: str, db_uri: str) -> db.Table:
+def create_table(table_name: str) -> db.Table:
     table = db.Table(
         table_name,
-        db.metadata(db_uri),
+        db.metadata,
         db.Column(
             "history_id",
             db.Integer,
@@ -169,7 +175,11 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
             # autoincrement=True,
             nullable=False,
         ),
-        db.Column("name", db.String(64), nullable=False,),
+        db.Column(
+            "name",
+            db.String(64),
+            nullable=False,
+        ),
         db.Column("config", db.NestedMutableJson, nullable=False),
         db.Column("is_published", db.Boolean, index=True, nullable=True, default=None),
         db.Column("last_modified", db.Float, nullable=False),
@@ -205,5 +215,5 @@ def create_table(table_name: str, db_uri: str) -> db.Table:
     #         value = None
     #     return value
 
-    table.create(db.get_engine(db_uri))
+    # table.create(db.engine, checkfirst=True)
     return table

@@ -7,8 +7,7 @@ from karp.infrastructure.sql import db
 
 
 class SqlRepository:
-    def __init__(self, db_uri: str) -> None:
-        self.db_uri = db_uri
+    def __init__(self) -> None:
         self._session: Optional[db.Session] = None
 
     def set_session(self, session):
@@ -22,12 +21,12 @@ class SqlRepository:
             raise RuntimeError("No session, use with unit_of_work.")
 
 
-@unit_of_work.create_unit_of_work.register(SqlRepository)
-def _(repo: SqlRepository):
-    return SqlUnitOfWork(repo)
-
-
 _create_new = object()
+
+
+@unit_of_work.create_unit_of_work.register(SqlRepository)
+def _(repo: SqlRepository, *, session=_create_new):
+    return SqlUnitOfWork(repo, session=session)
 
 
 class SqlUnitOfWork:
@@ -40,7 +39,7 @@ class SqlUnitOfWork:
     def __init__(self, repo, *, session=_create_new):
         self._repo = repo
         if session is _create_new:
-            self._session = db.create_session(repo.db_uri)
+            self._session = db.SessionLocal()
             self._session_is_created_here = True
         else:
             self._session = session

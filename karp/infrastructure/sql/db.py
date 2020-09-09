@@ -32,6 +32,15 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy_utils import UUIDType
 from sqlalchemy_json import NestedMutableJson
 
+from karp.application import config
+
+engine = sqlalchemy.create_engine(config.DB_URL)
+
+print(f"Engine created for {config.DB_URL}")
+metadata = MetaData()
+
+SessionLocal = sessionmaker(bind=engine)
+
 
 @attr.s(auto_attribs=True)
 class SQLEngineSessionfactory:
@@ -65,98 +74,98 @@ def _assure_in_db_handlers(db_uri: str):
         _db_handlers[db_uri] = SQLEngineSessionfactory.from_db_uri(db_uri)
 
 
-def metadata(db_uri: str) -> MetaData:
+def _metadata(db_uri: str) -> MetaData:
     _assure_in_db_handlers(db_uri)
     return _db_handlers[db_uri].metadata
 
 
-def get_table(db_uri: str, table_name: str) -> Optional[Table]:
-    return metadata(db_uri).tables.get(table_name)
+def get_table(table_name: str) -> Optional[Table]:
+    return metadata.tables.get(table_name)
 
 
-def map_class_to_some_table(cls, table: Table, entity_name: str, **mapper_kw):
-    """Use the EntityName-pattern to map a cls to several tables.
+# def map_class_to_some_table(cls, table: Table, entity_name: str, **mapper_kw):
+#     """Use the EntityName-pattern to map a cls to several tables.
 
-    See https://github.com/sqlalchemy/sqlalchemy/wiki/EntityName for more information.
+#     See https://github.com/sqlalchemy/sqlalchemy/wiki/EntityName for more information.
 
-    Arguments:
-        table {Table} -- the table to map to
-        entity_name {str} -- the name for the new class
+#     Arguments:
+#         table {Table} -- the table to map to
+#         entity_name {str} -- the name for the new class
 
-    Keyword arguments:
-    mapper_kw -- any keyword arguments passed to mapper
+#     Keyword arguments:
+#     mapper_kw -- any keyword arguments passed to mapper
 
-    Raises:
-        ValueError: when?
+#     Raises:
+#         ValueError: when?
 
-    Returns:
-        Any -- the new class constructed
-    """
-    newcls = type(entity_name, (cls,), {})
-    mapper(newcls, table, **mapper_kw)
-    return newcls
-
-
-_metadata = MetaData()
+#     Returns:
+#         Any -- the new class constructed
+#     """
+#     newcls = type(entity_name, (cls,), {})
+#     mapper(newcls, table, **mapper_kw)
+#     return newcls
 
 
-class JsonEncodedDict(TypeDecorator):
-    """Represent an immutable dictionary as a json-encoded-string."""
-
-    impl = VARCHAR
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            value = json.dumps(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            value = json.loads(value)
-        return value
+# _metadata = MetaData()
 
 
-class MutableDict(Mutable, dict):
-    """Tracking changes for sql."""
+# class JsonEncodedDict(TypeDecorator):
+#     """Represent an immutable dictionary as a json-encoded-string."""
 
-    @classmethod
-    def coerce(cls, key, value):
-        """Convert plain dicts to MutableDict."""
-        if not isinstance(value, MutableDict):
-            if isinstance(value, dict):
-                return cls(value)
+#     impl = VARCHAR
 
-            # this call will raise ValueError
-            return Mutable.coerce(key, value)
-        else:
-            return value
+#     def process_bind_param(self, value, dialect):
+#         if value is not None:
+#             value = json.dumps(value)
+#         return value
 
-    def __setitem__(self, key, value):
-        """Detect dictionary set events and emit changed event."""
-        dict.__setitem__(self, key, value)
-        self.changed()
-
-    def __delitem__(self, key, value):
-        """Detect dictionary del events and emit changed event."""
-        dict.__delitem__(self, key, value)
-        self.changed()
+#     def process_result_value(self, value, dialect):
+#         if value is not None:
+#             value = json.loads(value)
+#         return value
 
 
-MutableDict.associate_with(JsonEncodedDict)
+# class MutableDict(Mutable, dict):
+#     """Tracking changes for sql."""
+
+#     @classmethod
+#     def coerce(cls, key, value):
+#         """Convert plain dicts to MutableDict."""
+#         if not isinstance(value, MutableDict):
+#             if isinstance(value, dict):
+#                 return cls(value)
+
+#             # this call will raise ValueError
+#             return Mutable.coerce(key, value)
+#         else:
+#             return value
+
+#     def __setitem__(self, key, value):
+#         """Detect dictionary set events and emit changed event."""
+#         dict.__setitem__(self, key, value)
+#         self.changed()
+
+#     def __delitem__(self, key, value):
+#         """Detect dictionary del events and emit changed event."""
+#         dict.__delitem__(self, key, value)
+#         self.changed()
 
 
-class FalseEncodedAsNullBoolean(TypeDecorator):
-    impl = Boolean
+# MutableDict.associate_with(JsonEncodedDict)
 
-    def process_bind_param(self, value, dialect):
-        if value is False:
-            value = None
-        return value
 
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return False
-        return value
+# class FalseEncodedAsNullBoolean(TypeDecorator):
+#     impl = Boolean
+
+#     def process_bind_param(self, value, dialect):
+#         if value is False:
+#             value = None
+#         return value
+
+#     def process_result_value(self, value, dialect):
+#         if value is None:
+#             return False
+#         return value
 
 
 # class MutableBool(Mutable):

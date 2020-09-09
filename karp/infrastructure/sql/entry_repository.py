@@ -20,12 +20,11 @@ class SqlEntryRepository(
 ):
     def __init__(
         self,
-        db_uri: str,
         history_table: db.Table,
         runtime_table: db.Table,
         # mapped_class: Any
     ):
-        super().__init__(db_uri)
+        super().__init__()
         self.history_table = history_table
         self.runtime_table = runtime_table
         # self.mapped_class = mapped_class
@@ -33,31 +32,24 @@ class SqlEntryRepository(
     @classmethod
     def from_dict(cls, settings: Dict):
         try:
-            db_uri = settings["db_uri"]
-        except KeyError:
-            raise ValueError("Missing 'db_uri' in settings.")
-        try:
             table_name = settings["table_name"]
         except KeyError:
             raise ValueError("Missing 'table_name' in settings.")
 
-        history_table = db.get_table(db_uri, table_name) or create_history_entry_table(
-            db_uri, table_name
+        history_table = db.get_table(table_name) or create_history_entry_table(
+            table_name
         )
 
         runtime_table_name = f"runtime_{table_name}"
 
-        runtime_table = db.get_table(
-            db_uri, runtime_table_name
-        ) or create_entry_runtime_table(db_uri, runtime_table_name, history_table)
-        return cls(db_uri, history_table, runtime_table)
+        runtime_table = db.get_table(runtime_table_name) or create_entry_runtime_table(
+            runtime_table_name, history_table
+        )
+        return cls(history_table, runtime_table)
 
     @classmethod
     def _create_repository_settings(cls, resource_id: str) -> Dict:
-        return {
-            "db_uri": None,
-            "table_name": resource_id
-        }
+        return {"table_name": resource_id}
 
     def put(self, entry: Entry):
         self._check_has_session()
@@ -181,9 +173,9 @@ class SqlEntryRepositorySettings(EntryRepositorySettings):
 
 @create_entry_repository.register(SqlEntryRepositorySettings)
 def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
-    history_table = db.get_table(
-        settings.db_uri, settings.table_name
-    ) or create_history_entry_table(settings.table_name, settings.db_uri)
+    history_table = db.get_table(settings.table_name) or create_history_entry_table(
+        settings.table_name
+    )
 
     #     mapped_class = db.map_class_to_some_table(
     #         Entry,
@@ -202,16 +194,16 @@ def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
     #     )
     runtime_table_name = f"runtime_{settings.table_name}"
 
-    runtime_table = db.get_table(
-        settings.db_uri, runtime_table_name
-    ) or create_entry_runtime_table(runtime_table_name, settings.db_uri, history_table)
-    return SqlEntryRepository(settings.db_uri, history_table, runtime_table)
+    runtime_table = db.get_table(runtime_table_name) or create_entry_runtime_table(
+        runtime_table_name, history_table
+    )
+    return SqlEntryRepository(history_table, runtime_table)
 
 
-def create_history_entry_table(db_uri: str, table_name: str) -> db.Table:
+def create_history_entry_table(table_name: str) -> db.Table:
     table = db.Table(
         table_name,
-        db.metadata(db_uri),
+        db.metadata,
         db.Column("history_id", db.Integer, primary_key=True),
         db.Column("id", db.UUIDType, nullable=False),
         db.Column("entry_id", db.Text(100), nullable=False),
@@ -245,20 +237,18 @@ def create_history_entry_table(db_uri: str, table_name: str) -> db.Table:
     # )
     # if not _use_aliased:
     #     _use_aliased = True
-    table.create(db.get_engine(db_uri))
+    table.create(db.engine, checkfirst=True)
     return table
 
 
-def create_entry_runtime_table(
-    db_uri: str, table_name: str, history_table: db.Table
-) -> db.Table:
+def create_entry_runtime_table(table_name: str, history_table: db.Table) -> db.Table:
     table = db.Table(
         table_name,
-        db.metadata(db_uri),
+        db.metadata,
         db.Column("entry_id", db.Text(100), primary_key=True),
         db.Column("history_id", db.Integer, db.ForeignKey(history_table.c.history_id)),
         db.Column("id", db.UUIDType, db.ForeignKey(history_table.c.id)),
         db.Column("discarded", db.Boolean, db.ForeignKey(history_table.c.discarded)),
     )
-    table.create(db.get_engine(db_uri))
+    table.create(db.engine, checkfirst=True)
     return table

@@ -1,6 +1,6 @@
 flask
 sqlalchemy
-#flask-sqlalchemy
+flask-sqlalchemy
 mysqlclient
 gunicorn
 click
@@ -17,3 +17,5 @@ python-dotenv
 flask-reverse-proxy
 sqlalchemy-json
 sqlalchemy-utils
+fastapi
+pydantic

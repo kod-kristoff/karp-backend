@@ -1,5 +1,6 @@
-from functools import singledispatch
-from karp.application.config import Config
+# from functools import singledispatch
+
+# from karp.application.config import Config
 from karp.domain.model.resource import ResourceRepository
 
 from karp.domain.services.auth.auth import Auth
@@ -26,6 +27,6 @@ class Context:
         return f"Context(resource_repo={self.resource_repo!r})"
 
 
-@singledispatch
-def create_context(config: Config) -> Context:
-    return Context()
+# @singledispatch
+# def create_context(config: Config) -> Context:
+#     return Context()
