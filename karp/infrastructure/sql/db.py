@@ -23,11 +23,16 @@ from sqlalchemy import (
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import insert, delete, update
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import mapper, aliased
+from sqlalchemy.orm import mapper, aliased, relationship
 from sqlalchemy.orm.session import Session, sessionmaker
-from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.schema import (
+    UniqueConstraint,
+    ForeignKeyConstraint,
+    PrimaryKeyConstraint,
+)
 from sqlalchemy.types import TypeDecorator, VARCHAR, Boolean, Time, Float
 from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
 from sqlalchemy_utils import UUIDType
 from sqlalchemy_json import NestedMutableJson
@@ -38,6 +43,8 @@ engine = sqlalchemy.create_engine(config.DB_URL)
 
 print(f"Engine created for {config.DB_URL}")
 metadata = MetaData()
+
+Base = declarative_base(metadata=metadata)
 
 SessionLocal = sessionmaker(bind=engine)
 
@@ -52,8 +59,8 @@ class SQLEngineSessionfactory:
     def from_db_uri(cls, db_uri: str):
         engine = sqlalchemy.create_engine(db_uri)
         session_factory = sessionmaker(bind=engine)
-        metadata = MetaData()
-        return cls(engine, session_factory, metadata)
+        metadata_ = MetaData()
+        return cls(engine, session_factory, metadata_)
 
 
 _db_handlers: Dict[str, SQLEngineSessionfactory] = dict()

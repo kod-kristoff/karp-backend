@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from karp.domain.errors import DiscardedEntityError
-from karp.domain.model.history_entry import HistoryEntry
+from karp.domain.models.history_entry import HistoryEntry
 
 
 def test_history_entry_create():
@@ -23,7 +23,13 @@ def test_history_entry_create():
     assert entry.last_modified_by == "Unknown user"
 
 
-@pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("entry_id", "new..1"),
+        ("body", {"b": "r"}),
+    ],
+)
 def test_history_entry_update_updates(field, value):
     entry = HistoryEntry("test..2", {"a": ["1", "e"]})
 
@@ -34,7 +40,13 @@ def test_history_entry_update_updates(field, value):
     assert getattr(entry, field) == value
 
 
-@pytest.mark.parametrize("field,value", [("entry_id", "new..1"), ("body", {"b": "r"}),])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("entry_id", "new..1"),
+        ("body", {"b": "r"}),
+    ],
+)
 def test_history_entry_update_of_discarded_raises_(field, value):
     entry = HistoryEntry("test..2", {"a": ["1", "e"]})
 

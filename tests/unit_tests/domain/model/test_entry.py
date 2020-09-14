@@ -7,7 +7,7 @@ from karp.domain.errors import (
     ConfigurationError,
     DiscardedEntityError,
 )
-from karp.domain.model.entry import (
+from karp.domain.models.entry import (
     EntryStatus,
     create_entry,
     Entry,

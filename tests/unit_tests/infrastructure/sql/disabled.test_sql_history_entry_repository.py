@@ -1,6 +1,6 @@
 import pytest
 
-from karp.domain.model.history_entry import HistoryEntry
+from karp.domain.models.history_entry import HistoryEntry
 
 from karp.infrastructure.unit_of_work import unit_of_work
 from karp.infrastructure.sql.history_entry_repository import SqlHistoryEntryRepository

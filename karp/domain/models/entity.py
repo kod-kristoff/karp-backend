@@ -160,12 +160,13 @@ class TimestampedVersionedEntity(VersionedEntity, TimestampedEntity):
     def __init__(
         self,
         entity_id,
-        version: int,
         last_modified=_now,
         last_modified_by=_unknown_user,
         discarded: bool = False,
+        *,
+        version: int,
     ) -> None:
-        super().__init__(entity_id, version, discarded=discarded)
+        super().__init__(entity_id, version=version, discarded=discarded)
         self._last_modified = (
             monotonic_utc_now() if last_modified is _now else last_modified
         )
@@ -193,9 +194,10 @@ class TimestampedVersionedEntity(VersionedEntity, TimestampedEntity):
         self._check_not_discarded()
         self._last_modified_by = user
 
-    def stamp(self, user, *, increment_version=True):
+    def stamp(self, user, *, timestamp=_now, increment_version=True):
         self._check_not_discarded()
         event = TimestampedVersionedEntity.Stamped(
+            timestamp=timestamp,
             entity_id=self.id,
             entity_version=self.version,
             entity_last_modified=self.last_modified,

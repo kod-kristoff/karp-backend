@@ -11,7 +11,7 @@ from karp.domain import constraints
 from karp.domain.errors import ConfigurationError
 from karp.domain.common import _now, _unknown_user
 from karp.domain.models import event_handler
-from karp.domain.models.entity import TimestampedEntity
+from karp.domain.models.entity import TimestampedVersionedEntity
 
 from karp.utility import unique_id
 
@@ -31,8 +31,8 @@ class EntryStatus(enum.Enum):
     OK = "OK"
 
 
-class Entry(TimestampedEntity):
-    class Discarded(TimestampedEntity.Discarded):
+class Entry(TimestampedVersionedEntity):
+    class Discarded(TimestampedVersionedEntity.Discarded):
         def mutate(self, entry):
             super().mutate(entry)
             entry._op = EntryOp.DELETED
@@ -103,6 +103,7 @@ class Entry(TimestampedEntity):
             entity_last_modified=self.last_modified,
             user=user,
             message=message,
+            entity_version=self.version,
         )
         event.mutate(self)
         event_handler.publish(event)
@@ -113,8 +114,9 @@ class Entry(TimestampedEntity):
         *,
         message: str = None,
         timestamp: float = _now,
+        increment_version: bool = True,
     ):
-        super().stamp(user, timestamp=timestamp)
+        super().stamp(user, timestamp=timestamp, increment_version=increment_version)
         self._message = message
         self._op = EntryOp.UPDATED
 
@@ -128,6 +130,7 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
         status=EntryStatus.IN_PROGRESS,
         op=EntryOp.ADDED,
         entity_id=unique_id.make_unique_id(),
+        version=1,
     )
     return entry
 
@@ -191,7 +194,11 @@ class EntryRepository(metaclass=abc.ABCMeta):
         return repository_cls.from_dict(settings)
 
     @classmethod
-    def create_repository_settings(cls, repository_type: str, resource_id: str) -> Dict:
+    def create_repository_settings(
+        cls, repository_type: Optional[str], resource_id: str
+    ) -> Dict:
+        if repository_type is None:
+            repository_type = cls.get_default_repository_type()
         repository_cls = cls._registry[repository_type]
         return repository_cls._create_repository_settings(resource_id)
 
@@ -215,6 +222,15 @@ class EntryRepository(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def by_entry_id(self, entry_id: str) -> Optional[Entry]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def teardown(self):
+        """Use for testing purpose."""
+        return
+
+    @abc.abstractmethod
+    def by_referencable(self, **kwargs) -> List[Entry]:
         raise NotImplementedError()
 
 

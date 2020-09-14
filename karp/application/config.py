@@ -18,6 +18,8 @@ DB_PORT = config("DB_PORT", cast=int, default=None)
 DB_USER = config("DB_USER", default=None)
 DB_PASSWORD = config("DB_PASSWORD", cast=Secret, default=None)
 DB_DATABASE = config("DB_DATABASE", default=None)
+if TESTING is True:
+    DB_DATABASE = f"test_{DB_DATABASE}"
 DB_URL = config(
     "DB_URL",
     cast=make_url,

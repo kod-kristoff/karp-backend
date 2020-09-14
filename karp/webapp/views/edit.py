@@ -1,34 +1,36 @@
 from os import stat
 from fastapi import APIRouter, Security, HTTPException, status
 
-from karp import schemas
+from karp.domain.models.user import User
+from karp.domain.models.authentication_service import PermissionLevel
+
 from karp.application import ctx
-from karp.auth.user import User
+
+from karp.webapp import schemas
 from karp.webapp.auth import get_current_user
 
-from flask import Blueprint  # pyre-ignore
-from flask import jsonify as flask_jsonify  # pyre-ignore
-from flask import request  # pyre-ignore
+# from flask import Blueprint  # pyre-ignore
+# from flask import jsonify as flask_jsonify  # pyre-ignore
+# from flask import request  # pyre-ignore
 
 from karp.resourcemgr import entrywrite
-from karp.errors import KarpError
-import karp.auth.auth as auth
-from karp.util import convert
 
-edit_api = Blueprint("edit_api", __name__)
+# from karp.errors import KarpError
+# import karp.auth.auth as auth
+# from karp.util import convert
+
+# edit_api = Blueprint("edit_api", __name__)
 
 router = APIRouter()
 
 
-@router.post("/{resource_id}/add")
+@router.post("/{resource_id}/add", status_code=status.HTTP_201_CREATED)
 def add_entry(
     resource_id: str,
     data: schemas.EntryAdd,
     user: User = Security(get_current_user, scopes=["write"]),
 ):
-    if not ctx.auth_service.authorize(
-        schemas.PermissionLevel.write, user, [resource_id]
-    ):
+    if not ctx.auth_service.authorize(PermissionLevel.write, user, [resource_id]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not enough permissions",
@@ -38,7 +40,7 @@ def add_entry(
     new_id = entrywrite.add_entry(
         resource_id, data.entry, user.identifier, message=data.message
     )
-    return flask_jsonify({"newID": new_id}), 201
+    return {"newID": new_id}
 
 
 # @edit_api.route("/<resource_id>/<entry_id>/update", methods=["POST"])

@@ -1,4 +1,4 @@
-from karp.domain.model.entry import (
+from karp.domain.models.entry import (
     create_entry,
     EntryRepository,
 )
@@ -12,8 +12,8 @@ def test_create_sql_legacy_entry_repository():
         {
             "db_uri": "sqlite:///",
             "table_name": "karpentry",
-            "lexicon_id": "test_legacy_lexicon"
-        }
+            "lexicon_id": "test_legacy_lexicon",
+        },
     )
 
     assert entry_repo.type == "sql_legacy_v1"

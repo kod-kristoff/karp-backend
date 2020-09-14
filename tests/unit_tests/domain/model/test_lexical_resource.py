@@ -1,14 +1,14 @@
 from typing import Dict
 from uuid import uuid4
-from karp.domain.model.entry import EntryRepository
+from karp.domain.models.entry import EntryRepository
 from unittest import mock
 import uuid
 
 import pytest
 
 from karp.domain.errors import ConsistencyError, DiscardedEntityError, ConstraintsError
-from karp.domain.model.lexical_resource import LexicalResource
-from karp.domain.model.resource import (
+from karp.domain.models.lexical_resource import LexicalResource
+from karp.domain.models.resource import (
     Resource,
     ResourceOp,
     Release,
@@ -20,13 +20,13 @@ def create_resource(resource_id: str, name: str, config: Dict) -> LexicalResourc
         spec=EntryRepository, type="repository_type", id=uuid4()
     )
     with mock.patch("karp.utility.time.utc_now", return_value=12345), mock.patch(
-        "karp.domain.model.entry.EntryRepository.get_default_repository_type",
+        "karp.domain.models.entry.EntryRepository.get_default_repository_type",
         return_value="repository_type",
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create_repository_settings",
+        "karp.domain.models.entry.EntryRepository.create_repository_settings",
         return_value={},
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create",
+        "karp.domain.models.entry.EntryRepository.create",
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource("lexical_resource", config)
@@ -47,13 +47,13 @@ def test_resource_create_resource_creates_lexical_resource():
         spec=EntryRepository, type="repository_type", id=uuid4()
     )
     with mock.patch("karp.utility.time.utc_now", return_value=12345), mock.patch(
-        "karp.domain.model.entry.EntryRepository.get_default_repository_type",
+        "karp.domain.models.entry.EntryRepository.get_default_repository_type",
         return_value="repository_type",
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create_repository_settings",
+        "karp.domain.models.entry.EntryRepository.create_repository_settings",
         return_value={},
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create",
+        "karp.domain.models.entry.EntryRepository.create",
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource("lexical_resource", conf)
@@ -212,7 +212,10 @@ def test_lexical_resource_new_release_added_with_wrong_version_raises_consistenc
             "entry_repository_settings": {},
         },
     )
-    event = Resource.NewReleaseAdded(entity_id=resource.id, entity_version=12,)
+    event = Resource.NewReleaseAdded(
+        entity_id=resource.id,
+        entity_version=12,
+    )
     with pytest.raises(ConsistencyError):
         event.mutate(resource)
 
@@ -288,18 +291,18 @@ def test_lexical_resource_with_entry_repository_settings():
         spec=EntryRepository, type="test_type", id=uuid4()
     )
     with mock.patch("karp.utility.time.utc_now", return_value=12345), mock.patch(
-        "karp.domain.model.entry.EntryRepository.get_default_repository_type",
+        "karp.domain.models.entry.EntryRepository.get_default_repository_type",
         return_value="repository_type",
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create_repository_settings",
+        "karp.domain.models.entry.EntryRepository.create_repository_settings",
         return_value={},
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create",
+        "karp.domain.models.entry.EntryRepository.create",
         return_value=entry_repository_mock,
     ):
         resource = Resource.create_resource("lexical_resource", conf)
     # with mock.patch(
-    #     "karp.domain.model.entry.EntryRepository", spec=EntryRepository
+    #     "karp.domain.models.entry.EntryRepository", spec=EntryRepository
     # ) as entry_repository_cls_mock:
     #     entry_repository_mock = mock.MagicMock(autospec=EntryRepository)
     #     entry_repository_mock.type.return_value == "test_type"
@@ -322,19 +325,19 @@ def test_lexical_resource_with_entry_repository_id():
         spec=EntryRepository, type="test_type", id=uuid4()
     )
     with mock.patch("karp.utility.time.utc_now", return_value=12345), mock.patch(
-        "karp.domain.model.entry.EntryRepository.get_default_repository_type",
+        "karp.domain.models.entry.EntryRepository.get_default_repository_type",
         return_value="repository_type",
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.create_repository_settings",
+        "karp.domain.models.entry.EntryRepository.create_repository_settings",
         return_value={},
     ), mock.patch(
-        "karp.domain.model.entry.EntryRepository.repository",
+        "karp.domain.models.entry.EntryRepository.repository",
         # return_value=entry_repository_mock,
     ) as entry_repository_repository_mock:
         entry_repository_repository_mock.by_id.return_value = entry_repository_mock
         resource = Resource.create_resource("lexical_resource", conf)
     # with mock.patch(
-    #     "karp.domain.model.entry.EntryRepository", spec=EntryRepository
+    #     "karp.domain.models.entry.EntryRepository", spec=EntryRepository
     # ) as entry_repository_cls_mock:
     #     entry_repository_mock = mock.MagicMock(autospec=EntryRepository)
     #     entry_repository_mock.type.return_value == "test_type"

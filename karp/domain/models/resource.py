@@ -110,6 +110,7 @@ class Resource(TimestampedVersionedEntity):
         op: ResourceOp,
         *args,
         is_published: bool = False,
+        entry_repository: EntryRepository = None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -120,6 +121,7 @@ class Resource(TimestampedVersionedEntity):
         self._message = message
         self._op = op
         self._releases = []
+        self._entry_repository = entry_repository
 
     @property
     def resource_id(self):
@@ -141,6 +143,14 @@ class Resource(TimestampedVersionedEntity):
     @property
     def op(self):
         return self._op
+
+    @property
+    def entry_repository(self) -> EntryRepository:
+        if self._entry_repository is None:
+            self._entry_repository = entry_repository = EntryRepository.create(
+                None, {"table_name": self._resource_id, "config": self.config}
+            )
+        return self._entry_repository
 
     def stamp(self, *, user: str, message: str = None, increment_version: bool = True):
         self._check_not_discarded()

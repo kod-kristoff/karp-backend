@@ -1,5 +1,5 @@
 import pytest
-from karp.domain.model.entity import (
+from karp.domain.models.entity import (
     TimestampedEntity,
     TimestampedVersionedEntity,
     VersionedEntity,
@@ -73,7 +73,7 @@ def test_timestamped_entity_stamped_updates_last_modified_and_last_modified_by()
 
 
 def test_timestamped_versioned_entity():
-    entity = TimestampedVersionedEntity("id1", 1)
+    entity = TimestampedVersionedEntity("id1", version=1)
 
     assert isinstance(entity, TimestampedVersionedEntity)
     assert isinstance(entity, VersionedEntity)
@@ -81,7 +81,7 @@ def test_timestamped_versioned_entity():
 
 
 def test_timestamped_versioned_entity_discarded():
-    entity = TimestampedVersionedEntity("id1", 1)
+    entity = TimestampedVersionedEntity("id1", version=1)
 
     event = TimestampedVersionedEntity.Discarded(
         entity_id=entity.id,
@@ -102,7 +102,7 @@ def test_timestamped_versioned_entity_discarded():
 
 
 def test_timestamped_versioned_entity_discarded_w_wrong_version_raises_consistency_error():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     event = TimestampedVersionedEntity.Discarded(entity_id=entity.id, entity_version=2)
 
@@ -111,7 +111,7 @@ def test_timestamped_versioned_entity_discarded_w_wrong_version_raises_consisten
 
 
 def test_timestamped_versioned_entity_discarded_w_wrong_last_modified_raises_consistency_error():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     event = TimestampedVersionedEntity.Discarded(
         entity_id=entity.id, entity_version=1, entity_last_modified=2, user="Test"
@@ -122,7 +122,7 @@ def test_timestamped_versioned_entity_discarded_w_wrong_last_modified_raises_con
 
 
 def test_timestamped_versioned_entity_stamped_w_wrong_version_raises_consistency_error():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     event = TimestampedVersionedEntity.Stamped(entity_id=entity.id, entity_version=2)
 
@@ -131,7 +131,7 @@ def test_timestamped_versioned_entity_stamped_w_wrong_version_raises_consistency
 
 
 def test_timestamped_versioned_entity_stamped_w_wrong_last_modified_raises_consistency_error():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     event = TimestampedVersionedEntity.Stamped(
         entity_id=entity.id, entity_version=1, entity_last_modified=2, user="Test"
@@ -142,7 +142,7 @@ def test_timestamped_versioned_entity_stamped_w_wrong_last_modified_raises_consi
 
 
 def test_timestamped_versioned_entity_stamped_updates():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     event = TimestampedVersionedEntity.Stamped(
         entity_id=entity.id,
@@ -163,7 +163,7 @@ def test_timestamped_versioned_entity_stamped_updates():
 
 
 def test_timestamped_versioned_entity_stamp_updates_last_modified_and_version():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     previous_last_modified = entity.last_modified
     previous_last_modified_by = entity.last_modified_by
@@ -177,7 +177,7 @@ def test_timestamped_versioned_entity_stamp_updates_last_modified_and_version():
 
 
 def test_timestamped_versioned_entity_stamp_w_increment_version_eq_false_updates_last_modified_and_not_version():
-    entity = TimestampedVersionedEntity("id_v1", 1)
+    entity = TimestampedVersionedEntity("id_v1", version=1)
 
     previous_last_modified = entity.last_modified
     previous_last_modified_by = entity.last_modified_by

@@ -2,8 +2,9 @@
 
 # from karp.application.config import Config
 from karp.domain.models.resource import ResourceRepository
+from karp.domain.models.authentication_service import AuthenticationService
 
-from karp.domain.services.auth.auth import Auth
+# from karp.domain.services.auth.auth import Auth
 from karp.domain.services.search import SearchService
 from karp.domain.services.indexmgr.index import IndexService
 
@@ -14,7 +15,7 @@ class Context:
         resource_repo: ResourceRepository = None,
         search_service: SearchService = None,
         index_service: IndexService = None,
-        authentication_service: Auth = None
+        authentication_service: AuthenticationService = None
         # auth_service: AuthenticationService,
     ):
         self.resource_repo = resource_repo

@@ -1,11 +1,11 @@
-from karp.domain.model.entry import EntryRepository
 from unittest import mock
 import uuid
 
 import pytest
 
 from karp.domain.errors import ConsistencyError, DiscardedEntityError, ConstraintsError
-from karp.domain.model.resource import Resource, ResourceOp, Release, create_resource
+from karp.domain.models.resource import Resource, ResourceOp, Release, create_resource
+from karp.domain.models.entry import EntryRepository
 
 
 def test_create_resource_creates_resource():
@@ -155,7 +155,10 @@ def test_resource_new_release_added_with_wrong_version_raises_consistency_error(
             "entry_repository_settings": {},
         }
     )
-    event = Resource.NewReleaseAdded(entity_id=resource.id, entity_version=12,)
+    event = Resource.NewReleaseAdded(
+        entity_id=resource.id,
+        entity_version=12,
+    )
     with pytest.raises(ConsistencyError):
         event.mutate(resource)
 
