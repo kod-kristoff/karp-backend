@@ -23,7 +23,12 @@ environ["TESTING"] = "True"
 
 from karp.webapp import main as webapp_main
 from karp.infrastructure.sql import db
+from karp.application import ctx
+from karp.infrastructure.testing.dummy_auth_service import DummyAuthenticationService
+from karp.domain.models.resource import create_resource
 
+from karp.application import ctx
+from karp.infrastructure.unit_of_work import unit_of_work
 from karp import create_app  # noqa: E402
 
 # from karp.database import db  # noqa: E402
@@ -44,6 +49,7 @@ def db_setup():
 
 @pytest.fixture
 def fa_client(db_setup):
+    ctx.auth_service = DummyAuthenticationService()
     with TestClient(webapp_main.create_app()) as client:
         yield client
 
@@ -54,6 +60,27 @@ def db_session():
     yield session
     session.rollback()
     session.close()
+
+
+@pytest.fixture(name="places")
+def fixture_places():
+    with open("tests/data/config/places.json") as fp:
+        places_config = json.load(fp)
+
+    resource = create_resource(places_config)
+
+    yield resource
+
+    resource.entry_repository.teardown()
+
+
+@pytest.fixture(name="fa_client_w_places")
+def fixture_fa_client_w_places(fa_client, places):
+    places.is_published = True
+    with unit_of_work(using=ctx.resource_repo) as uw:
+        uw.put(places)
+
+    return fa_client
 
 
 # class ConfigTest(Config):

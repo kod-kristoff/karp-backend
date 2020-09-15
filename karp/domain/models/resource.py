@@ -8,7 +8,7 @@ from karp.domain import constraints
 from karp.domain.errors import ConfigurationError, RepositoryStatusError
 from karp.domain.models import event_handler
 from karp.domain.models.entity import Entity, TimestampedVersionedEntity
-from karp.domain.models.entry import EntryRepository
+from karp.domain.models.entry import Entry, EntryRepository, create_entry
 from karp.domain.models.events import DomainEvent
 
 from karp.utility import unique_id
@@ -150,7 +150,7 @@ class Resource(TimestampedVersionedEntity):
     @property
     def entry_repository(self) -> EntryRepository:
         if self._entry_repository is None:
-            self._entry_repository = entry_repository = EntryRepository.create(
+            self._entry_repository = EntryRepository.create(
                 None, {"table_name": self._resource_id, "config": self.config}
             )
         return self._entry_repository
@@ -209,6 +209,12 @@ class Resource(TimestampedVersionedEntity):
             )
         return self._entry_json_schema
 
+    def create_entry_from_dict(
+        self, raw: Dict, user: str = None, message: Optional[str] = None
+    ) -> Entry:
+        id_getter = create_id_getter(self.config["id"])
+        return create_entry(id_getter(raw), raw, last_modified_by=user, message=message)
+
 
 # ===== Entities =====
 class Release(Entity):
@@ -232,6 +238,14 @@ class Release(Entity):
     def description(self) -> str:
         """The description of this release."""
         return self._description
+
+
+# ===== Value objects ======
+def create_id_getter(id_field: str):
+    def getter(d: Dict):
+        return d[id_field]
+
+    return getter
 
 
 # ===== Factories =====

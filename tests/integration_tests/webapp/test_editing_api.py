@@ -7,6 +7,11 @@ import karp.resourcemgr.entryread as entryread
 from karp.errors import ClientErrorCodes
 from tests.utils import get_json
 
+# from tests.integration_tests.common_fixtures import (
+#     fixture_fa_client_w_places,
+#     fixture_places,
+# )
+
 
 def init(client, es_status_code, entries):
     if es_status_code == "skip":
@@ -22,24 +27,24 @@ def init(client, es_status_code, entries):
     return client_with_data
 
 
-def test_add(fa_client):
+def test_add(fa_client_w_places):
     # client = init(client_with_data_f, es, [])
 
-    response = fa_client.post(
+    response = fa_client_w_places.post(
         "places/add",
-        json=json.dumps(
-            {
-                "entry": {
-                    "code": 3,
-                    "name": "test3",
-                    "population": 4,
-                    "area": 50000,
-                    "density": 5,
-                    "municipality": [2, 3],
-                }
+        json={
+            "entry": {
+                "code": 3,
+                "name": "test3",
+                "population": 4,
+                "area": 50000,
+                "density": 5,
+                "municipality": [2, 3],
             }
-        ),
+        },
+        headers={"Authorization": "Bearer FAKETOKEN"},
     )
+    print(f"response. = {response.json()}")
     assert response.status_code == 201
     response_data = response.json()
     assert "newID" in response_data

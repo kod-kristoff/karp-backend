@@ -39,17 +39,17 @@ class SqlEntryRepository(
         except KeyError:
             raise ValueError("Missing 'table_name' in settings.")
 
-        # history_table = db.get_table(table_name)
-        # if history_table is None:
-        #     history_table = create_history_entry_table(table_name)
-        # history_table.create(bind=db.engine, checkfirst=True)
+        # history_model = db.get_table(table_name)
+        # if history_model is None:
+        #     history_model = create_history_entry_table(table_name)
+        # history_model.create(bind=db.engine, checkfirst=True)
 
         history_model = get_or_create_entry_history_model(table_name)
 
         # runtime_table = db.get_table(runtime_table_name)
         # if runtime_table is None:
         #     runtime_table = create_entry_runtime_table(
-        #         runtime_table_name, history_table, settings["config"]
+        #         runtime_table_name, history_model, settings["config"]
         #     )
 
         # runtime_table.create(bind=db.engine, checkfirst=True)
@@ -69,7 +69,7 @@ class SqlEntryRepository(
     def put(self, entry: Entry):
         self._check_has_session()
         history_id = self._insert_history(entry)
-        # ins_stmt = db.insert(self.history_table)
+        # ins_stmt = db.insert(self.history_model)
         # ins_stmt = ins_stmt.values(self._entry_to_history_row(entry))
         # result = self._session.execute(ins_stmt)
         # history_id = result.lastrowid or result.returned_defaults["history_id"]
@@ -120,7 +120,7 @@ class SqlEntryRepository(
         query = self._session.query(self.history_model)
         # query = query.join(
         #     self.runtime_table,
-        #     self.history_table.c.history_id == self.runtime_table.c.history_id,
+        #     self.history_model.c.history_id == self.runtime_table.c.history_id,
         # )
         return self._history_row_to_entry(
             query.filter_by(entry_id=entry_id)
@@ -142,13 +142,13 @@ class SqlEntryRepository(
         self._check_has_session()
         query = self._session.query(self.history_model)
         # query = query.join(
-        #     self.runtime_table, self.history_table.c.id == self.runtime_table.c.id
+        #     self.runtime_table, self.history_model.c.id == self.runtime_table.c.id
         # )
         return query.filter_by(entry_id=entry_id).all()
 
     def teardown(self):
         """Use for testing purpose."""
-        for child_model in self.runtime_model.child_tables:
+        for child_model in self.runtime_model.child_tables.values():
             child_model.__table__.drop(bind=db.engine)
         self.runtime_model.__table__.drop(bind=db.engine)
         self.history_model.__table__.drop(bind=db.engine)
@@ -160,10 +160,10 @@ class SqlEntryRepository(
         self._check_has_session()
         query = self._session.query(self.runtime_model)
         result = query.filter_by(**kwargs).all()
-        # query = self._session.query(self.history_table)
+        # query = self._session.query(self.history_model)
         # query = query.join(
         #     self.runtime_table,
-        #     self.history_table.c.history_id == self.runtime_table.c.history_id,
+        #     self.history_model.c.history_id == self.runtime_table.c.history_id,
         # )
         # result = query.filter_by(larger_place=7).all()
         print(f"result = {result}")
@@ -236,7 +236,7 @@ def _(settings: SqlEntryRepositorySettings) -> SqlEntryRepository:
 
     #     mapped_class = db.map_class_to_some_table(
     #         Entry,
-    #         history_table,
+    #         history_model,
     #         f"Entry_{table_name}",
     #         properties={
     #             "_id": table.c.id,
@@ -263,7 +263,9 @@ class_cache = {}
 def get_or_create_entry_history_model(resource_id: str) -> sql_models.BaseHistoryEntry:
     table_name = create_history_table_name(resource_id)
     if table_name in class_cache:
-        return class_cache[table_name]
+        history_model = class_cache[table_name]
+        history_model.__table__.create(bind=db.engine, checkfirst=True)
+        return history_model
 
     attributes = {
         "__tablename__": table_name,
@@ -323,17 +325,21 @@ def create_history_table_name(resource_id: str) -> str:
 
 
 def get_or_create_entry_runtime_model(
-    resource_id: str, history_table: db.Table, config: Dict
+    resource_id: str, history_model: db.Table, config: Dict
 ) -> sql_models.BaseRuntimeEntry:
     table_name = create_runtime_table_name(resource_id)
 
     if table_name in class_cache:
-        return class_cache[table_name]
+        runtime_model = class_cache[table_name]
+        runtime_model.__table__.create(bind=db.engine, checkfirst=True)
+        for child_model in runtime_model.child_tables.values():
+            child_model.__table__.create(bind=db.engine, checkfirst=True)
+        return runtime_model
 
     # history_table_name = create_history_table_name(resource_id)
 
     foreign_key_constraint = db.ForeignKeyConstraint(
-        ("history_id",), (history_table.history_id,)
+        ("history_id",), (history_model.history_id,)
     )
 
     attributes = {
@@ -391,7 +397,7 @@ def get_or_create_entry_runtime_model(
     runtime_model.__table__.create(bind=db.engine, checkfirst=True)
     runtime_model.child_tables = child_tables
 
-    for child_model in runtime_model.child_tables:
+    for child_model in runtime_model.child_tables.values():
         child_model.__table__.create(bind=db.engine, checkfirst=True)
     class_cache[table_name] = runtime_model
 
@@ -401,11 +407,11 @@ def get_or_create_entry_runtime_model(
     #     table_name,
     #     db.metadata,
     #     # db.Column("entry_id", db.String(100), primary_key=True),
-    #     # db.Column("history_id", db.Integer, db.ForeignKey(history_table.c.history_id)),
+    #     # db.Column("history_id", db.Integer, db.ForeignKey(history_model.c.history_id)),
     #     # # db.Column(
     #     # #     "history_id",
     #     # #     db.Integer,
-    #     # #     db.ForeignKey(f"{history_table.name}.history_id"),
+    #     # #     db.ForeignKey(f"{history_model.name}.history_id"),
     #     # # ),
     #     # db.Column("id", db.UUIDType, nullable=False),
     #     # db.Column("discarded", db.Boolean, nullable=False),

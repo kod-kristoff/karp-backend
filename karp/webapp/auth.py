@@ -2,7 +2,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, SecurityScopes
 
 from karp.application import ctx
-from karp.auth.auth import auth
+
+# from karp.auth.auth import auth
 from karp.errors import ClientErrorCodes, KarpError
 
 

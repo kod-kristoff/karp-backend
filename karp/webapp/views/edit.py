@@ -3,11 +3,13 @@ from fastapi import APIRouter, Security, HTTPException, status
 
 from karp.domain.models.user import User
 from karp.domain.models.authentication_service import PermissionLevel
+from karp.application.services import entries
 
 from karp.application import ctx
 
 from karp.webapp import schemas
 from karp.webapp.auth import get_current_user
+
 
 # from flask import Blueprint  # pyre-ignore
 # from flask import jsonify as flask_jsonify  # pyre-ignore
@@ -37,7 +39,7 @@ def add_entry(
             headers={"WWW-Authenticate": 'Bearer scope="write"'},
         )
     print("calling entrywrite")
-    new_id = entrywrite.add_entry(
+    new_id = entries.add_entry(
         resource_id, data.entry, user.identifier, message=data.message
     )
     return {"newID": new_id}

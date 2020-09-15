@@ -122,7 +122,15 @@ class Entry(TimestampedVersionedEntity):
 
 
 # === Factories ===
-def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> Entry:
+def create_entry(
+    entry_id: str,
+    body: Dict,
+    *,
+    last_modified_by: str = None,
+    message: Optional[str] = None,
+) -> Entry:
+    if not isinstance(entry_id, str):
+        entry_id = str(entry_id)
     entry = Entry(
         entry_id=entry_id,
         body=body,
@@ -131,6 +139,7 @@ def create_entry(entry_id: str, body: Dict, message: Optional[str] = None) -> En
         op=EntryOp.ADDED,
         entity_id=unique_id.make_unique_id(),
         version=1,
+        last_modified_by="Unknown user" if not last_modified_by else last_modified_by,
     )
     return entry
 
