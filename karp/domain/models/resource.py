@@ -10,7 +10,9 @@ from karp.domain.models import event_handler
 from karp.domain.models.entity import Entity, TimestampedVersionedEntity
 from karp.domain.models.entry import EntryRepository
 from karp.domain.models.events import DomainEvent
+
 from karp.utility import unique_id
+from karp.utility import json_schema
 
 
 class ResourceOp(enum.Enum):
@@ -122,6 +124,7 @@ class Resource(TimestampedVersionedEntity):
         self._op = op
         self._releases = []
         self._entry_repository = entry_repository
+        self._entry_json_schema = None
 
     @property
     def resource_id(self):
@@ -197,6 +200,14 @@ class Resource(TimestampedVersionedEntity):
 
         event.mutate(self)
         event_handler.publish(event)
+
+    @property
+    def entry_json_schema(self) -> Dict:
+        if self._entry_json_schema is None:
+            self._entry_json_schema = json_schema.create_entry_json_schema(
+                self.config["fields"]
+            )
+        return self._entry_json_schema
 
 
 # ===== Entities =====

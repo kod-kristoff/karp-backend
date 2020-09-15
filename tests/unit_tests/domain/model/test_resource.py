@@ -217,3 +217,21 @@ def test_release_created_w_resource_has_id():
     assert release.publication_date == 12345.0
     assert release.description == "ee"
     assert release.root.id == resource.id
+
+
+def test_resource_has_entry_json_schema():
+    resource = create_resource(
+        {
+            "resource_id": "test_resource",
+            "resource_name": "Test resource",
+            "sort": ["baseform"],
+            "fields": {"baseform": {"type": "string", "required": True}},
+            "entry_repository_type": None,
+            "entry_repository_settings": {},
+        }
+    )
+
+    json_schema = resource.entry_json_schema
+
+    assert json_schema["type"] == "object"
+    assert "baseform" in json_schema["properties"]
