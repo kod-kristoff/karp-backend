@@ -14,7 +14,7 @@ from sb_json_tools import jsondiff
 from karp import get_resource_string
 from karp.database import db
 from karp import database
-from karp.util.json_schema import create_entry_json_schema
+from karp.utility.json_schema import create_entry_json_schema
 from karp.errors import KarpError
 from karp.errors import ClientErrorCodes
 from karp.errors import (
@@ -161,7 +161,7 @@ def create_new_resource(config_file: BinaryIO, config_dir=None) -> Tuple[str, in
 
     version = database.get_next_resource_version(resource_id)
 
-    entry_json_schema = create_entry_json_schema(config)
+    entry_json_schema = create_entry_json_schema(config["fields"])
 
     config = load_plugins_to_config(config, version, config_dir)
 
