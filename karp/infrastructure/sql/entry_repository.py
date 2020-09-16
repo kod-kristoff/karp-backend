@@ -1,7 +1,9 @@
 """SQL repository for entries."""
-from karp.infrastructure.sql import sql_models
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
+
+import regex
 
 from karp.domain.models.entry import (
     Entry,
@@ -11,9 +13,16 @@ from karp.domain.models.entry import (
     EntryRepository,
     create_entry_repository,
 )
+from karp import errors
 
 from karp.infrastructure.sql import db
+from karp.infrastructure.sql import sql_models
 from karp.infrastructure.sql.sql_repository import SqlRepository
+
+logger = logging.getLogger("karp")
+
+DUPLICATE_PATTERN = r"Duplicate entry '(.+)' for key '(\w+)'"
+DUPLICATE_PROG = regex.compile(DUPLICATE_PATTERN)
 
 
 class SqlEntryRepository(
@@ -68,28 +77,25 @@ class SqlEntryRepository(
 
     def put(self, entry: Entry):
         self._check_has_session()
+
         history_id = self._insert_history(entry)
-        # ins_stmt = db.insert(self.history_model)
-        # ins_stmt = ins_stmt.values(self._entry_to_history_row(entry))
-        # result = self._session.execute(ins_stmt)
-        # history_id = result.lastrowid or result.returned_defaults["history_id"]
 
         ins_stmt = db.insert(self.runtime_model)
         ins_stmt = ins_stmt.values(**self._entry_to_runtime_dict(history_id, entry))
-        # ins_stmt = ins_stmt.values(self._entry_to_runtime_row(history_id, entry))
-        result = self._session.execute(ins_stmt)
-        # self._session.add(
-        #     self._entry_to_row(entry)
-        #     # self.mapped_class(
-        #     #     entry.entry_id,
-        #     #     entry.body,
-        #     #     entry.id,
-        #     #     entry.last_modified,
-        #     #     entry.last_modified_by,
-        #     #     entry.op,
-        #     #     entry.message,
-        #     # )
-        # )
+        try:
+            return self._session.execute(ins_stmt)
+        except db.exc.IntegrityError as exc:
+            logger.exception(exc)
+            match = DUPLICATE_PROG.search(str(exc))
+            if match:
+                value = match.group(1)
+                key = match.group(2)
+                if key == "PRIMARY":
+                    key = "entry_id"
+            else:
+                value = "UNKNOWN"
+                key = "UNKNOWN"
+            raise errors.IntegrityError(key, value)
 
     def update(self, entry: Entry):
         self._check_has_session()
@@ -99,19 +105,42 @@ class SqlEntryRepository(
         updt_stmt = updt_stmt.where(self.runtime_model.entry_id == entry.entry_id)
         updt_stmt = updt_stmt.values(self._entry_to_runtime_row(history_id, entry))
 
-        result = self._session.execute(updt_stmt)
+        try:
+            return self._session.execute(updt_stmt)
+        except db.exc.IntegrityError as exc:
+            logger.exception(exc)
+            match = DUPLICATE_PROG.search(str(exc))
+            if match:
+                value = match.group(1)
+                key = match.group(2)
+                if key == "PRIMARY":
+                    key = "entry_id"
+            else:
+                value = "UNKNOWN"
+                key = "UNKNOWN"
+            raise errors.IntegrityError(key, value)
 
     def _insert_history(self, entry: Entry):
         self._check_has_session()
-        ins_stmt = db.insert(self.history_model)
-        ins_stmt = ins_stmt.values(self._entry_to_history_row(entry))
-        result = self._session.execute(ins_stmt)
-        history_id = result.lastrowid or result.returned_defaults["history_id"]
-        return history_id
+        try:
+            ins_stmt = db.insert(self.history_model)
+            ins_stmt = ins_stmt.values(self._entry_to_history_row(entry))
+            result = self._session.execute(ins_stmt)
+            return result.lastrowid or result.returned_defaults["history_id"]
+        except db.exc.IntegrityError as exc:
+            logger.exception(exc)
+            match = DUPLICATE_PROG.search(str(exc))
+            if match:
+                value = match.group(1)
+                key = match.group(2)
+            else:
+                value = "UNKNOWN"
+                key = "UNKNOWN"
+            raise errors.IntegrityError(key, value)
 
     def entry_ids(self) -> List[str]:
         self._check_has_session()
-        query = self._session.query(self.runtime_model)
+        query = self._session.query(self.runtime_model).filter_by(discarded=False)
         return [row.entry_id for row in query.all()]
         # return [row.entry_id for row in query.filter_by(discarded=False).all()]
 
@@ -122,11 +151,12 @@ class SqlEntryRepository(
         #     self.runtime_table,
         #     self.history_model.c.history_id == self.runtime_table.c.history_id,
         # )
-        return self._history_row_to_entry(
-            query.filter_by(entry_id=entry_id)
+        entry = (
+            query.filter_by(entry_id=entry_id, discarded=False)
             .order_by(self.history_model.last_modified.desc())
             .first()
         )
+        return self._history_row_to_entry(entry) if entry else None
         # .order_by(self.mapped_class._version.desc())
 
     def by_id(self, id: str) -> Optional[Entry]:

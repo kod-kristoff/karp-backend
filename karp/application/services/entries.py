@@ -13,7 +13,13 @@ from karp.application import ctx
 from karp.infrastructure.unit_of_work import unit_of_work
 
 
-from karp.errors import KarpError, ClientErrorCodes, EntryNotFoundError, UpdateConflict
+from karp.errors import (
+    KarpError,
+    ClientErrorCodes,
+    EntryNotFoundError,
+    UpdateConflict,
+    EntryIdMismatch,
+)
 from karp.resourcemgr import get_resource
 from karp.database import db
 import karp.domain.services.indexmgr as indexmgr
@@ -46,45 +52,61 @@ def add_entry(
 #     return entry_json
 
 
-# def update_entry(
-#     resource_id: str,
-#     entry_id: str,
-#     version: int,
-#     entry: Dict,
-#     user_id: str,
-#     message: str = None,
-#     resource_version: int = None,
-#     force: bool = False,
-# ):
-#     resource = get_resource(resource_id, version=resource_version)
+def update_entry(
+    resource_id: str,
+    entry_id: str,
+    version: int,
+    entry: Dict,
+    user_id: str,
+    message: str = None,
+    resource_version: int = None,
+    force: bool = False,
+) -> str:
+    with unit_of_work(using=ctx.resource_repo) as uw:
+        resource = uw.get_active_resource(resource_id)
+    #     resource = get_resource(resource_id, version=resource_version)
 
-#     schema = _compile_schema(resource.entry_json_schema)
-#     _validate_entry(schema, entry)
+    schema = _compile_schema(resource.entry_json_schema)
+    _validate_entry(schema, entry)
 
-#     current_db_entry = resource.model.query.filter_by(
-#         entry_id=entry_id, deleted=False
-#     ).first()
-#     if not current_db_entry:
-#         raise EntryNotFoundError(
-#             resource_id,
-#             entry_id,
-#             entry_version=version,
-#             resource_version=resource_version,
-#         )
+    with unit_of_work(using=resource.entry_repository) as uw:
+        current_db_entry = uw.by_entry_id(entry_id)
 
-#     diff = jsondiff.compare(json.loads(current_db_entry.body), entry)
-#     if not diff:
-#         raise KarpError("No changes made", ClientErrorCodes.ENTRY_NOT_CHANGED)
+        #     current_db_entry = resource.model.query.filter_by(
+        #         entry_id=entry_id, deleted=False
+        #     ).first()
+        if not current_db_entry:
+            raise EntryNotFoundError(
+                resource_id,
+                entry_id,
+                entry_version=version,
+                resource_version=resource_version,
+            )
 
-#     db_entry_json = json.dumps(entry)
-#     db_id = current_db_entry.id
-#     latest_history_entry = (
-#         resource.history_model.query.filter_by(entry_id=db_id)
-#         .order_by(resource.history_model.version.desc())
-#         .first()
-#     )
-#     if not force and latest_history_entry.version > version:
-#         raise UpdateConflict(diff)
+        diff = jsondiff.compare(current_db_entry.body, entry)
+        if not diff:
+            raise KarpError("No changes made", ClientErrorCodes.ENTRY_NOT_CHANGED)
+
+        #     db_entry_json = json.dumps(entry)
+        #     db_id = current_db_entry.id
+        #     latest_history_entry = (
+        #         resource.history_model.query.filter_by(entry_id=db_id)
+        #         .order_by(resource.history_model.version.desc())
+        #         .first()
+        #     )
+        print(f"({current_db_entry.version}, {version})")
+        if not force and current_db_entry.version != version:
+            print("version conflict")
+            raise UpdateConflict(diff)
+
+        new_entry = resource.create_entry_from_dict(
+            entry, user=user_id, message=message
+        )
+
+        if new_entry.entry_id != entry_id:
+            raise EntryIdMismatch(new_entry.entry_id, entry_id)
+
+
 #     history_entry = resource.history_model(
 #         entry_id=db_id,
 #         user_id=user_id,
@@ -166,10 +188,14 @@ def add_entries(
         for entry_raw in entries:
             _validate_entry(validate_entry, entry_raw)
 
-            entry = resource.create_entry_from_dict(entry_raw)
+            entry = resource.create_entry_from_dict(
+                entry_raw, user=user_id, message=message
+            )
+            print("before uw.put")
             uw.put(entry)
             created_db_entries.append(entry.entry_id)
-
+            print("after uw.put")
+    print("after db commit")
     return created_db_entries
 
 
@@ -185,9 +211,9 @@ def _validate_entry(schema, json_obj):
         schema(json_obj)
     except fastjsonschema.JsonSchemaException as e:
         _logger.warning(
-            "Entry not valid:\n{entry}\nMessage: {message}".format(
-                entry=json.dumps(json_obj, indent=2), message=e.message
-            )
+            "Entry not valid:\n%s\nMessage: %s",
+            json.dumps(json_obj, indent=2),
+            e.message,
         )
         raise KarpError("entry not valid", ClientErrorCodes.ENTRY_NOT_VALID)
 
@@ -274,11 +300,22 @@ def _validate_entry(schema, json_obj):
 #     return kwargs
 
 
-# def delete_entry(resource_id: str, entry_id: str, user_id: str):
-#     resource = get_resource(resource_id)
-#     entry = resource.model.query.filter_by(entry_id=entry_id, deleted=False).first()
-#     if not entry:
-#         raise EntryNotFoundError(resource_id, entry_id)
+def delete_entry(resource_id: str, entry_id: str, user_id: str):
+    with unit_of_work(using=ctx.resource_repo) as uw:
+        resource = uw.get_active_resource(resource_id)
+
+    with unit_of_work(using=resource.entry_repository) as uw:
+        entry = uw.by_entry_id(entry_id)
+
+        #     resource = get_resource(resource_id)
+        #     entry = resource.model.query.filter_by(entry_id=entry_id, deleted=False).first()
+        if not entry:
+            raise EntryNotFoundError(resource_id, entry_id)
+
+        entry.discard(user=user_id)
+        uw.update(entry)
+
+
 #     entry.deleted = True
 #     history_cls = resource.history_model
 #     history_entry = history_cls(

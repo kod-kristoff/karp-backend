@@ -1,3 +1,4 @@
+from karp.errors import UpdateConflict
 import logging
 
 try:

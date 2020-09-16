@@ -33,6 +33,14 @@ class Entry(BaseModel):
     entry_id: str
 
 
-class EntryAdd(BaseModel):
+class EntryBase(BaseModel):
     entry: Dict
+
+
+class EntryAdd(EntryBase):
     message: str = ""
+
+
+class EntryUpdate(EntryBase):
+    message: str
+    version: int

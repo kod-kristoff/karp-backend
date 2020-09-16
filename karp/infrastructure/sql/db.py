@@ -21,6 +21,7 @@ from sqlalchemy import (
     or_,
 )
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import exc
 from sqlalchemy.sql import insert, delete, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import mapper, aliased, relationship
