@@ -40,6 +40,10 @@ venv: ${VENV_NAME}/venv.created
 
 install: venv ${VENV_NAME}/req.installed
 install-dev: venv ${VENV_NAME}/req-dev.installed
+install-es6: venv
+	${INVENV} pip install -e .[elasticsearch6]
+install-es7: venv
+	${INVENV} pip install -e .[elasticsearch7]
 
 ${VENV_NAME}/venv.created:
 	@python3 -c "import sys; assert sys.version_info >= (3, 6)" || echo "Python >= 3.6 is needed"

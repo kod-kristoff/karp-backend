@@ -47,7 +47,7 @@ jobs:
           echo "TEST_ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
           echo "SEARCH_CONTEXT=es6_search_service" >> .env
           cat .env
-          pip install -e .[elasticsearch6]
+          make install-es6
 
       - name: Install Elasticsearch 7
         if: startsWith( matrix.es-version, '7')
@@ -57,7 +57,7 @@ jobs:
           echo "TEST_ELASTICSEARCH_ENABLED=True" >> .env
           echo "TEST_ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
           cat .env
-          pip install -e .[elasticsearch7]
+          make install-es7
 
       - name: Test with pytest
         run: make test-w-coverage
