@@ -56,6 +56,7 @@ jobs:
           tar -xzf elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
           echo "TEST_ELASTICSEARCH_ENABLED=True" >> .env
           echo "TEST_ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
+          echo "SEARCH_CONTEXT=es7_search_service" >> .env
           cat .env
           make install-es7
 
