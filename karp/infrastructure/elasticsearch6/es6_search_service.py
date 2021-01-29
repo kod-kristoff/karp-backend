@@ -20,7 +20,7 @@ from karp.domain.errors import (
     # UnsupportedQuery,
 )
 from .es_query import EsQuery
-from . import config
+from karp.infrastructure.elasticsearch_common import config
 
 logger = logging.getLogger("karp")
 
