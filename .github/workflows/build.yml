@@ -10,7 +10,6 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        # es-version: [6.5.4, 6.8.3]
         es-version: [6.8.3, 7.3.2]
 
     steps:
@@ -48,7 +47,7 @@ jobs:
           echo "TEST_ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
           echo "SEARCH_CONTEXT=es6_search_service" >> .env
           cat .env
-          # pip install -e .[elasticsearch6]
+          pip install -e .[elasticsearch6]
 
       - name: Install Elasticsearch 7
         if: startsWith( matrix.es-version, '7')
@@ -72,7 +71,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v1
