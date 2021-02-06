@@ -55,6 +55,15 @@ ${VENV_NAME}/req-dev.installed: setup.py setup.cfg tools/pip-requires
 	${INVENV} pip install -e .[dev]
 	@touch $@
 
+install-mysql: venv
+	${INVENV} pip install -e .[mysql]
+
+install-elasticsearch6: venv
+	${INVENV} pip install -e .[elasticsearch6]
+
+install-elasticsearch7: venv
+	${INVENV} pip install -e .[elasticsearch7]
+
 init-db:
 	${INVENV} alembic upgrade head
 
