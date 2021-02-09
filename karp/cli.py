@@ -52,7 +52,12 @@ def cli_timer(func):
     return func_wrapper
 
 
-@cli.command("create")
+@cli.group("resource")
+def resource():
+    pass
+
+
+@resource.command("create")
 @click.option(
     "--config",
     default=None,
@@ -85,7 +90,7 @@ def create_resource(config, config_dir):
         )
 
 
-@cli.command("update")
+@resource.command("update")
 @click.option(
     "--config",
     default=None,
@@ -125,22 +130,7 @@ def update_resource(config, config_dir):
             )
 
 
-@cli.command("import")
-@click.option("--resource_id", default=None, help="", required=True)
-@click.option("--version", default=None, help="", required=True)
-@click.option("--data", default=None, help="", required=True)
-@cli_error_handler
-@cli_timer
-def import_resource(resource_id, version, data):
-    count = entrywrite.add_entries_from_file(resource_id, version, data)
-    click.echo(
-        "Added {count} entries to {resource_id}, version {version}".format(
-            count=count, version=version, resource_id=resource_id
-        )
-    )
-
-
-@cli.command("publish")
+@resource.command("publish")
 @click.option("--resource_id", default=None, help="", required=True)
 @click.option("--version", default=None, help="", required=True)
 @cli_error_handler
@@ -158,7 +148,7 @@ def publish_resource(resource_id, version):
         )
 
 
-@cli.command("reindex")
+@resource.command("reindex")
 @click.option("--resource_id", default=None, help="", required=True)
 @cli_error_handler
 @cli_timer
@@ -175,7 +165,7 @@ def reindex_resource(resource_id):
         click.echo("No active version of {resource_id}".format(resource_id=resource_id))
 
 
-@cli.command("pre_process")
+@resource.command("pre_process")
 @click.option("--resource_id", required=True)
 @click.option("--version", required=True)
 @click.option("--filename", required=True)
@@ -188,7 +178,7 @@ def pre_process_resource(resource_id, version, filename):
         pickle.dump(processed, fp)
 
 
-@cli.command("publish_preprocessed")
+@resource.command("publish_preprocessed")
 @click.option("--resource_id", required=True)
 @click.option("--version", required=True)
 @click.option("--data", required=True)
@@ -204,7 +194,7 @@ def index_processed(resource_id, version, data):
             click.echo("Something wrong with file")
 
 
-@cli.command("reindex_preprocessed")
+@resource.command("reindex_preprocessed")
 @click.option("--resource_id", required=True)
 @click.option("--data", required=True)
 @cli_error_handler
@@ -218,7 +208,7 @@ def reindex_preprocessed(resource_id, data):
             click.echo("Something wrong with file")
 
 
-@cli.command("list")
+@resource.command("list")
 @click.option("--show-active/--show-all", default=False)
 @cli_error_handler
 @cli_timer
@@ -239,7 +229,7 @@ def list_resources(show_active):
         )
 
 
-@cli.command("show")
+@resource.command("show")
 @click.option("--version", default=None, type=int)
 @click.argument("resource_id")
 @cli_error_handler
@@ -270,7 +260,7 @@ def show_resource(resource_id, version):
     )
 
 
-@cli.command("set_permissions")
+@resource.command("set_permissions")
 @click.option("--resource_id", required=True)
 @click.option("--version", required=True)
 @click.option("--level", required=True)
@@ -288,4 +278,36 @@ def export_resource():
 
 
 def delete_resource():
+    pass
+
+
+# Entries commands
+
+@cli.group("entries")
+def entries():
+    pass
+
+
+@entries.command("import")
+@click.option("--resource_id", default=None, help="", required=True)
+@click.option("--version", default=None, help="", required=True)
+@click.option("--data", default=None, help="", required=True)
+@cli_error_handler
+@cli_timer
+def import_resource(resource_id, version, data):
+    count = entrywrite.add_entries_from_file(resource_id, version, data)
+    click.echo(
+        "Added {count} entries to {resource_id}, version {version}".format(
+            count=count, version=version, resource_id=resource_id
+        )
+    )
+
+
+@entries.command("update")
+@click.option("--resource_id", default=None, help="", required=True)
+@click.option("--version", default=None, help="", required=True)
+@click.option("--data", default=None, help="", required=True)
+@cli_error_handler
+@cli_timer
+def update_entries(resource_id, version, data):
     pass
