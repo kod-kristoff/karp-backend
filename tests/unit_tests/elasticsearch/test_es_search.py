@@ -3,8 +3,12 @@ from typing import List, Tuple
 
 import pytest
 
-from karp.elasticsearch import EsIndex, EsSearch
-from karp.elasticsearch.es_search import UnsupportedField
+try:
+    import elasticsearch
+    from karp.elasticsearch import EsIndex, EsSearch
+    from karp.elasticsearch.es_search import UnsupportedField
+except ImportError:
+    elasticsearch = None
 
 
 @pytest.fixture
@@ -404,6 +408,7 @@ def es_mock():
     return _es_mock
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_create_empty(es_mock):
     es_index_mock = mock.Mock(spec=EsIndex)
     es_search = EsSearch(es_mock, es_index_mock)
@@ -416,6 +421,7 @@ def test_create_empty(es_mock):
     assert "lemma.SMP" in es_search.sortable_fields["nordicon"]
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_translate_sort_fields(es_mock):
     es_search = EsSearch(es_mock, mock.Mock())
 
@@ -426,6 +432,7 @@ def test_translate_sort_fields(es_mock):
     assert result == expected
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_translate_sort_fields_raises(es_mock):
     es_search = EsSearch(es_mock, mock.Mock())
 
@@ -433,6 +440,7 @@ def test_translate_sort_fields_raises(es_mock):
         es_search.translate_sort_fields(["places"], ["v_larger_place"])
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 @pytest.mark.parametrize(
     "properties,expected_mappings,expected_non_mappings",
     [

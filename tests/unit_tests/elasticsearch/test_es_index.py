@@ -1,9 +1,16 @@
 from unittest import mock
 
-from karp.elasticsearch.index import _create_es_mapping, EsIndex
-from karp.elasticsearch.es_observer import OnPublish
+import pytest
+
+try:
+    import elasticsearch
+    from karp.elasticsearch.index import _create_es_mapping, EsIndex
+    from karp.elasticsearch.es_observer import OnPublish
+except ImportError:
+    elasticsearch = None
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_create_es_mapping_empty():
     config = {"fields": {}}
     mapping = _create_es_mapping(config)
@@ -11,6 +18,7 @@ def test_create_es_mapping_empty():
     assert mapping == {"dynamic": False, "properties": {}}
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_create_es_mapping_string():
     config = {"fields": {"test": {"type": "string"}}}
     mapping = _create_es_mapping(config)
@@ -23,6 +31,7 @@ def test_create_es_mapping_string():
     }
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_create_es_mapping_string_skip_raw():
     config = {"fields": {"test": {"type": "string", "skip_raw": True}}}
     mapping = _create_es_mapping(config)
@@ -33,6 +42,7 @@ def test_create_es_mapping_string_skip_raw():
     }
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_es_index_register_unregister_on_publish():
     es_index = EsIndex(None)
 
@@ -47,6 +57,7 @@ def test_es_index_register_unregister_on_publish():
     assert on_publish not in es_index.publish_notifier.observers
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch is not installed")
 def test_es_index_publish_notifies_observer():
     es_mock = mock.Mock()
     on_publish_mock = mock.Mock(spec=OnPublish)
