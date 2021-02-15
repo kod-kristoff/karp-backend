@@ -160,9 +160,7 @@ def update_entry(
 
 def add_entries_from_file(resource_id: str, version: int, data: str) -> int:
     with open(data) as fp:
-        objs = []
-        for line in fp:
-            objs.append(json.loads(line))
+        objs = [json.loads(line) for line in fp]
         add_entries(resource_id, objs, user_id="local_admin", resource_version=version)
     return len(objs)
 
@@ -303,7 +301,7 @@ def delete_entries(
         except KarpError as exc:
             result["failure"].append(
                 {
-                    "entry": obj,
+                    "entry_id": entry_id,
                     "error": exc.message,
                 }
             )
