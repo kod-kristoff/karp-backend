@@ -14,6 +14,7 @@ cryptography
 flask-cors
 sb-json-tools>=0.5.2
 python-dotenv
+pydantic
 flask-reverse-proxy
 json_streams
 tabulate

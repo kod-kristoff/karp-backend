@@ -1,31 +1,51 @@
 import os
 import logging
 from distutils.util import strtobool
+from typing import Optional
+
+import pydantic
+from sqlalchemy.engine import url as sa_url
+
 
 MYSQL_FORMAT = "mysql://{user}:{passwd}@{dbhost}/{dbname}"
 
 
-class Config:
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG = False
-    TESTING = False
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-    ELASTICSEARCH_HOST = (
-        os.environ["ELASTICSEARCH_HOST"].split(",")
-        if "ELASTICSEARCH_HOST" in os.environ
-        else None
-    )
-    ELASTICSEARCH_ENABLED = strtobool(os.environ.get("ELASTICSEARCH_ENABLED", "n"))
+class Config(pydantic.BaseSettings):
+    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+    DEBUG: bool = False
+    TESTING: bool = False
+    DB_DRIVER: str = "mysql+pymysql"
+    DB_USER: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[int] = None
+    DB_DATABASE: Optional[str] = None
+    SQLALCHEMY_DATABASE_URI: sa_url.URL = "sqlite:///:memory:"
+    ELASTICSEARCH_HOST: list = []
+    ELASTICSEARCH_ENABLED: bool = False
     # CONSOLE_LOG_LEVEL = logging.getLevelName(
     #     os.environ.get("CONSOLE_LOG_LEVEL", "INFO")
     # )
-    CONSOLE_LOG_LEVEL = getattr(
-        logging, os.environ.get("CONSOLE_LOG_LEVEL", "INFO"), logging.INFO
-    )
-    LOG_TO_SLACK = strtobool(os.environ.get("LOG_TO_SLACK", "n"))
-    SLACK_SECRET = os.environ.get("SLACK_SECRET")
-    JWT_AUTH = strtobool(os.environ.get("JWT_AUTH", "n"))
-    REVERSE_PROXY_PATH = os.environ.get("REVERSE_PROXY_PATH")
+    CONSOLE_LOG_LEVEL = logging.INFO
+    LOG_TO_SLACK: bool = False
+    SLACK_SECRET: str = os.environ.get("SLACK_SECRET")
+    JWT_AUTH: bool = False
+    REVERSE_PROXY_PATH: Optional[str] = None
+
+    @pydantic.validator("SQLALCHEMY_DATABASE_URI", pre=True, always=True)
+    def build_db_url(cls, v, *, values, **kwargs):
+        if v:
+            db_url = sa_url.make_url(v)
+        else:
+            db_url = sa_url.URL(
+                drivername=values["DB_DRIVER"],
+                username=values["DB_USER"],
+                password=values["DB_PASSWORD"],
+                host=values["DB_HOST"],
+                port=values["DB_PORT"],
+                database=values["DB_DATABASE"],
+            )
+        return db_url
 
 
 class ProductionConfig(Config):
