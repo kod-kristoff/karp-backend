@@ -4,6 +4,7 @@ import click
 import pickle
 
 from flask.cli import FlaskGroup  # pyre-ignore
+import json_streams
 import dotenv
 
 dotenv.load_dotenv(".env", verbose=True)
@@ -310,4 +311,13 @@ def import_resource(resource_id, version, data):
 @cli_error_handler
 @cli_timer
 def update_entries(resource_id, version, data):
-    pass
+    result = entrywrite.update_entries(
+        resource_id=resource_id,
+        entries=json_streams.load_from_file(data),
+        user_id="local admin",
+        message="update by admin",
+        resource_version=version
+    )
+
+    if results["failure"]:
+        click.echo(f"Th")
