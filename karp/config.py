@@ -20,7 +20,7 @@ class Config(pydantic.BaseSettings):
     DB_HOST: Optional[str] = None
     DB_PORT: Optional[int] = None
     DB_DATABASE: Optional[str] = None
-    SQLALCHEMY_DATABASE_URI: sa_url.URL = "sqlite:///:memory:"
+    SQLALCHEMY_DATABASE_URI: sa_url.URL
     ELASTICSEARCH_HOST: list = []
     ELASTICSEARCH_ENABLED: bool = False
     # CONSOLE_LOG_LEVEL = logging.getLevelName(
