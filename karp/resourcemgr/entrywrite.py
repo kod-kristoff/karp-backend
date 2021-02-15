@@ -8,7 +8,13 @@ from sqlalchemy import exc as sql_exception
 
 from sb_json_tools import jsondiff
 
-from karp.errors import KarpError, ClientErrorCodes, EntryNotFoundError, UpdateConflict, ResourceNotFoundError
+from karp.errors import (
+    KarpError,
+    ClientErrorCodes,
+    EntryNotFoundError,
+    UpdateConflict,
+    ResourceNotFoundError,
+)
 from karp.resourcemgr import get_resource
 from karp.database import db
 import karp.indexmgr as indexmgr
@@ -22,8 +28,8 @@ def add_entry(
     resource_id: str,
     entry: Dict,
     user_id: str,
-    message: str = None,
-    resource_version: int = None,
+    message: Optional[str] = None,
+    resource_version: Optional[int] = None,
 ):
     return add_entries(
         resource_id,
@@ -68,10 +74,12 @@ def update_entries(
         except ResourceNotFoundError:
             raise
         except KarpError as exc:
-            result["failure"].append({
-                "entry": obj,
-                "error": exc.message,
-            })
+            result["failure"].append(
+                {
+                    "entry": obj,
+                    "error": exc.message,
+                }
+            )
     return result
 
 
@@ -81,8 +89,8 @@ def update_entry(
     version: int,
     entry: Dict,
     user_id: str,
-    message: str = None,
-    resource_version: int = None,
+    message: Optional[str] = None,
+    resource_version: Optional[int] = None,
     force: bool = False,
 ):
     resource = get_resource(resource_id, version=resource_version)
@@ -274,8 +282,42 @@ def _src_entry_to_db_kwargs(entry, entry_json, resource_model, resource_conf):
     return kwargs
 
 
-def delete_entry(resource_id: str, entry_id: str, user_id: str):
-    resource = get_resource(resource_id)
+def delete_entries(
+    resource_id: str, entry_ids: Iterable[str], user_id: str, resource_version: int
+) -> Dict[str, List]:
+    result = {
+        "success": [],
+        "failure": [],
+    }
+    for entry_id in entry_ids:
+        try:
+            succ_id = delete_entry(
+                resource_id=resource_id,
+                entry_id=entry_id,
+                user_id=user_id,
+                resource_version=resource_version,
+            )
+            result["success"].append(succ_id)
+        except ResourceNotFoundError:
+            raise
+        except KarpError as exc:
+            result["failure"].append(
+                {
+                    "entry": obj,
+                    "error": exc.message,
+                }
+            )
+    return result
+
+
+def delete_entry(
+    resource_id: str,
+    entry_id: str,
+    user_id: str,
+    *,
+    resource_version: Optional[int] = None
+):
+    resource = get_resource(resource_id, version=resource_version)
     entry = resource.model.query.filter_by(entry_id=entry_id, deleted=False).first()
     if not entry:
         raise EntryNotFoundError(resource_id, entry_id)
