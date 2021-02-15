@@ -2,9 +2,11 @@ import logging
 import time
 import click
 import pickle
+from pathlib import Path
 
 from flask.cli import FlaskGroup  # pyre-ignore
 import json_streams
+from tabulate import tabulate
 import dotenv
 
 dotenv.load_dotenv(".env", verbose=True)
@@ -219,15 +221,7 @@ def list_resources(show_active):
     else:
         resources = resourcemgr.get_all_resources()
 
-    click.echo("resource_id version active")
-    for resource in resources:
-        click.echo(
-            "{resource_id} {version} {active}".format(
-                resource_id=resource.resource_id,
-                version=resource.version,
-                active="y" if resource.active else "n",
-            )
-        )
+    click.echo(tabulate(resources, headers=["resource_id", "version", "active"]))
 
 
 @resource.command("show")
@@ -284,6 +278,7 @@ def delete_resource():
 
 # Entries commands
 
+
 @cli.group("entries")
 def entries():
     pass
@@ -306,7 +301,7 @@ def import_resource(resource_id, version, data):
 
 @entries.command("update")
 @click.option("--resource_id", default=None, help="", required=True)
-@click.option("--version", default=None, help="", required=True)
+@click.option("--version", default=None, help="", required=False, type=int)
 @click.option("--data", default=None, help="", required=True)
 @cli_error_handler
 @cli_timer
@@ -316,8 +311,39 @@ def update_entries(resource_id, version, data):
         entries=json_streams.load_from_file(data),
         user_id="local admin",
         message="update by admin",
-        resource_version=version
+        resource_version=version,
     )
 
-    if results["failure"]:
-        click.echo(f"Th")
+    if result["failure"]:
+        click.echo(f"{len(result['success'])} entries were successfully updated.")
+        click.echo(f"There were {len(result['failure'])} errors:")
+        click.echo(tabulate(result["failure"]))
+    else:
+        click.echo(f"All {len(result['success'])} entries were successfully updated.")
+
+
+@entries.command("delete")
+@click.option(
+    "--resource_id",
+    default=None,
+    help="The resource to delete entries from",
+    required=True,
+)
+@click.option("--version", default=None, help="", required=False, type=int)
+@click.option("--data", default=None, help="", required=True)
+@cli_error_handler
+@cli_timer
+def delete_entries(resource_id: str, version: int, data: Path):
+    result = entrywrite.delete_entries(
+        resource_id=resource_id,
+        entry_ids=json_streams.load_from_file(data),
+        user_id="local admin",
+        resource_version=version,
+    )
+
+    if result["failure"]:
+        click.echo(f"{len(result['success'])} entries were successfully deleted.")
+        click.echo(f"There were {len(result['failure'])} errors:")
+        click.echo(tabulate(result["failure"]))
+    else:
+        click.echo(f"All {len(result['success'])} entries were successfully deleted.")
