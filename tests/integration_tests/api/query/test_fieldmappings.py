@@ -1,5 +1,7 @@
+from karp import elasticsearch
 import pytest  # pyre-ignore
 
+elasticsearch = pytest.importorskip("elasticsearch")
 try:
     from elasticsearch_dsl.query import (
         Bool,
