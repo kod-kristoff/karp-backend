@@ -2,21 +2,23 @@
 """Pytest entry point."""
 from distutils.util import strtobool
 import json
+import logging
 import os
 import time
 from typing import Dict
+import pydantic
 
 import pytest  # pyre-ignore
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=".env")
+# load_dotenv(dotenv_path=".env")
 
 import elasticsearch_test  # pyre-ignore
 
 from karp import create_app  # noqa: E402
 from karp.database import db  # noqa: E402
-from karp.config import Config  # noqa: E402
+from karp.config import Config, TestingConfig  # noqa: E402
 import karp.resourcemgr as resourcemgr  # noqa: E402
 import karp.indexmgr as indexmgr  # noqa: E402
 from karp.database import ResourceDefinition  # noqa: E402
@@ -54,24 +56,32 @@ CONFIG_PLACES = """{
 }"""
 
 
-class ConfigTest(Config):
+class ConfigTest(TestingConfig):
     """[summary]
 
     Arguments:
         Config {[type]} -- [description]
     """
 
-    SQLALCHEMY_DATABASE_URI = "sqlite://"
+    # SQLALCHEMY_DATABASE_URI = "sqlite://"
     TESTING = True
     SETUP_DATABASE = False
     JWT_AUTH = False
     ELASTICSEARCH_ENABLED = False
-    CONSOLE_LOG_LEVEL = "WARNING"
+    CONSOLE_LOG_LEVEL = logging.WARNING
+    ELASTICSEARCH_HOST = ["http://localhost:9201"]
 
-    def __init__(self, use_elasticsearch=False):
-        if use_elasticsearch:
-            self.ELASTICSEARCH_ENABLED = True
-            self.ELASTICSEARCH_HOST = "http://localhost:9201"
+    @pydantic.validator("ELASTICSEARCH_HOST", pre=True, always=True)
+    def is_elasticsearch_enabled(cls, v, *, values, **kwargs):
+        return (
+            v or ["http://localhost:9201"]
+            if values.get("ELASTICSEARCH_ENABLED")
+            else []
+        )
+
+    # def __init__(self, use_elasticsearch=False):
+    #     if use_elasticsearch:
+    #         self.ELASTICSEARCH_ENABLED = True
 
 
 @pytest.fixture(name="app_f")
@@ -86,6 +96,9 @@ def fixture_app_f():
     """
 
     def fun(**kwargs):
+        config = ConfigTest(**kwargs)
+        assert config.ELASTICSEARCH_ENABLED
+        assert config.ELASTICSEARCH_HOST == []
         app = create_app(ConfigTest(**kwargs))
         with app.app_context():
             ResourceDefinition.__table__.create(bind=db.engine)
@@ -388,7 +401,7 @@ MUNICIPALITIES = [
 def init(client, es_status_code, entries: Dict):
     if es_status_code == "skip":
         pytest.skip("elasticsearch disabled")
-    client_with_data = client(use_elasticsearch=True)
+    client_with_data = client(elasticsearch_enabled=True)
 
     for resource, _entries in entries.items():
         for entry in _entries:

@@ -34,7 +34,7 @@ entries = [
 
 
 def init(client, es_status_code):
-    client_with_data = client(use_elasticsearch=True)
+    client_with_data = client(elasticsearch_enabled=True)
     if es_status_code == "skip":
         pytest.skip("elasticsearch disabled")
 

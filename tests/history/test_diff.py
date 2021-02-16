@@ -14,7 +14,7 @@ places = [
 def diff_data_client(client_with_data_f_scope_module, es):
     if es == "skip":
         pytest.skip("elasticsearch disabled")
-    client = client_with_data_f_scope_module(use_elasticsearch=True)
+    client = client_with_data_f_scope_module(elasticsearch_enabled=True)
 
     response = client.post(
         "places/add",
@@ -81,7 +81,7 @@ def test_diff_from_first_to_date(diff_data_client):
 
 def test_diff_from_date_to_last(diff_data_client):
     """
-        this test is a bit shaky due to assuming that we will find the correct version by subtracting three seconds
+    this test is a bit shaky due to assuming that we will find the correct version by subtracting three seconds
     """
     response = diff_data_client.get(
         "places/3/diff?from_date=%s" % (str(datetime.now(timezone.utc).timestamp() - 3))

@@ -20,7 +20,7 @@ class Config(pydantic.BaseSettings):
     DB_HOST: Optional[str] = None
     DB_PORT: Optional[int] = None
     DB_DATABASE: Optional[str] = None
-    SQLALCHEMY_DATABASE_URI: sa_url.URL
+    SQLALCHEMY_DATABASE_URI: sa_url.URL = None
     ELASTICSEARCH_HOST: list = []
     ELASTICSEARCH_ENABLED: bool = False
     # CONSOLE_LOG_LEVEL = logging.getLevelName(
@@ -28,16 +28,17 @@ class Config(pydantic.BaseSettings):
     # )
     CONSOLE_LOG_LEVEL = logging.INFO
     LOG_TO_SLACK: bool = False
-    SLACK_SECRET: str = os.environ.get("SLACK_SECRET")
+    SLACK_SECRET: Optional[str] = None
     JWT_AUTH: bool = False
     REVERSE_PROXY_PATH: Optional[str] = None
+    SETUP_DATABASE: bool = False
 
     @pydantic.validator("SQLALCHEMY_DATABASE_URI", pre=True, always=True)
     def build_db_url(cls, v, *, values, **kwargs):
         if v:
-            db_url = sa_url.make_url(v)
+            return sa_url.make_url(v)
         else:
-            db_url = sa_url.URL(
+            return sa_url.URL(
                 drivername=values["DB_DRIVER"],
                 username=values["DB_USER"],
                 password=values["DB_PASSWORD"],
@@ -45,17 +46,20 @@ class Config(pydantic.BaseSettings):
                 port=values["DB_PORT"],
                 database=values["DB_DATABASE"],
             )
-        return db_url
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
 
 
-class ProductionConfig(Config):
-    def __init__(self):
-        self.SQLALCHEMY_DATABASE_URI = MYSQL_FORMAT.format(
-            user=os.environ["MARIADB_USER"],
-            pwd=os.environ["MARIADB_PASSWORD"],
-            dbhost=os.environ["MARIADB_HOST"],
-            dbname=os.environ["MARIADB_DATABASE"],
-        )
+# class ProductionConfig(Config):
+#     def __init__(self):
+#         self.SQLALCHEMY_DATABASE_URI = MYSQL_FORMAT.format(
+#             user=os.environ["MARIADB_USER"],
+#             pwd=os.environ["MARIADB_PASSWORD"],
+#             dbhost=os.environ["MARIADB_HOST"],
+#             dbname=os.environ["MARIADB_DATABASE"],
+#         )
 
 
 class DevelopmentConfig(Config):
@@ -64,26 +68,35 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    DB_DRIVER = "sqlite"
+
+    class Config:
+        env_file = ".env"
+        fields = {
+            "ELASTICSEARCH_HOST": {
+                "env": "TEST_ELASTICSEARCH_HOST",
+            },
+        }
 
 
 def get_config():
     return Config()
 
 
-class MariaDBConfig(Config):
-    def __init__(
-        self, user=None, pwd=None, host=None, dbname=None, setup_database=False
-    ):
-        if not user:
-            user = os.environ["MARIADB_USER"]
-        if not pwd:
-            pwd = os.environ["MARIADB_PASSWORD"]
-        if not host:
-            host = os.environ["MARIADB_HOST"]
-        if not dbname:
-            dbname = os.environ["MARIADB_DATABASE"]
+# class MariaDBConfig(Config):
+#     def __init__(
+#         self, user=None, pwd=None, host=None, dbname=None, setup_database=False
+#     ):
+#         if not user:
+#             user = os.environ["MARIADB_USER"]
+#         if not pwd:
+#             pwd = os.environ["MARIADB_PASSWORD"]
+#         if not host:
+#             host = os.environ["MARIADB_HOST"]
+#         if not dbname:
+#             dbname = os.environ["MARIADB_DATABASE"]
 
-        self.SETUP_DATABASE = setup_database
-        self.SQLALCHEMY_DATABASE_URI = MYSQL_FORMAT.format(
-            user=user, passwd=pwd, dbhost=host, dbname=dbname
-        )
+#         self.SETUP_DATABASE = setup_database
+#         self.SQLALCHEMY_DATABASE_URI = MYSQL_FORMAT.format(
+#             user=user, passwd=pwd, dbhost=host, dbname=dbname
+#         )
