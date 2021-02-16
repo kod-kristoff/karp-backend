@@ -1,6 +1,15 @@
 import pytest  # pyre-ignore
 
-from elasticsearch_dsl.query import Bool, Exists, Match, Range, Regexp  # pyre-ignore
+try:
+    from elasticsearch_dsl.query import (
+        Bool,
+        Exists,
+        Match,
+        Range,
+        Regexp,
+    )  # pyre-ignore
+except ImportError:
+    pytestmark = pytest.mark.skip("All tests depends on elasticsearch_dsl")
 
 from karp import search
 from karp.elasticsearch.es_search import EsQuery

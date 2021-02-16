@@ -3,6 +3,8 @@ import urllib.request
 import urllib.parse
 import pytest  # pyre-ignore
 from karp import search
+
+elasticsearch = pytest.importorskip("elasticsearch")
 from karp.elasticsearch import es_search
 
 entries = [
