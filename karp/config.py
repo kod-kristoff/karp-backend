@@ -1,7 +1,7 @@
 import os
 import logging
 from distutils.util import strtobool
-from typing import Optional
+from typing import Optional, List
 
 import pydantic
 from sqlalchemy.engine import url as sa_url
@@ -21,7 +21,7 @@ class Config(pydantic.BaseSettings):
     DB_PORT: Optional[int] = None
     DB_DATABASE: Optional[str] = None
     SQLALCHEMY_DATABASE_URI: sa_url.URL = None
-    ELASTICSEARCH_HOST: list = []
+    ELASTICSEARCH_HOST: List[str] = []
     ELASTICSEARCH_ENABLED: bool = False
     # CONSOLE_LOG_LEVEL = logging.getLevelName(
     #     os.environ.get("CONSOLE_LOG_LEVEL", "INFO")
@@ -69,6 +69,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     DB_DRIVER = "sqlite"
+    ES_HOME = ""
 
     class Config:
         env_file = ".env"

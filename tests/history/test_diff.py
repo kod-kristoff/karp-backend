@@ -14,7 +14,7 @@ places = [
 def diff_data_client(client_with_data_f_scope_module, es):
     if es == "skip":
         pytest.skip("elasticsearch disabled")
-    client = client_with_data_f_scope_module(elasticsearch_enabled=True)
+    client = client_with_data_f_scope_module(ELASTICSEARCH_ENABLED=True)
 
     response = client.post(
         "places/add",

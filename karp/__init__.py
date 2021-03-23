@@ -49,13 +49,15 @@ def create_app(config_class=None):
 
     db.init_app(app)
 
+    assert app.config["ELASTICSEARCH_ENABLED"]
+    assert app.config.get("ELASTICSEARCH_HOST")
     if app.config.get("SETUP_DATABASE", True):
         from .resourcemgr import setup_resource_classes
 
         with app.app_context():
             setup_resource_classes()
 
-    if app.config["ELASTICSEARCH_ENABLED"] and app.config.get("ELASTICSEARCH_HOST", ""):
+    if app.config["ELASTICSEARCH_ENABLED"] and app.config.get("ELASTICSEARCH_HOST"):
         from karp.elasticsearch import init_es
 
         init_es(app.config["ELASTICSEARCH_HOST"])

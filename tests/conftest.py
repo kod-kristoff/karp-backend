@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import time
-from typing import Dict
+from typing import Dict, List
 import pydantic
 
 import pytest  # pyre-ignore
@@ -64,20 +64,38 @@ class ConfigTest(TestingConfig):
     """
 
     # SQLALCHEMY_DATABASE_URI = "sqlite://"
-    TESTING = True
-    SETUP_DATABASE = False
-    JWT_AUTH = False
-    ELASTICSEARCH_ENABLED = False
+    TESTING: bool = True
+    SETUP_DATABASE: bool = False
+    JWT_AUTH: bool = False
+    ELASTICSEARCH_ENABLED: bool = False
     CONSOLE_LOG_LEVEL = logging.WARNING
-    ELASTICSEARCH_HOST = ["http://localhost:9201"]
+    ELASTICSEARCH_HOST: List[str] = ["http://localhost:9201"]
 
-    @pydantic.validator("ELASTICSEARCH_HOST", pre=True, always=True)
-    def is_elasticsearch_enabled(cls, v, *, values, **kwargs):
+    # @pydantic.validator("ELASTICSEARCH_HOST", pre=True, always=True)
+    # def is_elasticsearch_enabled(cls, v, *, values, **kwargs):
+    #     return (
+    #         v or ["http://localhost:9201"]
+    #         if values.get("ELASTICSEARCH_ENABLED")
+    #         or values.get("elasticsearch_enabled")
+    #         else []
+    #     )
+
+    @pydantic.validator("ELASTICSEARCH_ENABLED", pre=True, always=True)
+    def enable_elasticsearch(cls, v, *, values, **kwargs):
         return (
-            v or ["http://localhost:9201"]
-            if values.get("ELASTICSEARCH_ENABLED")
-            else []
+            v
+            or values.get("ELASTICSEARCH_ENABLED")
+            or values.get("elasticsearch_enabled")
         )
+
+    class Config:
+        env_file = ".env"
+        fields = {
+            "elasticsearch_enabled": {
+                "env": ["ELASTICSEARCH_ENABLED", "elasticsearch_enabled"]
+            },
+            "ELASTICSEARCH_HOST": {"env": "TEST_ELASTICSEARCH_HOST"},
+        }
 
     # def __init__(self, use_elasticsearch=False):
     #     if use_elasticsearch:
@@ -96,9 +114,6 @@ def fixture_app_f():
     """
 
     def fun(**kwargs):
-        config = ConfigTest(**kwargs)
-        assert config.ELASTICSEARCH_ENABLED
-        assert config.ELASTICSEARCH_HOST == []
         app = create_app(ConfigTest(**kwargs))
         with app.app_context():
             ResourceDefinition.__table__.create(bind=db.engine)
@@ -273,12 +288,13 @@ def runner(app_f):
 
 @pytest.fixture(name="es", scope="session")
 def fixture_es():
-    if not strtobool(os.environ.get("ELASTICSEARCH_ENABLED", "false")):
+    config = ConfigTest()
+    if not config.ELASTICSEARCH_ENABLED:
         pytest.skip("Elasticsearch disabled.")
     else:
-        if not os.environ.get("ES_HOME"):
+        if not config.ES_HOME:
             raise RuntimeError("must set ES_HOME to run tests that use elasticsearch")
-        with elasticsearch_test.ElasticsearchTest(port=9201):
+        with elasticsearch_test.ElasticsearchTest(es_path=config.ES_HOME, port=9201):
             yield "run"
 
 
@@ -401,7 +417,7 @@ MUNICIPALITIES = [
 def init(client, es_status_code, entries: Dict):
     if es_status_code == "skip":
         pytest.skip("elasticsearch disabled")
-    client_with_data = client(elasticsearch_enabled=True)
+    client_with_data = client(ELASTICSEARCH_ENABLED=True)
 
     for resource, _entries in entries.items():
         for entry in _entries:

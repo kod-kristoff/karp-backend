@@ -7,7 +7,7 @@ from tests.utils import get_json
 def init(client, es_status_code):
     if es_status_code == "skip":
         pytest.skip("elasticsearch disabled")
-    return client(elasticsearch_enabled=True)
+    return client(ELASTICSEARCH_ENABLED=True)
 
 
 def test_add(es, client_with_data_f):

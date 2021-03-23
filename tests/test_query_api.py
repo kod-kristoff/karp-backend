@@ -995,7 +995,7 @@ def test_resource_not_existing(client_with_entries_scope_session):
 def init_data(client, es_status_code, no_entries):
     if es_status_code == "skip":
         pytest.skip("elasticsearch disabled")
-    client_with_data = client(elasticsearch_enabled=True)
+    client_with_data = client(ELASTICSEARCH_ENABLED=True)
 
     for i in range(0, no_entries):
         entry = {"code": i, "name": "name", "municipality": [1]}
