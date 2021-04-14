@@ -84,9 +84,8 @@ def create_app(config_class=None):
         if isinstance(error, KarpError):
             logger.debug(error_str)
             logger.debug(error.message)
-            error_code = error.code if error.code else 0
             return (
-                json.dumps({"error": error.message, "errorCode": error_code}),
+                json.dumps({"error": error.message, "errorCode": error.code}),
                 error.http_return_code,
             )
         else:
@@ -96,7 +95,11 @@ def create_app(config_class=None):
             logger.exception("unhandled exception")
             return (
                 json.dumps(
-                    {"error": "unknown error", "errorCode": 0, "error": str(error)}
+                    {
+                        "error": "unknown error",
+                        "errorCode": 0,
+                        "debug": str(error),
+                    }  # TODO: remove debug field
                 ),
                 400,
             )
