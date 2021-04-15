@@ -172,13 +172,7 @@ def _evaluate_function(
 def _transform_to_index_entry(
     resource: resourcemgr.Resource, _src_entry: Dict, _index_entry, fields
 ):
-    print(
-        f"_transform_to_index_entry_173: _src_entry = '{_src_entry}', _index_entry = '{_index_entry}', fields = '{fields}'"
-    )
     for field_name, field_conf in fields:
-        print(
-            f"_transform_to_index_entry_173: field_name = '{field_name}' field_conf = (virtual: '{field_conf.get('virtual')}', collection: '{field_conf.get('collection')}', type: '{field_conf['type']}')"
-        )
         field_content = None
         if field_conf.get("virtual"):
             res = _evaluate_function(field_conf["function"], _src_entry, resource)
@@ -190,9 +184,6 @@ def _transform_to_index_entry(
                 for subfield in _src_entry[field_name]:
                     if field_conf["type"] == "object":
                         subfield_content = indexer.impl.create_empty_object()
-                        print(
-                            f"_transform_to_index_entry_173: calling _transform_to_index_entry_173(..., {subfield}, ...)"
-                        )
                         _transform_to_index_entry(
                             resource,
                             subfield,
@@ -206,9 +197,6 @@ def _transform_to_index_entry(
         elif field_conf["type"] == "object":
             field_content = indexer.impl.create_empty_object()
             if field_name in _src_entry:
-                print(
-                    f"_transform_to_index_entry_173: calling _transform_to_index_entry_173(..., {_src_entry[field_name]}, ...)"
-                )
                 _transform_to_index_entry(
                     resource,
                     _src_entry[field_name],
@@ -232,9 +220,6 @@ def _transform_to_index_entry(
 def _resolve_ref(
     resource: resourcemgr.Resource, src_entry: Dict, ref_conf: Dict, field_name: str
 ) -> Optional[Any]:
-    print(
-        f"_resolve_ref: src_entry = '{src_entry}', ref_conf = '{ref_conf}', field_name = '{field_name}'"
-    )
     assert field_name in src_entry
     res = None
     if "resource_id" in ref_conf:
@@ -270,14 +255,11 @@ def _resolve_ref(
         if ref:
             ref_entry = {field_name: json.loads(ref.body)}
             # ref_entry = json.loads(ref.body)
-            print(f"_resolve_ref: ref_entry = '{ref_entry}'")
             ref_index_entry = {}
             list_of_sub_fields = ((field_name, ref_conf["field"]),)
-            print("_resolve_ref: calling _transform_to_index_entry_173 ...")
             _transform_to_index_entry(
                 resource, ref_entry, ref_index_entry, list_of_sub_fields
             )
-            print(f"_resolve_ref: ref_index_entry = '{ref_index_entry}'")
             res = ref_index_entry[field_name]
 
     return res
