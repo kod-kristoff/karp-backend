@@ -2,6 +2,12 @@ import os
 import pkg_resources
 import json
 import logging
+
+try:
+    from importlib.metadata import entry_points
+except ImportError:
+    from importlib_metadata import entry_points
+
 from flask import Flask  # pyre-ignore
 from flask_cors import CORS  # pyre-ignore
 from flask import request  # pyre-ignore
@@ -116,6 +122,7 @@ def create_app(config_class=None):
         auth.auth.set_authenticator(Authenticator())
 
     CORS(app)
+    load_modules(app)
     # app = ProxyFix(app, x_for=1, x_host=1)
 
     app.wsgi_app = flask_reverse_proxy.ReverseProxied(app.wsgi_app)
@@ -145,3 +152,17 @@ def get_version() -> str:
 
 def get_resource_string(name: str) -> str:
     return pkg_resources.resource_string(__name__, name).decode("utf-8")
+
+
+def load_modules(app=None):
+    logger = logging.getLogger("karp")
+    if not entry_points().get("karp.webapp"):
+        logger.info("No webapp modules to load.")
+        return
+    for ep in entry_points()["karp.webapp"]:
+        logger.info("Loading webapp module: %s", ep.name)
+        mod = ep.load()
+        if app:
+            init_app = getattr(mod, "init_app", None)
+            if init_app:
+                init_app(app)
