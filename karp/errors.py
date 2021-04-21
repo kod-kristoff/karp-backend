@@ -39,7 +39,8 @@ class ResourceNotFoundError(KarpError):
             "Resource not found. ID: {resource_id}, version: {version}".format(
                 resource_id=resource_id, version=version
             ),
-            ClientErrorCodes.RESOURCE_DOES_NOT_EXIST,
+            code=ClientErrorCodes.RESOURCE_DOES_NOT_EXIST,
+            http_return_code=404,
         )
 
 
