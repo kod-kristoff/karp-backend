@@ -757,6 +757,7 @@ class EsSearch(search.SearchInterface):
             # print(f"{response=}")
             result = self._format_result_dict(query.resources, response)
             if query.lexicon_stats:
+                response = self.execute_query(s, from_=0, size=0)
                 result["distribution"] = {}
                 for bucket in response["aggregations"]["distribution"]["buckets"]:
                     key = bucket["key"]
