@@ -50,8 +50,9 @@ def query(resources: str):
     return flask.Response(
             flask.stream_with_context(
                 json_streams.json_iter.dumps(response)),
-            status_code=200,
-            content_type="application/json")
+            status=200,
+            content_type="application/json",
+            stream=True)
     # return flask_jsonify(response), 200
 
 
