@@ -754,7 +754,7 @@ class EsSearch(search.SearchInterface):
             # TODO format response in a better way, because the whole response takes up too much space in the logs
             # logger.debug('response = {}'.format(response.to_dict()))
 
-            print(f"{response=}")
+            # print(f"{response=}")
             result = self._format_result_dict(query.resources, response)
             if query.lexicon_stats:
                 result["distribution"] = {}
