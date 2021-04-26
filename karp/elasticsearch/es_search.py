@@ -695,6 +695,8 @@ class EsSearch(search.SearchInterface):
             "total": response["hits"]["total"],
             "hits": [format_entry(entry) for entry in response["hits"]["hits"]],
         }
+        if "aggregations" in response:
+            result["aggregations"] = response["aggregations"]
         return result
 
     def search_with_query(self, query: EsQuery):
@@ -757,7 +759,8 @@ class EsSearch(search.SearchInterface):
             # print(f"{response=}")
             result = self._format_result_dict(query.resources, response)
             if query.lexicon_stats:
-                response = self.execute_query(s, from_=0, size=0)
+                if "aggregations" not in response:
+                    response = self.execute_query(s, from_=0, size=0)
                 result["distribution"] = {}
                 for bucket in response["aggregations"]["distribution"]["buckets"]:
                     key = bucket["key"]
