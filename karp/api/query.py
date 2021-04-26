@@ -5,7 +5,9 @@ Used to perform readiness and liveness probes on the server.
 """
 import logging
 
+import flask
 from flask import Blueprint, jsonify as flask_jsonify, request  # pyre-ignore
+import json_streams
 
 from karp import resourcemgr
 
@@ -45,7 +47,12 @@ def query(resources: str):
             )
         )
         raise
-    return flask_jsonify(response), 200
+    return flask.Response(
+            flask.stream_with_context(
+                json_streams.json_iter.dumps(response)),
+            status_code=200,
+            content_type="application/json")
+    # return flask_jsonify(response), 200
 
 
 # @query_api.route("/<resources>/query_split", methods=["GET"])
