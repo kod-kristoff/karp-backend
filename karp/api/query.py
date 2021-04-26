@@ -52,7 +52,7 @@ def query(resources: str):
                 json_streams.json_iter.dumps(response)),
             status=200,
             content_type="application/json",
-            stream=True)
+        )
     # return flask_jsonify(response), 200
 
 
