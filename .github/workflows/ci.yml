@@ -1,16 +1,61 @@
-name: Build
+name: CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  test_w_es:
-    name: Test with Elasticsearch
+  check_pylint:
+    name: Pylint for Python-${{ matrix.python-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.6]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: make install-dev
+      - name: Lint with pylint
+        run: make check-pylint
+        continue-on-error: true
+
+  unit_tests:
+    name: Run unit tests (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: make install-dev
+      - name: Lint with pylint
+        run: make run-unit-tests-w-coverage
+
+  integration_tests:
+    name: Run integration tests (${{ matrix.python-version }}, ${{ matrix.es.version}}, ${{ matrix.os }})
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        es-version: [6.5.4, 6.8.3]
+        es:
+          - use_es: true
+            version: 6.5.4
+          - use_es: true
+            version: 6.8.3
+          - use_es: false
+            verion: '-'
         # es-version: [6.8.3, 7.3.2]
 
     steps:
@@ -20,60 +65,26 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          # pip install -Ur requirements-dev.txt
-          make install-dev
-      # - name: Lint with flake8
-      #   run: |
-      #     # stop the build if there are Python syntax errors or undefined names
-      #     make lint-syntax-errors
-      - name: Lint with pylint
-        run: |
-          make lint-no-fail
+        run: make install-dev
       - name: Install Elasticsearch 6
-        if: startsWith( matrix.es-version, '6')
+        if: matrix.es.use_es && startsWith( matrix.es.version, '6')
         run: |
           wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es-version }}.tar.gz
           tar -xzf elasticsearch-${{ matrix.es-version }}.tar.gz
-          echo "ELASTICSEARCH_ENABLED=True" >> .env
-          echo "ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
-          cat .env
-          # pip install -e .[elasticsearch6]
+          make install-elasticsearch6
       - name: Install Elasticsearch 7
-        if: startsWith( matrix.es-version, '7')
+        if: matrix.es.use_es && startsWith( matrix.es.version, '7')
         run: |
           wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
           tar -xzf elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
+
+          make install-elasticsearch7
+      - name: Configure Elasticsearch
+        if: matrix.es.use_es
+        run: |
           echo "ELASTICSEARCH_ENABLED=True" >> .env
           echo "ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
           cat .env
-          pip install -e .[elasticsearch7]
       - name: Test with pytest
-        run: make test-w-coverage
-  test_w_sql:
-    name: Test with SQL
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
+        run: make run-integration-tests-w-coverage
 
-    steps:
-      - uses: actions/checkout@v1
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          make install-dev
-      # - name: Lint with flake8
-      #   run: |
-      #     # stop the build if there are Python syntax errors or undefined names
-      #     make lint-syntax-errors
-      - name: Lint with pylint
-        run: make lint-no-fail
-      - name: Test with pytest
-        run: make test-w-coverage
