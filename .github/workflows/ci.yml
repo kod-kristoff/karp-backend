@@ -72,7 +72,7 @@ jobs:
       - name: Install dependencies
         run: make install-dev
       - name: Install Elasticsearch 6
-        if: matrix.es.use_es == true && startsWith( matrix.es.version, '6')
+        if: matrix.es.use_es && startsWith( matrix.es.version, '6')
         run: |
           wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es.version }}.tar.gz
           tar -xzf elasticsearch-${{ matrix.es.version }}.tar.gz
