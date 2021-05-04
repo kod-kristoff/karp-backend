@@ -48,11 +48,12 @@ jobs:
           path: .coverage
 
   integration_tests:
-    name: Run integration tests (${{ matrix.python-version }}, ${{ matrix.es.version}}, ${{ matrix.os }})
-    runs-on: ubuntu-latest
+    name: Run integration tests (py-${{ matrix.python-version }}, es-${{ matrix.es.version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
       matrix:
+        os: [ubuntu-latest]
         python-version: [3.6, 3.7, 3.8]
         es:
           - use_es: true
