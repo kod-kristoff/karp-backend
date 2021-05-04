@@ -72,7 +72,7 @@ jobs:
       - name: Install dependencies
         run: make install-dev
       - name: Install Elasticsearch 6
-        if: matrix.es.use_es == 'true' && startsWith( matrix.es.version, '6')
+        if: matrix.es.use_es == true && startsWith( matrix.es.version, '6')
         run: |
           wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es-version }}.tar.gz
           tar -xzf elasticsearch-${{ matrix.es-version }}.tar.gz
@@ -84,7 +84,7 @@ jobs:
           tar -xzf elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
           make install-elasticsearch7
       - name: Configure Elasticsearch
-        if: matrix.es.use_es == 'true'
+        if: matrix.es.use_es == true
         run: |
           echo "ELASTICSEARCH_ENABLED=True" >> .env
           echo "ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
