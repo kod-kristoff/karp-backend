@@ -62,7 +62,6 @@ jobs:
             version: 6.8.3
           - use_es: false
             verion: '-'
-        # es-version: [6.8.3, 7.3.2]
 
     steps:
       - uses: actions/checkout@v1
@@ -75,20 +74,20 @@ jobs:
       - name: Install Elasticsearch 6
         if: matrix.es.use_es == true && startsWith( matrix.es.version, '6')
         run: |
-          wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es-version }}.tar.gz
-          tar -xzf elasticsearch-${{ matrix.es-version }}.tar.gz
+          wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es.version }}.tar.gz
+          tar -xzf elasticsearch-${{ matrix.es.version }}.tar.gz
           make install-elasticsearch6
       - name: Install Elasticsearch 7
         if: matrix.es.use_es == 'true' && startsWith( matrix.es.version, '7')
         run: |
-          wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
-          tar -xzf elasticsearch-${{ matrix.es-version }}-linux-x86_64.tar.gz
+          wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es.version }}-linux-x86_64.tar.gz
+          tar -xzf elasticsearch-${{ matrix.es.version }}-linux-x86_64.tar.gz
           make install-elasticsearch7
       - name: Configure Elasticsearch
         if: matrix.es.use_es == true
         run: |
           echo "ELASTICSEARCH_ENABLED=True" >> .env
-          echo "ES_HOME=`realpath elasticsearch-${{ matrix.es-version }}`" >> .env
+          echo "ES_HOME=`realpath elasticsearch-${{ matrix.es.version }}`" >> .env
           cat .env
       - name: Run all integration tests
         run: make run-integration-tests-w-coverage
