@@ -1,4 +1,4 @@
-.PHONY: test test-log pytest build-dev run-tests clean clean-pyc help lint lint-syntax-errors
+.PHONY: test test-log pytest build-dev run-tests clean clean-pyc help lint lint-syntax-errors check-pylint run-unit-tests-w-coverage run-integration-tests-w-coverage
 .DEFAULT: test
 
 PYTHON = python3
@@ -55,6 +55,12 @@ ${VENV_NAME}/req-dev.installed: setup.py setup.cfg requirements.txt
 	${INVENV} pip install -e .[dev]
 	@touch $@
 
+install-elasticsearch6: venv
+	${INVENV} pip install -e .[elasticsearch6]
+
+install-elasticsearch7: venv
+	${INVENV} pip install -e .[elasticsearch7]
+
 init-db:
 	${INVENV} alembic upgrade head
 
@@ -66,6 +72,12 @@ run-dev: install-dev
 
 lint-syntax-errors: install-dev
 	${INVENV} flake8 karp tests setup.py run.py --count --select=E9,F63,F7,F82 --show-source --statistics ${FLAKE8_FLAGS}
+
+run-unit-tests-w-coverage: install-dev clean-pyc
+	${INVENV} pytest -vv --cov-config=setup.cfg --cov=karp --cov-report=term-missing tests/unit_tests
+
+run-integration-tests-w-coverage: install-dev clean-pyc
+	${INVENV} pytest -vv --cov-config=setup.cfg --cov=karp --cov-report=term-missing tests/integration_tests
 
 test: install-dev clean-pyc
 	${INVENV} pytest -vv tests/unit_tests
@@ -87,7 +99,7 @@ tox:
 tox-to-log:
 	tox > tox.log
 
-lint: install-dev
+check-pylint: install-dev
 	${INVENV} pylint --rcfile=.pylintrc --load-plugins "pylint_flask" karp tests setup.py run.py wsgi.py
 
 lint-no-fail: install-dev
@@ -109,7 +121,7 @@ bumpversion-minor: install-dev
 bumpversion-major: install-dev
 	${INVENV} bump2version major
 
-mkrelease-patch: bumpversion-patch prepare-release docs/openapi.html
+mkrelease: bumpversion-patch prepare-release docs/openapi.html
 mkrelease-minor: bumpversion-minor prepare-release docs/openapi.html
 mkrelease-major: bumpversion-major prepare-release docs/openapi.html
 
