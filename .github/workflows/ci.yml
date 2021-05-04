@@ -23,38 +23,38 @@ jobs:
         run: make check-pylint
         continue-on-error: true
 
-  unit_tests:
-    name: Run unit tests (${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: make install-dev
-      - name: Run unit tests
-        run: make run-unit-tests-w-coverage
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage-unit-test-py${{ matrix.python-version }}
-          path: .coverage
+  # unit_tests:
+  #   name: Run unit tests (${{ matrix.python-version }}, ${{ matrix.os }})
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest]
+  #       python-version: [3.6, 3.7, 3.8, 3.9]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install dependencies
+  #       run: make install-dev
+  #     - name: Run unit tests
+  #       run: make run-unit-tests-w-coverage
+  #     - name: Upload coverage artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: coverage-unit-test-py${{ matrix.python-version }}
+  #         path: .coverage
 
-  integration_tests:
-    name: Run integration tests (py-${{ matrix.python-version }}, es-${{ matrix.es.version}}, ${{ matrix.os }})
+  tests:
+    name: ${{ matrix.task.name }} (py-${{ matrix.python-version }}, es-${{ matrix.es.version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         es:
           - use_es: true
             version: 6.5.4
@@ -62,6 +62,16 @@ jobs:
             version: 6.8.3
           - use_es: false
             verion: '-'
+        task:
+          - name: Unit tests
+            run: make run-unit-tests-w-coverage
+          - name: Integration tests
+            run: make run-integration-tests-w-coverage
+        exclude:
+          - task:
+              name: Unit tests
+            es:
+              use_es: true
 
     steps:
       - uses: actions/checkout@v1
@@ -78,22 +88,22 @@ jobs:
           tar -xzf elasticsearch-${{ matrix.es.version }}.tar.gz
           make install-elasticsearch6
       - name: Install Elasticsearch 7
-        if: matrix.es.use_es == 'true' && startsWith( matrix.es.version, '7')
+        if: matrix.es.use_es && startsWith( matrix.es.version, '7')
         run: |
           wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${{ matrix.es.version }}-linux-x86_64.tar.gz
           tar -xzf elasticsearch-${{ matrix.es.version }}-linux-x86_64.tar.gz
           make install-elasticsearch7
       - name: Configure Elasticsearch
-        if: matrix.es.use_es == true
+        if: matrix.es.use_es
         run: |
           echo "ELASTICSEARCH_ENABLED=True" >> .env
           echo "ES_HOME=`realpath elasticsearch-${{ matrix.es.version }}`" >> .env
           cat .env
-      - name: Run all integration tests
-        run: make run-integration-tests-w-coverage
+      - name: ${{ matrix.task.name }}
+        run: ${{ matrix.task.run }}
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v2
         with:
-          name: coverage-integration-test-py${{ matrix.python-version }}-es${{ matrix.es.version }}
+          name: "coverage-${{ matrix.task.name }}-py${{ matrix.python-version }}-es${{ matrix.es.version }}"
           path: .coverage
 
