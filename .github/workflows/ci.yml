@@ -41,6 +41,11 @@ jobs:
         run: make install-dev
       - name: Run unit tests
         run: make run-unit-tests-w-coverage
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-unit-test-py${{ matrix.python-version }}
+          path: .coverage
 
   integration_tests:
     name: Run integration tests (${{ matrix.python-version }}, ${{ matrix.es.version}}, ${{ matrix.os }})
@@ -86,4 +91,9 @@ jobs:
           cat .env
       - name: Run all integration tests
         run: make run-integration-tests-w-coverage
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-integration-test-py${{ matrix.python-version }}-es${{ matrix.es.version }}
+          path: .coverage
 
