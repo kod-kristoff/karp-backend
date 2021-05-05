@@ -61,7 +61,7 @@ jobs:
           - use_es: true
             version: 6.8.3
           - use_es: false
-            verion: '-'
+            verion: NO
         task:
           - name: Unit tests
             run: make run-unit-tests-w-coverage
@@ -74,7 +74,7 @@ jobs:
               use_es: true
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -104,6 +104,39 @@ jobs:
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v2
         with:
-          name: "coverage-${{ matrix.task.name }}-py${{ matrix.python-version }}-es${{ matrix.es.version }}"
+          name: ".coverage.${{ matrix.task.name }}.py${{ matrix.python-version }}.es${{ matrix.es.version }}"
           path: .coverage
 
+  coverage:
+    name: Combine coverage
+    needs: [tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.6
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: coverage-data
+      - name: Combine coverage
+        run: |
+          pip install coverage
+          coverage combine coverage-data
+          coverage report --show-missing > coverage.report
+          coverage html docs/coverage
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: coverage.report
+      - name: Commit coverage report
+        shell: bash
+        run: |
+          # setup username and email
+          git config --local user.name "Github Actions Bot"
+          git config --local user.email "<>"
+          # stage, commit and push docs/coverage
+          git add docs/coverage
+          git commit -m "update coverage report"
+          git push origin ${GITHUB_REF#refs/heads/}
