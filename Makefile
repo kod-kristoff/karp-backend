@@ -102,8 +102,11 @@ tox-to-log:
 check-pylint: install-dev
 	${INVENV} pylint --rcfile=.pylintrc --load-plugins "pylint_flask" karp tests setup.py run.py wsgi.py
 
-lint-no-fail: install-dev
-	${INVENV} pylint --rcfile=.pylintrc --load-plugins "pylint_flask" --exit-zero karp tests setup.py run.py wsgi.py
+check-mypy: install-dev
+	${INVENV} mypy karp wsgi.py run.py
+
+check-pylint-refactorings: install-dev
+	${INVENV} pylint --disable=C,W,E --enable=R karp tests
 
 type-check:
 	pyre check
