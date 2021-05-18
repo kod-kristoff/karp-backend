@@ -1,6 +1,5 @@
-
-def test_get_yaml(client):
-    response = client.get("/documentation/spec.yaml")
+def test_get_yaml(client_scope_session):
+    response = client_scope_session.get("/documentation/spec.yaml")
 
     assert 200 <= response.status_code < 300
 
