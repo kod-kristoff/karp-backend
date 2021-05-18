@@ -16,5 +16,5 @@ def get_json(client, path: str):
         [type] -- [description]
     """
     response = client.get(path)
-    assert 200 <= response.status_code < 300
+    assert 200 <= response.status_code < 300, response.status_code
     return json.loads(response.data.decode())
