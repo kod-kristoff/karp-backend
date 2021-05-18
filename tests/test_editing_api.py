@@ -22,8 +22,8 @@ def init(client, es_status_code, entries):
     return client_with_data
 
 
-def test_add(es, client_with_data_f):
-    client = init(client_with_data_f, es, [])
+def test_add(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es, [])
 
     response = client.post(
         "places/add",
@@ -50,8 +50,8 @@ def test_add(es, client_with_data_f):
     assert entries["hits"][0]["entry"]["name"] == "test3"
 
 
-def test_add_existing(es, client_with_data_f):
-    client = init(client_with_data_f, es, [])
+def test_add_existing(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es, [])
 
     response = client.post(
         "places/add",
@@ -96,9 +96,9 @@ def test_add_existing(es, client_with_data_f):
     assert "Database error" in response_data["error"]
 
 
-def test_delete(es, client_with_data_f):
+def test_delete(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -121,9 +121,9 @@ def test_delete(es, client_with_data_f):
     assert len(entries["hits"]) == 0
 
 
-def test_update(es, client_with_data_f):
+def test_update(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -168,9 +168,9 @@ def test_update(es, client_with_data_f):
     assert entries["hits"][0]["entry"]["population"] == 5
 
 
-def test_update_entry_id(es, client_with_data_f):
+def test_update_entry_id(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -214,9 +214,9 @@ def test_update_entry_id(es, client_with_data_f):
     assert 1 == len(entries["hits"])
 
 
-def test_update_via_get_doesnt_mess_up(es, client_with_data_f):
+def test_update_via_get_doesnt_mess_up(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -285,9 +285,9 @@ def test_update_via_get_doesnt_mess_up(es, client_with_data_f):
     #         assert "v_smaller_places" not in entry
 
 
-def test_refs(es, client_with_data_f):
+def test_refs(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -327,9 +327,9 @@ def test_refs(es, client_with_data_f):
             assert "v_smaller_places" not in entry
 
 
-def test_external_refs(es, client_with_data_f):
+def test_external_refs(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -421,9 +421,9 @@ def test_external_refs(es, client_with_data_f):
             ]
 
 
-def test_update_refs(es, client_with_data_f):
+def test_update_refs(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f,
+        client_with_data_f_scope_session,
         es,
         [
             {
@@ -464,9 +464,11 @@ def test_update_refs(es, client_with_data_f):
     assert "v_smaller_places" not in entry
 
 
-def test_update_refs2(es, client_with_data_f):
+def test_update_refs2(es, client_with_data_f_scope_session):
     client = init(
-        client_with_data_f, es, [{"code": 3, "name": "test3", "municipality": [2, 3]}]
+        client_with_data_f_scope_session,
+        es,
+        [{"code": 3, "name": "test3", "municipality": [2, 3]}],
     )
 
     client.post(
@@ -495,12 +497,14 @@ def test_update_refs2(es, client_with_data_f):
         assert db_entry.municipality[0].municipality == 2
 
 
-def test_last_modified(es, client_with_data_f):
+def test_last_modified(es, client_with_data_f_scope_session):
     before_add = datetime.now(timezone.utc).timestamp()
 
     time.sleep(1)
     client = init(
-        client_with_data_f, es, [{"code": 1, "name": "test1", "municipality": [1]}]
+        client_with_data_f_scope_session,
+        es,
+        [{"code": 1, "name": "test1", "municipality": [1]}],
     )
     time.sleep(1)
 

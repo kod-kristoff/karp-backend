@@ -20,10 +20,10 @@ def get_helper(client, url):
 
 
 @pytest.fixture(scope="module")
-def history_data_client(client_with_data_f_scope_module, es):
+def history_data_client(client_with_data_f_scope_session, es):
     if es == "skip":
         pytest.skip("elasticsearch disabled")
-    client = client_with_data_f_scope_module(use_elasticsearch=True)
+    client = client_with_data_f_scope_session(use_elasticsearch=True)
     with client.application.app_context():
         for entry in places[0:2]:
             entrywrite.add_entry("places", entry, "user1", message="Add it")

@@ -256,7 +256,7 @@ def test_transform_to_index_entry(
     src_entry: Dict,
     expected: Dict,
 ):
-    # app = app_with_data_f_scope_session(use_elasticsearch=True)
+    # app = app_with_data_f_scope_session_scope_session(use_elasticsearch=True)
     with client_with_entries_scope_session.application.app_context():
         resource = resourcemgr.get_resource(resource_id)
         index_entry = transform_to_index_entry(

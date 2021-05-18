@@ -14,8 +14,8 @@ municipalities = [
 ]
 
 
-def test_no_refs_1(app_with_data_f):
-    app = app_with_data_f()
+def test_no_refs_1(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places[0:1], "test", resource_version=1)
@@ -24,8 +24,8 @@ def test_no_refs_1(app_with_data_f):
         assert len(referenced_entries) == 0
 
 
-def test_no_refs_2(app_with_data_f):
-    app = app_with_data_f()
+def test_no_refs_2(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places[0:2], "test", resource_version=1)
@@ -36,8 +36,8 @@ def test_no_refs_2(app_with_data_f):
         assert len(referenced_entries) == 0
 
 
-def test_internal_ref(app_with_data_f):
-    app = app_with_data_f()
+def test_internal_ref(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places[1:3], "test", resource_version=1)
@@ -47,8 +47,8 @@ def test_internal_ref(app_with_data_f):
         assert referenced_entries[0]["entry_id"] == "4"
 
 
-def test_external_ref(app_with_data_f):
-    app = app_with_data_f()
+def test_external_ref(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places, "test", resource_version=1)
@@ -83,8 +83,8 @@ def test_external_ref(app_with_data_f):
         assert ref_municipalities[0]["entry_id"] != ref_municipalities[1]["id"]
 
 
-def test_virtual_internal_ref(app_with_data_f):
-    app = app_with_data_f()
+def test_virtual_internal_ref(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places[1:3], "test", resource_version=1)
@@ -94,8 +94,8 @@ def test_virtual_internal_ref(app_with_data_f):
         assert referenced_entries[0]["entry_id"] == "5"
 
 
-def test_virtual_external_ref(app_with_data_f):
-    app = app_with_data_f()
+def test_virtual_external_ref(app_with_data_f_scope_session):
+    app = app_with_data_f_scope_session()
 
     with app.app_context():
         entrywrite.add_entries("places", places[0:1], "test", resource_version=1)

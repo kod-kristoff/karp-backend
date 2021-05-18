@@ -930,7 +930,7 @@ def test_protected(client_with_data_scope_module):
 
 
 # def test_pagination_explicit_0_25(client_with_entries_scope_session):
-#     client = init_data(client_with_data_f, es, 30)
+#     client = init_data(client_with_data_f_scope_session, es, 30)
 #     resource = 'places'
 #     response = client.get('/{}/query?from=0&size=25'.format(resource))
 #     assert response.status == '200 OK'
@@ -942,7 +942,7 @@ def test_protected(client_with_data_scope_module):
 #
 #
 # def test_pagination_explicit_13_45(client_with_entries_scope_session):
-#     client = init_data(client_with_data_f, es, 60)
+#     client = init_data(client_with_data_f_scope_session, es, 60)
 #     resource = 'places'
 #     response = client.get('/{}/query?from=13&size=45'.format(resource))
 #     assert response.status == '200 OK'
@@ -954,7 +954,7 @@ def test_protected(client_with_data_scope_module):
 #
 #
 # def test_pagination_default_size(client_with_entries_scope_session):
-#     client = init_data(client_with_data_f, es, 30)
+#     client = init_data(client_with_data_f_scope_session, es, 30)
 #     resource = 'places'
 #     response = client.get('/{}/query?from=0'.format(resource))
 #     assert response.status == '200 OK'
@@ -964,7 +964,7 @@ def test_protected(client_with_data_scope_module):
 #
 #
 # def test_pagination_default_from(client_with_entries_scope_session):
-#     client = init_data(client_with_data_f, es, 50)
+#     client = init_data(client_with_data_f_scope_session, es, 50)
 #     resource = 'places'
 #     response = client.get('/{}/query?size=45'.format(resource))
 #     assert response.status == '200 OK'
@@ -974,7 +974,7 @@ def test_protected(client_with_data_scope_module):
 #
 #
 # def test_pagination_fewer(client_with_entries_scope_session):
-#     client = init_data(client_with_data_f, es, 5)
+#     client = init_data(client_with_data_f_scope_session, es, 5)
 #     resource = 'places'
 #     response = client.get('/{}/query?from=10'.format(resource))
 #     assert response.status == '200 OK'

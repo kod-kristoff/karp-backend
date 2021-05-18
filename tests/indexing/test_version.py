@@ -10,8 +10,8 @@ def init(client, es_status_code):
     return client(use_elasticsearch=True)
 
 
-def test_add(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_add(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -22,8 +22,8 @@ def test_add(es, client_with_data_f):
     assert result["hits"][0]["version"] == 1
 
 
-def test_no_changes_update(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_no_changes_update(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -40,8 +40,8 @@ def test_no_changes_update(es, client_with_data_f):
     assert result["hits"][0]["version"] == 1
 
 
-def test_update(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_update(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -62,8 +62,8 @@ def test_update(es, client_with_data_f):
     assert result["hits"]["places"][0]["version"] == 2
 
 
-def test_conflict(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_conflict(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -91,8 +91,8 @@ def test_conflict(es, client_with_data_f):
     assert "diff" in error_obj
 
 
-def test_delete(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_delete(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -104,8 +104,8 @@ def test_delete(es, client_with_data_f):
     # TODO query history about changes, when we have a history api
 
 
-def test_reindex(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_reindex(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(
@@ -130,8 +130,8 @@ def test_reindex(es, client_with_data_f):
     assert len(result["hits"]) == 1
 
 
-def test_force_update(es, client_with_data_f):
-    client = init(client_with_data_f, es)
+def test_force_update(es, client_with_data_f_scope_session):
+    client = init(client_with_data_f_scope_session, es)
 
     entry = {"code": 1, "name": "1", "municipality": [1]}
     client.post(

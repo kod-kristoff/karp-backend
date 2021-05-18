@@ -57,11 +57,11 @@ def test_es_setup(es):
     assert answer["tagline"] == "You Know, for Search"
 
 
-def test_es_search(es, client_with_data_f):
+def test_es_search(es, client_with_data_f_scope_session):
     if es == "skip":
         pytest.skip("elasticsearch disabled")
 
-    client_with_data = init(client_with_data_f, es)
+    client_with_data = init(client_with_data_f_scope_session, es)
 
     with client_with_data.application.app_context():
         args = {"q": "equals|population|3"}
@@ -73,11 +73,11 @@ def test_es_search(es, client_with_data_f):
         assert ids["hits"][0]["entry"]["population"] == 3
 
 
-def test_es_search2(es, client_with_data_f):
+def test_es_search2(es, client_with_data_f_scope_session):
     if es == "skip":
         pytest.skip("elasticsearch disabled")
 
-    client_with_data = init(client_with_data_f, es)
+    client_with_data = init(client_with_data_f_scope_session, es)
 
     with client_with_data.application.app_context():
         args = {"q": "equals|population|3"}
