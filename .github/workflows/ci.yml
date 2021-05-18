@@ -123,7 +123,7 @@ jobs:
       - name: Combine coverage
         run: |
           pip install coverage
-          ls -r coverage-data
+          ls -R coverage-data
           coverage combine coverage-data
           coverage report --show-missing > coverage.report
           coverage html docs/coverage
