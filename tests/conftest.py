@@ -411,7 +411,7 @@ def init(client, es_status_code, entries: Dict):
                 data=json.dumps({"entry": entry}),
                 content_type="application/json",
             )
-            assert resp.status_code < 300, resp
+            assert resp.status_code < 300, resp.status_code
     return client_with_data
 
 

@@ -1,0 +1,12 @@
+{
+    "resource_id": "large_lex",
+    "resource_name": "large_lex",
+    "fields": {
+        "foo": {
+            "type": "string",
+            "required": true
+        }
+    },
+    "sort": "foo",
+    "id": "foo"
+}
