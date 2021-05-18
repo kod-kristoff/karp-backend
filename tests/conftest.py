@@ -185,6 +185,7 @@ def fixture_app_with_data_f_scope_session(app_f_scope_session):
                 "tests/data/config/places.json",
                 "tests/data/config/municipalities.json",
                 "tests/data/config/alphalex.json",
+                "tests/data/config/large_lex.json",
             ]:
                 with open(file) as fp:
                     resource, version = resourcemgr.create_new_resource(fp)
