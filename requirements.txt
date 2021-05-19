@@ -1,5 +1,5 @@
 flask
-json-streams>=0.3.1
+json-streams>=0.7.1
 sqlalchemy
 flask-sqlalchemy
 mysqlclient
@@ -13,7 +13,7 @@ slack-log-utils
 pyjwt
 cryptography
 flask-cors
-sb-json-tools>=0.5.2
+sb-json-tools>=0.9
 python-dotenv
 flask-reverse-proxy
 tabulate
