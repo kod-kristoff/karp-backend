@@ -1,1 +1,0 @@
-from .resource_handlers import CreateResourceHandler

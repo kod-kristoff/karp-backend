@@ -4,7 +4,7 @@ import enum
 from uuid import UUID
 from typing import Callable, Dict, Any, Optional, List, Union
 
-from karp.domain import constraints
+from karp.domain import constraints, events  # , repository
 from karp.domain.errors import ConfigurationError, RepositoryStatusError
 from karp.domain.models import event_handler
 from karp.domain.models.entity import Entity, TimestampedVersionedEntity
@@ -15,6 +15,9 @@ from karp.domain.models.auth_service import PermissionLevel
 from karp.utility import unique_id
 from karp.utility import json_schema
 from karp.utility.container import create_field_getter
+
+
+# pylint: disable=unsubscriptable-object
 
 
 class ResourceOp(enum.Enum):
@@ -116,6 +119,7 @@ class Resource(TimestampedVersionedEntity):
         op: ResourceOp = ResourceOp.ADDED,
         is_published: bool = False,
         entry_repository: EntryRepository = None,
+        entries=None,  # type: Optional[repository.EntryRepository]
         version: int = 1,
         **kwargs,
     ):
@@ -130,6 +134,11 @@ class Resource(TimestampedVersionedEntity):
         self._releases = []
         self._entry_repository = entry_repository
         self._entry_json_schema = None
+        self.entries = entries
+        self.events: List[events.Event] = []
+        print(f"self.entries = {entries}")
+        self.entries = entries
+        self.events.append(events.ResourceCreated(resource_id))
 
     @property
     def resource_id(self):

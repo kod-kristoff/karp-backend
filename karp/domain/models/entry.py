@@ -40,17 +40,18 @@ class Entry(TimestampedVersionedEntity):
 
     def __init__(
         self,
-        entry_id: str,
+        entry_id: unique_id.UniqueId,
+        name: str,
         body: Dict,
         message: str,
-        status: EntryStatus,  # IN-PROGRESS, IN-REVIEW, OK, PUBLISHED
-        op: EntryOp,
-        *pos,
+        version: int = 1,
+        status: EntryStatus = EntryStatus.IN_PROGRESS,  # IN-PROGRESS, IN-REVIEW, OK, PUBLISHED
+        op: EntryOp = EntryOp.ADDED,
         **kwargs,
         # version: int = 0
     ):
-        super().__init__(*pos, **kwargs)
-        self._entry_id = entry_id
+        super().__init__(entity_id=entry_id, version=version, **kwargs)
+        self.name = name
         self._body = body
         self._op = op
         self._message = "Entry added." if message is None else message
@@ -121,7 +122,7 @@ class Entry(TimestampedVersionedEntity):
         self._op = EntryOp.UPDATED
 
     def __repr__(self) -> str:
-        return f"Entry(id={self._id}, entry_id={self._entry_id}, version={self.version}, last_modified={self._last_modified}, body={self.body})"
+        return f"Entry(id={self._id}, name={self.name}, version={self.version}, last_modified={self._last_modified}, body={self.body})"
 
 
 # === Factories ===
