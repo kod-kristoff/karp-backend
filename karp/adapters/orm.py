@@ -1,7 +1,7 @@
 from collections import namedtuple
-from karp.errors import IntegrityError
 import logging
 from typing import List, Optional, Union
+import logging
 
 import sqlalchemy
 from sqlalchemy import (
@@ -25,8 +25,9 @@ from sqlalchemy_utils import UUIDType
 from sqlalchemy_json import NestedMutableJson
 from sqlalchemy_utils.functions import create_database, drop_database
 
+from karp.errors import IntegrityError
+from karp.domain import model
 from karp.domain.models.resource import (
-    Resource,
     ResourceOp,
 )  # Resource, ResourceReporter
 from karp.domain.ports import (
@@ -38,6 +39,62 @@ from karp.utility.unique_id import UniqueId
 
 
 # pylint: disable=unsubscriptable-object
+
+metadata = MetaData()
+
+logger = logging.getLogger(__name__)
+
+resources = Table(
+    "resources",
+    metadata,
+    Column("history_id", Integer, primary_key=True),
+    Column("id", UUIDType, nullable=False),
+    Column("machine_name", String(32), nullable=False),
+    Column("version", Integer, nullable=False),
+    Column("name", String(64), nullable=False),
+    Column("config", NestedMutableJson, nullable=False),
+    Column("is_published", Boolean, index=True, nullable=True, default=None),
+    Column("last_modified", Float, nullable=False),
+    Column("last_modified_by", String(100), nullable=False),
+    Column("message", String(100), nullable=False),
+    Column("op", Enum(ResourceOp), nullable=False),
+    # Column("entry_json_schema", Text, nullable=False),
+    Column("discarded", Boolean, default=False),
+    # Column("reporter_name", String(50)),
+    # Column("reporter_email", String(50)),
+    # Column("description", Text),
+    UniqueConstraint("id", "version", name="resource_version_unique_constraint"),
+)
+
+
+def start_mappers():
+    logger.info("Starting mappers")
+    mapper(
+        model.Resource,
+        resources,
+        properties={
+            "_id": resources.c.id,
+            "machine_name": resources.c.machine_name,
+            "_version": resources.c.version,
+            "_name": resources.c.name,
+            "config": resources.c.config,
+            "is_published": resources.c.is_published,
+            "_last_modified": resources.c.last_modified,
+            "_last_modified_by": resources.c.last_modified_by,
+            "_message": resources.c.message,
+            "_op": resources.c.op,
+            # "entry_json_schema": resources.c.entry_json_schema,
+            "discarded": resources.c.discarded,
+            # "reporter_name": resources.c.reporter_name,
+            # "reporter_email": resources.c.reporter_email,
+            # "description": resources.c.description,
+            # "reporter": composite(
+            #     ResourceReporter,
+            #     resources.c.reporter_name,
+            #     resources.c.reporter_email,
+            # ),
+        },
+    )
 
 
 class SqlAlchemyUnitOfWorkManager(UnitOfWorkManager):
@@ -140,29 +197,7 @@ class SqlAlchemy:
         self.metadata = MetaData(self.engine)
 
         # ResourceReporter.__composite_values__ = lambda i: (i.name, i.email)
-        resources = Table(
-            "resources",
-            self.metadata,
-            Column("history_id", Integer, primary_key=True),
-            Column("id", UUIDType, nullable=False),
-            Column("machine_name", String(32), nullable=False),
-            Column("version", Integer, nullable=False),
-            Column("name", String(64), nullable=False),
-            Column("config", NestedMutableJson, nullable=False),
-            Column("is_published", Boolean, index=True, nullable=True, default=None),
-            Column("last_modified", Float, nullable=False),
-            Column("last_modified_by", String(100), nullable=False),
-            Column("message", String(100), nullable=False),
-            Column("op", Enum(ResourceOp), nullable=False),
-            # Column("entry_json_schema", Text, nullable=False),
-            Column("discarded", Boolean, default=False),
-            # Column("reporter_name", String(50)),
-            # Column("reporter_email", String(50)),
-            # Column("description", Text),
-            UniqueConstraint(
-                "id", "version", name="resource_version_unique_constraint"
-            ),
-        )
+
         if self.resource_mapper is None:
             self.set_resource_mapper(
                 mapper(
