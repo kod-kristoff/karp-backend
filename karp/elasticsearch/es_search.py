@@ -619,11 +619,7 @@ class EsSearch(search.SearchInterface):
     def _get_index_mappings(
         self, index: Optional[str] = None
     ) -> Dict[str, Dict[str, Dict[str, Dict[str, Dict]]]]:
-        if index is not None:
-            kwargs = {"index": index}
-        else:
-            kwargs = {}
-
+        kwargs = {"index": index} if index is not None else {}
         return self.es.indices.get_mapping(**kwargs)
 
     def _get_all_aliases(self) -> List[Tuple[str, str]]:
@@ -756,7 +752,7 @@ class EsSearch(search.SearchInterface):
             # TODO format response in a better way, because the whole response takes up too much space in the logs
             # logger.debug('response = {}'.format(response.to_dict()))
 
-            # print(f"{response=}")
+            print(f"es_search.search_with_query: response={response}")
             result = self._format_result_dict(query.resources, response)
             if query.lexicon_stats:
                 if "aggregations" not in response:
@@ -772,20 +768,26 @@ class EsSearch(search.SearchInterface):
     def execute_query(
         self, es_search: es_dsl.Search, *, from_: int = 0, size: Optional[int] = None
     ) -> Dict:
+        logger.info(
+            "es_search.execute_query called with from_ = %d, size = %d", from_, size
+        )
         if from_ is None:
             raise ValueError("'from_' must have a value.")
 
         response = {"hits": {"hits": [], "total": 0}}
 
         if size is None or (from_ + size > search_settings.scan_limit):
+            logger.info("es_search.execute_query: large query, counting ...")
             # tmp_search = es_search.extra(from_=0, size=0)
             # tmp_response = tmp_search.execute()
             # tot_hits = tmp_response.hits.total
-            tot_hits = es_search.count()
+            tot_hits: int = es_search.count()
+            logger.info("es_search.execute_query: tot_hits = %d", tot_hits)
             response["hits"]["total"] = tot_hits
             if size is None:
                 size = tot_hits - from_
             if tot_hits < from_:
+                logger.info("es_search.execute_query: early exit")
                 return response
 
         if size + from_ <= search_settings.scan_limit:

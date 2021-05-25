@@ -67,7 +67,7 @@ class ConfigTest(Config):
     SETUP_DATABASE = False
     JWT_AUTH = False
     ELASTICSEARCH_ENABLED = False
-    CONSOLE_LOG_LEVEL = "WARNING"
+    CONSOLE_LOG_LEVEL = "INFO"
 
     def __init__(self, use_elasticsearch=False):
         print(f"use_elasticsearch: {use_elasticsearch}")
@@ -440,7 +440,11 @@ def client_with_entries_scope_session(es, client_with_data_f_scope_session):
     client_with_data = init(
         client_with_data_f_scope_session,
         es,
-        {"places": common_data.PLACES, "municipalities": common_data.MUNICIPALITIES},
+        {
+            "places": common_data.PLACES,
+            "municipalities": common_data.MUNICIPALITIES,
+            # "large_lex": ({"foo": str(value)} for value in range(12000)),
+        },
     )
     time.sleep(5)
     return client_with_data
