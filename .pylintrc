@@ -263,7 +263,10 @@ good-names=i,
            _,
            fp,
            es,
-           uw
+           uw,
+           s,
+           q,
+           ms
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no
