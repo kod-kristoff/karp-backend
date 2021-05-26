@@ -1,19 +1,23 @@
 import pytest
 from karp.adapters import repository
 from karp.domain import model
+from karp.utility.unique_id import make_unique_id
 
 pytestmark = pytest.mark.usefixtures("mappers")
 
 
-def test_get_by_batchref(sqlite_session_factory):
-    session = sqlite_session_factory()
-    repo = repository.SqlAlchemyRepository(session)
-    b1 = model.Batch(ref="b1", sku="sku1", qty=100, eta=None)
-    b2 = model.Batch(ref="b2", sku="sku1", qty=100, eta=None)
-    b3 = model.Batch(ref="b3", sku="sku2", qty=100, eta=None)
-    p1 = model.Product(sku="sku1", batches=[b1, b2])
-    p2 = model.Product(sku="sku2", batches=[b3])
-    repo.add(p1)
-    repo.add(p2)
-    assert repo.get_by_batchref("b2") == p1
-    assert repo.get_by_batchref("b3") == p2
+class TestResourceRepository:
+    def test_get_by_id(self, sqlite_session_factory):
+        session = sqlite_session_factory()
+        repo = repository.SqlResourceRepository(session)
+        resource_id1 = make_unique_id()
+        r1 = model.Resource(
+            resource_id=resource_id1,
+            machine_name="res1",
+            name="Res 1",
+            last_modified_by="user",
+            message="msg",
+            config={},
+        )
+        repo.add(r1)
+        assert repo.get(resource_id1) == r1
