@@ -21,3 +21,4 @@ class TestResourceRepository:
         )
         repo.add(r1)
         assert repo.get(resource_id1) == r1
+        assert repo.get(resource_id1).id == resource_id1
