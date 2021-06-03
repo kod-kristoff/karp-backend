@@ -61,11 +61,12 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=locally-disabled,
-        suppressed-message,
-        missing-module-docstring,
-        missing-class-docstring,
-        missing-function-docstring
+disable=C,R
+# disable=locally-disabled,
+#         suppressed-message,
+#         missing-module-docstring,
+#         missing-class-docstring,
+#         missing-function-docstring
 
 # disable=print-statement,
 #         parameter-unpacking,
@@ -149,8 +150,8 @@ disable=locally-disabled,
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
-enable=all
-# enable=c-extension-no-member
+# enable=all
+enable=c-extension-no-member
 
 
 [REPORTS]
