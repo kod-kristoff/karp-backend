@@ -78,7 +78,6 @@ class BaseHistory:
     message = db.Column(db.Text)
 
     @declared_attr
-    @classmethod
     def __table_args__(cls):
         return (
             db.UniqueConstraint(
