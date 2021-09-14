@@ -203,7 +203,7 @@ def _transform_to_index_entry(
                     field_content,
                     field_conf["fields"].items(),
                 )
-        elif field_conf["type"] in ("integer", "string", "number"):
+        elif field_conf["type"] in ("integer", "string", "number", "boolean"):
             if field_name in _src_entry:
                 field_content = _src_entry[field_name]
 

@@ -188,6 +188,8 @@ def get_or_create_resource_model(config, version):
                     column_type = db.Integer()
                 elif field["type"] == "number":
                     column_type = db.Float()
+                elif field["type"] == "boolean":
+                    column_type = db.Boolean()
                 elif field["type"] == "string":
                     column_type = ref_column
                 else:
