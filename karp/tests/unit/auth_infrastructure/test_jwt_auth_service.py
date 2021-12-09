@@ -1,4 +1,4 @@
-"""Unit tests for JWTAuthenticator"""
+"""Unit tests for JWTAuthService"""
 import datetime
 from pathlib import Path
 
@@ -7,7 +7,7 @@ import pytest
 
 from karp.auth.domain.errors import AuthError
 from karp.errors import ClientErrorCodes
-from karp.auth_infrastructure.services.jwt_auth_service import JWTAuthService
+from karp.auth_infrastructure.services import JWTAuthService
 
 from karp.tests.unit.auth import adapters
 
