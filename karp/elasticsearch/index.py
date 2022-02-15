@@ -86,6 +86,55 @@ class EsIndex(IndexInterface):
                 "number_of_shards": 1,
                 "number_of_replicas": 1,
                 "refresh_interval": -1,
+                'analysis': {
+                    'analyzer': {
+                        'default': {
+                            'char_filter': [
+                                'compound',
+                                'swedish_aa',
+                                'swedish_ae',
+                                'swedish_oe'
+                            ],
+                            'filter': [
+                                'swedish_folding',
+                                'lowercase'
+                            ],
+                            'tokenizer': 'standard'
+                        }
+                    },
+                    'char_filter': {
+                        'compound': {
+                            'pattern': '-',
+                            'replacement': '',
+                            'type': 'pattern_replace'
+                        },
+                        'swedish_aa': {
+                            'pattern': '[Ǻǻ]',
+                            'replacement': 'å',
+                            'type': 'pattern_replace'
+                        },
+                        'swedish_ae': {
+                            'pattern': '[æÆǞǟ]',
+                            'replacement': 'ä',
+                            'type': 'pattern_replace'
+                        },
+                        'swedish_oe': {
+                            'pattern': '[ØøŒœØ̈ø̈ȪȫŐőÕõṌṍṎṏȬȭǾǿǬǭŌōṒṓṐṑ]',
+                            'replacement': 'ö',
+                            'type': 'pattern_replace'
+                        },
+                    },
+                    'filter': {
+                        'swedish_folding': {
+                            'type': 'icu_folding',
+                            'unicodeSetFilter': '[^åäöÅÄÖ]'
+                        },
+                        'swedish_sort': {
+                            'language': 'sv',
+                            'type': 'icu_collation'
+                        }
+                    }
+                }
             },
             "mappings": {"entry": mapping},
         }
