@@ -76,7 +76,7 @@ class GenericSearchService(SearchService):
                 resource_id: len(hits)
             }
 
-        return response
+        return response.dict()
 
     def query_split(self, request: QueryRequest):
         if request.q:

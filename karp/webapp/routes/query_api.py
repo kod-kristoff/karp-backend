@@ -6,6 +6,9 @@ from typing import List, Optional
 
 from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
                      status)
+from fastapi.responses import StreamingResponse
+
+from json_streams import json_iter
 
 from karp import errors as karp_errors, auth, search
 from karp.search.application.queries import SearchService, QueryRequest
@@ -124,7 +127,10 @@ def query_split(
                 'error_description': err.error_description,
             }
         )
-    return response
+    return StreamingResponse(
+        json_iter.dumps(response),
+        media_type='application/json',
+    )
 
 
 @router.get(
@@ -241,7 +247,7 @@ def query(
         lexicon_stats=lexicon_stats,
     )
     try:
-        print(f'{search_service=}')
+        logger.debug({'search_service': search_service})
         response = search_service.query(query_request)
 
     except karp_errors.KarpError as err:
@@ -252,7 +258,11 @@ def query(
                    'error_message': err.message},
         )
         raise
-    return response
+    # logger.debug({'response': response})
+    return StreamingResponse(
+        json_iter.dumps(response),
+        media_type='application/json',
+    )
 
 
 def init_app(app):

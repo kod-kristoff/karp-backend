@@ -259,17 +259,6 @@ class Es6SearchService(search.SearchService):
         }
         return result
 
-    def query(self, request: QueryRequest):
-        logger.info('query called', extra={'request': request})
-        query = EsQuery.from_query_request(request)
-        return self.search_with_query(query)
-
-    def query_split(self, request: QueryRequest):
-        logger.info('query_split called', extra={'request': request})
-        query = EsQuery.from_query_request(request)
-        query.split_results = True
-        return self.search_with_query(query)
-
     def search_with_query(self, query: EsQuery):
         logger.info('search_with_query called', extra={'query': query})
         es_query = None
@@ -354,6 +343,152 @@ class Es6SearchService(search.SearchService):
 
             # logger.debug("return result = %s", result)
             return result
+
+    def query_split(self, request: QueryRequest):
+        logger.info('query_split called', extra={'request': request})
+        query = EsQuery.from_query_request(request)
+
+        logger.info("search_with_query called with query", extra={'query': query})
+        es_query = None
+        if query.q:
+            try:
+                model = self.parser.parse(query.q)
+                es_query = self.query_builder.walk(model)
+            except tatsu_exc.FailedParse as err:
+                logger.debug('Parse error', extra={'err': err})
+                raise errors.IncompleteQuery(
+                    failing_query=query.q,
+                    error_description=str(err)
+                ) from err
+        ms = es_dsl.MultiSearch(using=self.es)
+
+        for resource in query.resources:
+            s = es_dsl.Search(index=resource)
+
+            if es_query:
+                s = s.query(es_query)
+            s = s[query.from_ : query.from_ + query.size]
+            if query.sort:
+                s = s.sort(*self.translate_sort_fields([resource], query.sort))
+            elif resource in query.sort_dict:
+                s = s.sort(
+                    *self.translate_sort_fields(
+                        [resource], query.sort_dict[resource]
+                    )
+                )
+            ms = ms.add(s)
+
+        responses = ms.execute()
+        result = {"total": 0, "hits": {}}
+        for i, response in enumerate(responses):
+            result["hits"][query.resources[i]] = self._format_result(
+                query.resources, response
+            ).get("hits", [])
+            result["total"] += response.hits.total
+            if query.lexicon_stats:
+                if "distribution" not in result:
+                    result["distribution"] = {}
+                result["distribution"][query.resources[i]] = response.hits.total
+        return result
+
+    def query(self, request: QueryRequest):
+        logger.info('query called', extra={'request': request})
+        query = EsQuery.from_query_request(request)
+        logger.info("search_with_query called with query", extra={'query': query})
+        es_query = None
+        if query.q:
+            try:
+                model = self.parser.parse(query.q)
+                es_query = self.query_builder.walk(model)
+            except tatsu_exc.FailedParse as err:
+                logger.debug('Parse error', extra={'err': err})
+                raise errors.IncompleteQuery(
+                    failing_query=query.q,
+                    error_description=str(err)
+                ) from err
+
+        s = es_dsl.Search(using=self.es, index=query.resource_str)
+        if es_query:
+            s = s.query(es_query)
+
+        if query.lexicon_stats:
+            s.aggs.bucket(
+                "distribution", "terms", field="_index", size=len(query.resources)
+            )
+        if query.sort:
+            s = s.sort(*self.translate_sort_fields(query.resources, query.sort))
+        elif query.sort_dict:
+            sort_fields = []
+            for resource, sort in query.sort_dict.items():
+                sort_fields.extend(self.translate_sort_fields([resource], sort))
+            s = s.sort(*sort_fields)
+        logger.debug("s = {}".format(s.to_dict()))
+        response = self.execute_query(s, from_=query.from_, size=query.size)
+
+        # TODO format response in a better way, because the whole response takes up too much space in the logs
+        # logger.debug('response = {}'.format(response.to_dict()))
+
+        logger.debug("es_search.search_with_query",extra={ 'response':response})
+        result = self._format_result_dict(query.resources, response)
+        if query.lexicon_stats:
+            if "aggregations" not in response:
+                response = self.execute_query(s, from_=0, size=0)
+            result["distribution"] = {}
+            for bucket in response["aggregations"]["distribution"]["buckets"]:
+                key = bucket["key"]
+                value = bucket["doc_count"]
+                result["distribution"][key.rsplit("_", 1)[0]] = value
+
+        return result
+
+    def execute_query(
+        self, es_search: es_dsl.Search, *, from_: int = 0, size: Optional[int] = None
+    ) -> Dict:
+        logger.info(
+            "es_search.execute_query called with from_ = %d, size = %d", from_, size
+        )
+        if from_ is None:
+            raise ValueError("'from_' must have a value.")
+
+        response = {"hits": {"hits": [], "total": 0}}
+
+        if size is None or (from_ + size > search_settings.scan_limit):
+            logger.info("es_search.execute_query: large query, counting ...")
+            # tmp_search = es_search.extra(from_=0, size=0)
+            # tmp_response = tmp_search.execute()
+            # tot_hits = tmp_response.hits.total
+            tot_hits: int = es_search.count()
+            logger.info("es_search.execute_query: tot_hits = %d", tot_hits)
+            response["hits"]["total"] = tot_hits
+            if size is None:
+                size = tot_hits - from_
+            if tot_hits < from_:
+                logger.info("es_search.execute_query: early exit")
+                return response
+
+        if size + from_ <= search_settings.scan_limit:
+            extra_kwargs = {}
+            if from_ is not None:
+                extra_kwargs["from_"] = from_
+            if size is not None:
+                extra_kwargs["size"] = size
+            if extra_kwargs:
+                es_search = es_search.extra(**extra_kwargs)
+            return es_search.execute().to_dict()
+        else:
+            es_search = es_search.params(preserve_order=True, scroll="5m")
+            # Workaround
+            scan_iter = elasticsearch.helpers.scan(
+                es_search._using,
+                query=es_search.to_dict(),
+                index=es_search._index,
+                doc_type=es_search._get_doc_type(),
+                **es_search._params,
+            )
+            # scan_iter = es_search.scan()
+            for hit in itertools.islice(scan_iter, from_, from_ + size):
+                response["hits"]["hits"].append(hit)
+                # response["hits"]["hits"].append(hit.to_dict())
 
     def translate_sort_fields(
         self, resources: List[str], sort_values: List[str]
