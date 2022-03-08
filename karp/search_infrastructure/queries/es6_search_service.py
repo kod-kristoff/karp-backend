@@ -114,6 +114,10 @@ class EsQueryBuilder(query_dsl.NodeWalker):
         return es_dsl.Q("regexp", **{self.walk(node.field): f"{self.walk(node.arg)}.*"})
 
 
+class SearchSettings(pydantic.BaseModel):
+    scan_limit: int = 10000
+
+
 class Es6SearchService(search.SearchService):
     def __init__(self, es: elasticsearch.Elasticsearch):
         self.es: elasticsearch.Elasticsearch = es
@@ -140,6 +144,7 @@ class Es6SearchService(search.SearchService):
         analyzed_fields, sortable_fields = self._init_field_mapping()
         self.analyzed_fields: Dict[str, List[str]] = analyzed_fields
         self.sortable_fields: Dict[str, Dict[str, List[str]]] = sortable_fields
+        self.search_settings = SearchSettings()
 
     def _get_index_name_for_resource(self, resource_id: str) -> str:
         res = self.es.get(
@@ -452,7 +457,7 @@ class Es6SearchService(search.SearchService):
 
         response = {"hits": {"hits": [], "total": 0}}
 
-        if size is None or (from_ + size > search_settings.scan_limit):
+        if size is None or (from_ + size > self.search_settings.scan_limit):
             logger.info("es_search.execute_query: large query, counting ...")
             # tmp_search = es_search.extra(from_=0, size=0)
             # tmp_response = tmp_search.execute()
