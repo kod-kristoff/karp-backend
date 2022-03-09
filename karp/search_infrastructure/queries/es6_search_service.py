@@ -471,7 +471,7 @@ class Es6SearchService(search.SearchService):
                 logger.info("es_search.execute_query: early exit")
                 return response
 
-        if size + from_ <= search_settings.scan_limit:
+        if size + from_ <= self.search_settings.scan_limit:
             extra_kwargs = {}
             if from_ is not None:
                 extra_kwargs["from_"] = from_
