@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
 import elasticsearch
 import elasticsearch.helpers  # pyre-ignore
 import elasticsearch_dsl as es_dsl  # pyre-ignore
-import logging
+import pydantic
 from tatsu import exceptions as tatsu_exc
 
 from karp import search
