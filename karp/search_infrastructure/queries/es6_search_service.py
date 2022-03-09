@@ -264,6 +264,33 @@ class Es6SearchService(search.SearchService):
         }
         return result
 
+    def _format_result_dict(self, resource_ids, response: Dict) -> Dict:
+        def format_entry(entry):
+            dict_entry = entry["_source"]
+            version = dict_entry.pop("_entry_version", None)
+            last_modified_by = dict_entry.pop("_last_modified_by", None)
+            last_modified = dict_entry.pop("_last_modified", None)
+            return {
+                "id": entry["_id"],
+                "version": version,
+                "last_modified": last_modified,
+                "last_modified_by": last_modified_by,
+                "resource": next(
+                    resource
+                    for resource in resource_ids
+                    if entry["_index"].startswith(resource)
+                ),
+                "entry": dict_entry,
+            }
+
+        result = {
+            "total": response["hits"]["total"],
+            "hits": [format_entry(entry) for entry in response["hits"]["hits"]],
+        }
+        if "aggregations" in response:
+            result["aggregations"] = response["aggregations"]
+        return result
+
     def search_with_query(self, query: EsQuery):
         logger.info('search_with_query called', extra={'query': query})
         es_query = None
