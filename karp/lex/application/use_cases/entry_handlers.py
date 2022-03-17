@@ -197,21 +197,6 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
         return current_db_entry
 
 
-def update_entries(*args, **kwargs):
-    return []
-
-
-def add_entries_from_file(
-    resource_id: str, version: int, filename: Path
-) -> List[Entry]:
-    return add_entries(
-        resource_id,
-        json_streams.load_from_file(filename),
-        user_id="local_admin",
-        resource_version=version,
-    )
-
-
 class AddingEntries(
     BasingEntry,
     CommandHandler[commands.AddEntries]
@@ -422,11 +407,6 @@ class DeletingEntry(BasingEntry, CommandHandler[commands.DeleteEntry]):
 #     indexmgr.delete_entry(resource_id, entry.entry_id)
 #
 #
-def _src_entry_to_index_entry(resource: Resource, src_entry: Entry) -> Dict:
-    return indexing.transform_to_index_entry(
-        ctx.resource_repo, ctx.search_service, resource, src_entry
-    )
-
 
 # def _src_entry_to_index_entry(resource: Resource, src_entry: Dict):
 #     """
