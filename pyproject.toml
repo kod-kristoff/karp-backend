@@ -71,10 +71,14 @@ dependency-injector = "^4.36.2"
 elasticsearch-dsl = "^6"
 mysqlclient = { version = "^2.1.0", optional = true }
 TatSu = "^5.6"
-PyMySQL = { version = "^1.0.2", optional = true }
+PyMySQL = { version = "^0.9", optional = true }
+databases = "^0.5.5"
+aiosqlite = {version = "^0.17.0", optional = true}
+aiomysql = {version = "^0.0.22", optional = true}
 
 [tool.poetry.extras]
-mysql = ["mysqlclient", "PyMySQL"]
+mysql = ["mysqlclient", "PyMySQL", "aiomysql"]
+sqlite = ["aiosqlite"]
 
 [tool.poetry.dev-dependencies]
 flake8 = "<3.9.1"
@@ -89,6 +93,9 @@ isort = "^5.9.3"
 flakehell = "^0.9.0"
 wemake-python-styleguide = "^0.16"
 elasticsearch-test-py = "^1.1.0"
+asgi-lifespan = "^1.0.1"
+httpx = "^0.22.0"
+pytest-asyncio = "^0.17.2"
 
 [tool.flakehell]
 exclude = ["README.rst", "README.md"]
