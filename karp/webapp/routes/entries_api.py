@@ -21,7 +21,7 @@ from karp.lex.domain import commands, errors
 from karp.auth import User
 from karp.foundation.value_objects import PermissionLevel
 from karp.auth import AuthService
-from karp.webapp import schemas, dependencies as deps
+from karp.webapp import schemas, dependencies as deps, services
 
 
 router = APIRouter()
@@ -42,12 +42,13 @@ def get_history_for_entry(
     auth_service: auth.AuthService = Depends(deps.get_auth_service),
     get_entry_history: GetEntryHistory = Depends(deps.get_entry_history),
 ):
-    if not auth_service.authorize(auth.PermissionLevel.admin, user, [resource_id]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not enough permissions",
-            headers={"WWW-Authenticate": 'Bearer scope="lexica:admin"'},
-        )
+    services.authorize_user(
+        auth_service,
+        user,
+        level=PermissionLevel.admin,
+        resource_ids=[resource_id],
+    )
+
     logger.info(
         "getting history for entry",
         extra={
@@ -73,12 +74,10 @@ def add_entry(
     adding_entry_uc: lex.AddingEntry = Depends(deps.get_lex_uc(lex.AddingEntry)),
 ):
 
-    if not auth_service.authorize(PermissionLevel.write, user, [resource_id]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not enough permissions",
-            headers={"WWW-Authenticate": 'Bearer scope="write"'},
-        )
+    services.authorize_user(
+        auth_service, user, level=PermissionLevel.write, resource_ids=[resource_id]
+    )
+
     logger.info("adding entry", extra={"resource_id": resource_id, "data": data})
     try:
         new_entry = adding_entry_uc.execute(
@@ -119,12 +118,10 @@ def preview_entry(
         deps.inject_from_req(search.PreviewEntry)
     ),
 ):
-    if not auth_service.authorize(PermissionLevel.read, user, [resource_id]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not enough permissions",
-            headers={"WWW-Authenticate": 'Bearer scope="lexica:read"'},
-        )
+    services.authorize_user(
+        auth_service, user, level=PermissionLevel.read, resource_ids=[resource_id]
+    )
+
     try:
         input_dto = search.PreviewEntryInputDto(
             resource_id=resource_id, entry=data.entry, user=user.identifier
@@ -149,12 +146,9 @@ def update_entry(
     auth_service: AuthService = Depends(deps.get_auth_service),
     updating_entry_uc: lex.UpdatingEntry = Depends(deps.get_lex_uc(lex.UpdatingEntry)),
 ):
-    if not auth_service.authorize(PermissionLevel.write, user, [resource_id]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not enough permissions",
-            headers={"WWW-Authenticate": 'Bearer scope="write"'},
-        )
+    services.authorize_user(
+        auth_service, user, level=PermissionLevel.write, resource_ids=[resource_id]
+    )
 
     #     force_update = convert.str2bool(request.args.get("force", "false"))
     #     data = request.get_json()
@@ -236,12 +230,9 @@ def delete_entry(
     deleting_entry_uc: lex.DeletingEntry = Depends(deps.get_lex_uc(lex.DeletingEntry)),
 ):
     """Delete a entry from a resource."""
-    if not auth_service.authorize(PermissionLevel.write, user, [resource_id]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not enough permissions",
-            headers={"WWW-Authenticate": 'Bearer scope="lexica:write"'},
-        )
+    services.authorize_user(
+        auth_service, user, level=PermissionLevel.write, resource_ids=[resource_id]
+    )
     try:
         deleting_entry_uc.execute(
             commands.DeleteEntry(
