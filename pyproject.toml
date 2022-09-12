@@ -79,6 +79,7 @@ asgi-correlation-id = "^3.0.1"
 python-json-logger = "^2.0.4"
 ulid-py = "^1.1.0"
 Deprecated = "^1.2.13"
+httpx = "^0.23"
 
 [tool.poetry.extras]
 mysql = ["mysqlclient", "PyMySQL", "aiomysql"]
