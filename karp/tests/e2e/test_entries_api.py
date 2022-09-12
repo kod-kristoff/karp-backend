@@ -1,4 +1,5 @@
 from typing import Dict, List
+from httpx import AsyncClient
 
 import pytest  # pyre-ignore
 from fastapi import status
@@ -61,6 +62,38 @@ class TestEntriesRoutes:
 
         response = fa_data_client.post("/entries/places/preview")
         assert response.status_code != status.HTTP_404_NOT_FOUND
+
+
+class TestEntryIdWithSlashLifecycle:
+    @pytest.mark.asyncio
+    async def test_add_with_entry_id_w_slash_returns_201(
+        self,
+        aclient_w_data: AsyncClient,
+        admin_token: auth.AccessToken,
+    ):
+        entry_id = "foo/bar"
+        print(f"add entry '{entry_id}' to resource 'lexlex'")
+        response = await aclient_w_data.put(
+            "/entries/lexlex",
+            json={"entry": {"baseform": entry_id}},
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == 201
+        response_data = response.json()
+        assert "newID" in response_data
+        assert response_data["newID"] == entry_id
+
+        print(f"get entry '{entry_id}' to resource 'lexlex'")
+        response = await aclient_w_data.get(
+            f"/entries/lexlex/{entry_id}",
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == 200
+        response_data = response.json()
+        assert "entry_id" in response_data
+        assert response_data["entry_id"] == entry_id
 
 
 class TestAddEntry:
@@ -647,7 +680,7 @@ class TestGetEntry:
         admin_token: auth.AccessToken,
     ):
         response = fa_data_client.get(
-            "/entries/places/209/5",
+            "/entries/places/209?version=5",
             headers=admin_token.as_header(),
         )
         assert response.status_code == status.HTTP_200_OK

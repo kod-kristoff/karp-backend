@@ -1,25 +1,26 @@
 """Pytest entry point."""
 
 # pylint: disable=wrong-import-position,missing-function-docstring
+import asyncio
 from karp.main import AppContext
 from karp.tests.integration.auth.adapters import create_bearer_token
 from karp import auth, config
 import os
 import json
 import typing
-from typing import Any, Dict, Generator, Optional, Tuple
+from typing import Any, Generator, Optional, Tuple, AsyncGenerator
 
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from httpx import AsyncClient
 from typer import Typer
 from typer.testing import CliRunner
 
-import alembic
 import alembic.config
-from karp.foundation.value_objects import make_unique_id
-from karp.foundation.commands import CommandBus
 import elasticsearch_test  # pyre-ignore
 
 import pytest  # pyre-ignore
+import pytest_asyncio
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import session, sessionmaker
 from starlette.testclient import TestClient
@@ -37,6 +38,7 @@ import karp.lex_infrastructure.sql.sql_models  # nopep8
 from karp.db_infrastructure.db import metadata  # nopep8
 from karp.lex.domain import commands, errors, entities  # nopep8
 from karp import errors as karp_errors  # nopep8
+from karp.tests.e2e.karp_client import KarpClient, AsyncKarpClient
 
 
 @pytest.fixture(name="in_memory_sqlite_db")
@@ -106,6 +108,16 @@ def fixture_client(app: FastAPI) -> Generator[TestClient, None, None]:
         yield client
 
 
+@pytest_asyncio.fixture(name="aclient", scope="session")
+async def fixture_aclient(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
+    async with LifespanManager(app):
+        async with AsyncClient(
+            app=app,
+            base_url="http://testserver",
+        ) as client:
+            yield client
+
+
 #     async with LifespanManager(app):
 #         async with AsyncClient(
 #             app=app,
@@ -115,75 +127,70 @@ def fixture_client(app: FastAPI) -> Generator[TestClient, None, None]:
 #             yield client
 
 
-def create_and_publish_resource(
-    client: TestClient,
-    *,
-    path_to_config: str,
-    access_token: auth.AccessToken,
-) -> Tuple[bool, Optional[dict[str, Any]]]:
-    from karp.webapp.schemas import ResourceCreate
-
-    with open(path_to_config) as fp:
-        resource_config = json.load(fp)
-
-    resource_id = resource_config.pop("resource_id")
-    resource = ResourceCreate(
-        resource_id=resource_id,
-        name=resource_config.pop("resource_name"),
-        config=resource_config,
-        message=f"{resource_id} added",
-    )
-    response = client.post(
-        "/resources/",
-        json=resource.dict(),
-        headers=access_token.as_header(),
-    )
-    if response.status_code != 201:
-        return False, {
-            "error": f"Failed create resource: unexpected status_code: {response.status_code} != 201 ",
-            "response.json": response.json(),
-        }
-
-    response = client.post(
-        f"/resources/{resource_id}/publish",
-        json={
-            "message": f"{resource_id} published",
-        },
-        headers=access_token.as_header(),
-    )
-    if response.status_code != 200:
-        return False, {
-            "error": f"Failed publish resource: unexpected status_code: {response.status_code} != 200 ",
-            "response.json": response.json(),
-        }
-
-    return True, None
-
-
 @pytest.fixture(scope="session", name="fa_data_client")
 def fixture_fa_data_client(
     fa_client,
     admin_token: auth.AccessToken,
 ):
-    ok, msg = create_and_publish_resource(
-        fa_client,
+    karp_client = KarpClient(fa_client)
+    ok, msg = karp_client.create_and_publish_resource(
         path_to_config="karp/tests/data/config/places.json",
         access_token=admin_token,
     )
     assert ok, msg
-    ok, msg = create_and_publish_resource(
-        fa_client,
+    ok, msg = karp_client.create_and_publish_resource(
         path_to_config="karp/tests/data/config/municipalities.json",
         access_token=admin_token,
     )
     assert ok, msg
-    utils.add_entries(
-        fa_client,
+    ok, msg = karp_client.add_entries(
         {"places": common_data.PLACES, "municipalities": common_data.MUNICIPALITIES},
         access_token=admin_token,
     )
+    assert ok, msg
 
     return fa_client
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session", name="aclient_w_data")
+async def fixture_aclient_w_data(
+    aclient: AsyncClient,
+    admin_token: auth.AccessToken,
+):
+    karp_client = AsyncKarpClient(aclient)
+    ok, msg = await karp_client.create_and_publish_resource(
+        path_to_config="karp/tests/data/config/places.json",
+        access_token=admin_token,
+    )
+    assert ok, msg
+
+    ok, msg = await karp_client.create_and_publish_resource(
+        path_to_config="karp/tests/data/config/municipalities.json",
+        access_token=admin_token,
+    )
+    assert ok, msg
+
+    ok, msg = await karp_client.create_and_publish_resource(
+        path_to_config="karp/tests/data/config/lexlex.json",
+        access_token=admin_token,
+    )
+    assert ok, msg
+
+    ok, msg = await karp_client.add_entries(
+        {"places": common_data.PLACES, "municipalities": common_data.MUNICIPALITIES},
+        access_token=admin_token,
+    )
+    # assert ok, msg
+
+    return aclient
 
 
 @pytest.fixture(scope="session")
@@ -246,6 +253,7 @@ def admin_token(auth_levels: typing.Dict[str, int]) -> auth.AccessToken:
                 "places": auth_levels[auth.PermissionLevel.admin],
                 "test_resource": auth_levels[auth.PermissionLevel.admin],
                 "municipalities": auth_levels[auth.PermissionLevel.admin],
+                "lexlex": auth_levels[auth.PermissionLevel.admin],
             }
         },
     )
@@ -261,6 +269,7 @@ def read_token(auth_levels: typing.Dict[str, int]) -> auth.AccessToken:
                 "places": auth_levels[auth.PermissionLevel.read],
                 "test_resource": auth_levels[auth.PermissionLevel.read],
                 "municipalities": auth_levels[auth.PermissionLevel.read],
+                "lexlex": auth_levels[auth.PermissionLevel.read],
             }
         },
     )
@@ -276,6 +285,7 @@ def write_token(auth_levels: typing.Dict[str, int]) -> auth.AccessToken:
                 "places": auth_levels[auth.PermissionLevel.write],
                 "test_resource": auth_levels[auth.PermissionLevel.write],
                 "municipalities": auth_levels[auth.PermissionLevel.write],
+                "lexlex": auth_levels[auth.PermissionLevel.write],
             }
         },
     )

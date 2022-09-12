@@ -24,7 +24,7 @@ def fixture_entry_repo_repo_uow() -> EntryUowRepositoryUnitOfWork:
     return InMemoryEntryUowRepositoryUnitOfWork()
 
 
-@pytest.fixture(name='create_entry_repository')
+@pytest.fixture(name="create_entry_repository")
 def fixture_create_entry_repository() -> lex_commands.CreateEntryRepository:
     return factories.CreateEntryRepositoryFactory()
 
@@ -46,16 +46,17 @@ def fixture_resource_uow() -> InMemoryResourceUnitOfWork:
 
 @pytest.fixture()
 def lex_ctx() -> adapters.UnitTestContext:
-    container = injector.Injector([
-        CommandBusMod(),
-        EventBusMod(),
-        Lex(),
-        adapters.InMemoryLexInfrastructure(),
-
-    ], auto_bind=False)
+    container = injector.Injector(
+        [
+            CommandBusMod(),
+            EventBusMod(),
+            Lex(),
+            adapters.InMemoryLexInfrastructure(),
+        ],
+        auto_bind=False,
+    )
     return adapters.UnitTestContext(
-        container=container,
-        command_bus=container.get(CommandBus)
+        container=container, command_bus=container.get(CommandBus)
     )
 
 
