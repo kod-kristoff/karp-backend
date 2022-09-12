@@ -70,7 +70,7 @@ class EntityIdMixin(BaseModel):
 class ResourceBase(BaseModel):
     resource_id: str
     name: str
-    config: typing.Dict
+    config: dict
     message: Optional[str] = None
     entry_repo_id: Optional[unique_id.UniqueId] = None
     is_published: Optional[bool] = None
@@ -83,6 +83,7 @@ class ResourceCreate(ResourceBase):
 
 class ResourcePublic(EntityIdMixin, ResourceBase):
     last_modified: float
+    discarded: bool
 
 
 class ResourceProtected(ResourcePublic):

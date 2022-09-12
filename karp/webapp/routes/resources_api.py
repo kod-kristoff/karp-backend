@@ -144,13 +144,15 @@ def get_resource_by_resource_id(
     resource_id: str,
     resource_repo: ReadOnlyResourceRepository = Depends(deps.get_resources_read_repo),
 ) -> ResourcePublic:
-    resource = resource_repo.get_by_resource_id(resource_id)
-    if not resource:
+    if resource := resource_repo.get_by_resource_id(resource_id):
+        return ResourcePublic(
+            entry_repo_id=resource.entry_repository_id, **resource.dict()
+        )
+    else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No resource with resource_id '{resource_id}' was found.",
         )
-    return resource
 
 
 def init_app(app):
