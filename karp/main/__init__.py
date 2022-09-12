@@ -210,44 +210,44 @@ def configure_logging(settings: dict[str, str]) -> None:
 #    return bus
 
 
-def setup_logging():
+# def setup_logging():
 
-    # Clear Gunicorn access log to remove duplicate requests logging
-    # logging.getLogger("gunicorn.access").handlers.clear()
-    logging.basicConfig(
-        format="%(asctime)s %(message)s",
-        datefmt="%Y-%m-%dT%H:%M:%S%z",
-        level=logging.INFO,
-    )
-    logger = logging.getLogger("karp")
-    logger.setLevel(logging.INFO)
-    # structlog.configure(
-    #     processors=[
-    #         structlog.stdlib.add_log_level,
-    #         structlog.threadlocal.merge_threadlocal,
-    #         structlog.processors.TimeStamper(fmt="iso"),
-    #         structlog.processors.JSONRenderer(
-    #             serializer=json.dumps, sort_keys=True),
-    #     ],
-    #     wrapper_class=structlog.stdlib.BoundLogger,
-    #     context_class=dict,
-    #     cache_logger_on_first_use=True,
-    #     logger_factory=structlog.stdlib.LoggerFactory(),
-    # )
-    logger = logging.getLogger(__name__)
-    # if app.config.get("LOG_TO_SLACK"):
-    #     slack_handler = slack_logging.get_slack_logging_handler(
-    #         app.config.get("SLACK_SECRET")
-    #     )
-    #     logger.addHandler(slack_handler)
-    # console_handler = logging.StreamHandler()
-    # formatter = logging.Formatter(
-    #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    # )
-    # console_handler.setFormatter(formatter)
-    # logger.setLevel(logging.DEBUG)
-    # logger.addHandler(console_handler)
-    return logger
+#     # Clear Gunicorn access log to remove duplicate requests logging
+#     # logging.getLogger("gunicorn.access").handlers.clear()
+#     logging.basicConfig(
+#         format="%(asctime)s %(message)s",
+#         datefmt="%Y-%m-%dT%H:%M:%S%z",
+#         level=logging.INFO,
+#     )
+#     logger = logging.getLogger("karp")
+#     logger.setLevel(logging.INFO)
+#     # structlog.configure(
+#     #     processors=[
+#     #         structlog.stdlib.add_log_level,
+#     #         structlog.threadlocal.merge_threadlocal,
+#     #         structlog.processors.TimeStamper(fmt="iso"),
+#     #         structlog.processors.JSONRenderer(
+#     #             serializer=json.dumps, sort_keys=True),
+#     #     ],
+#     #     wrapper_class=structlog.stdlib.BoundLogger,
+#     #     context_class=dict,
+#     #     cache_logger_on_first_use=True,
+#     #     logger_factory=structlog.stdlib.LoggerFactory(),
+#     # )
+#     logger = logging.getLogger(__name__)
+#     # if app.config.get("LOG_TO_SLACK"):
+#     #     slack_handler = slack_logging.get_slack_logging_handler(
+#     #         app.config.get("SLACK_SECRET")
+#     #     )
+#     #     logger.addHandler(slack_handler)
+#     # console_handler = logging.StreamHandler()
+#     # formatter = logging.Formatter(
+#     #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+#     # )
+#     # console_handler.setFormatter(formatter)
+#     # logger.setLevel(logging.DEBUG)
+#     # logger.addHandler(console_handler)
+#     return logger
 
 
 def load_infrastructure():

@@ -16,6 +16,7 @@ import pydantic
 from starlette import responses
 
 from karp import errors as karp_errors, auth, lex, search
+from karp.foundation.commands import CommandBus
 from karp.lex.application.queries import EntryDto, GetEntryHistory
 from karp.lex.domain import commands, errors
 from karp.auth import User
@@ -131,8 +132,8 @@ def preview_entry(
         return preview_entry.query(input_dto)
 
 
-@router.post("/{resource_id}/{entry_id}/update", tags=["Editing"])
-@router.post("/{resource_id}/{entry_id}", tags=["Editing"])
+# @router.post("/{resource_id}/{entry_id}/update", tags=["Editing"])
+@router.post("/{resource_id}/{entry_id:path}", tags=["Editing"])
 def update_entry(
     response: Response,
     resource_id: str,
@@ -140,7 +141,7 @@ def update_entry(
     data: schemas.EntryUpdate,
     user: User = Security(deps.get_user, scopes=["write"]),
     auth_service: AuthService = Depends(deps.get_auth_service),
-    updating_entry_uc: lex.UpdatingEntry = Depends(deps.get_lex_uc(lex.UpdatingEntry)),
+    bus: CommandBus = Depends(deps.inject_from_req(CommandBus)),
 ):
     services.authorize_user(
         auth_service, user, level=PermissionLevel.write, resource_ids=[resource_id]
@@ -163,7 +164,7 @@ def update_entry(
         },
     )
     try:
-        entry = updating_entry_uc.execute(
+        entry = bus.dispatch(
             commands.UpdateEntry(
                 resource_id=resource_id,
                 entry_id=entry_id,

@@ -95,6 +95,21 @@ class TestEntryIdWithSlashLifecycle:
         assert "entry_id" in response_data
         assert response_data["entry_id"] == entry_id
 
+        print(f"update entry '{entry_id}' to resource 'lexlex'")
+        new_entry_id = f"{entry_id}/baz"
+        response = await aclient_w_data.post(
+            f"/entries/lexlex/{entry_id}",
+            json={
+                "entry": {"baseform": new_entry_id},
+                "version": 1,
+                "message": "change entry_id",
+            },
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == 200
+        assert response.json()["newID"] == new_entry_id
+
 
 class TestAddEntry:
     def test_put_route_exist(self, fa_data_client):
@@ -348,7 +363,7 @@ class TestUpdateEntry:
     ):
         entry_id = "non-existent"
         response = fa_data_client.post(
-            f"/entries/places/{entry_id}/update",
+            f"/entries/places/{entry_id}",
             json={
                 "entry": {
                     "code": 3,
@@ -398,7 +413,7 @@ class TestUpdateEntry:
         assert response.status_code == status.HTTP_201_CREATED
 
         response = fa_data_client.post(
-            f"/entries/places/{entry_id}/update",
+            f"/entries/places/{entry_id}",
             json={
                 "entry": {
                     "code": entry_id,
@@ -440,7 +455,7 @@ class TestUpdateEntry:
         assert response.status_code == 201
 
         response = fa_data_client.post(
-            f"/entries/places/{entry_id}/update",
+            f"/entries/places/{entry_id}",
             json={
                 "entry": {
                     "code": entry_id,
@@ -492,7 +507,7 @@ class TestUpdateEntry:
         assert response.status_code == 201
 
         response = fa_data_client.post(
-            f"/entries/places/{entry_id}/update",
+            f"/entries/places/{entry_id}",
             json={
                 "entry": {
                     "code": entry_id,
@@ -533,7 +548,7 @@ class TestUpdateEntry:
 
         for i in range(2, 10):
             response = fa_data_client.post(
-                f"/entries/places/{entry_id}/update",
+                f"/entries/places/{entry_id}",
                 json={
                     "entry": {"code": entry_id, "name": "a" * i, "municipality": [1]},
                     "message": "changes",
@@ -568,7 +583,7 @@ class TestUpdateEntry:
         assert response.status_code == 201
 
         response = fa_data_client.post(
-            f"places/{entry_id}/update",
+            f"places/{entry_id}",
             json={
                 "entry": {
                     "code": entry_id + 1,
@@ -622,7 +637,7 @@ class TestUpdateEntry:
             assert entry.last_modified < after_add
 
         fa_data_client.post(
-            f"/entries/places/{entry_id}/update",
+            f"/entries/places/{entry_id}",
             json={
                 "entry": {
                     "code": entry_id,

@@ -87,6 +87,10 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
 
         with self.get_entry_uow(resource.entry_repository_id) as uw:
             try:
+                print(f"fetching entry with entry_id '{command.entry_id}'")
+                logger.warning(
+                    "fetching entry by entry_id", extra={"entry_id": command.entry_id}
+                )
                 current_db_entry = uw.repo.by_entry_id(command.entry_id)
             except errors.EntryNotFound as err:
                 raise errors.EntryNotFound(
