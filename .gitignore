@@ -127,3 +127,6 @@ pubkey.pem
 old_files/
 sketch/
 /data/
+
+# ignore logs
+/logs/*
