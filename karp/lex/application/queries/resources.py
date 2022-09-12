@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable, Optional, Dict
+from typing import Iterable, Optional
 
 import pydantic
 
@@ -15,7 +15,7 @@ class ResourceDto(pydantic.BaseModel):
     last_modified_by: str
     message: str
     last_modified: float
-    config: Dict
+    config: dict
     entry_repository_id: UniqueId
     discarded: bool
 
