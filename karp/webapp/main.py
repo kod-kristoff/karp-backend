@@ -3,7 +3,7 @@ from os import stat
 import traceback
 import sys
 import time
-from typing import Any
+from typing import Any, Optional
 
 try:
     from importlib.metadata import entry_points
@@ -28,7 +28,7 @@ from karp.foundation.value_objects import unique_id
 from karp.auth import errors as auth_errors
 from karp.lex.domain import errors as lex_errors
 from karp.errors import ClientErrorCodes
-from karp.main import modules, config
+from karp.main import AppContext, modules, config
 from karp.webapp.routes import router as api_router
 from karp.webapp import tasks
 from karp.webapp.contrib import MatomoMiddleware
@@ -98,9 +98,10 @@ tags_metadata = [
 logger = logging.getLogger(__name__)
 
 
-def create_app() -> FastAPI:
+def create_app(app_context: Optional[AppContext] = None) -> FastAPI:
 
-    app_context = main.bootstrap_app()
+    if not app_context:
+        app_context = main.bootstrap_app()
 
     app = FastAPI(
         title=f"{config.PROJECT_NAME} API",
@@ -221,7 +222,7 @@ def create_app() -> FastAPI:
             )
         return response
 
-    if app_context.settings["tracking.matomo.url"]:
+    if app_context.settings.get("tracking.matomo.url"):
         app.add_middleware(
             MatomoMiddleware,
             idsite=app_context.settings["tracking.matomo.idsite"],
