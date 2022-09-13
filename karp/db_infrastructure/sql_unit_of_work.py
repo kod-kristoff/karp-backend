@@ -1,11 +1,9 @@
 import enum
 import logging
-import typing
-from typing import Dict, Optional
+from typing import Optional
 
 import regex
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 
 
 DUPLICATE_PROG = regex.compile(r"Duplicate entry '(.+)' for key '(\w+)'")
@@ -27,7 +25,7 @@ class SqlUnitOfWork:  # (repositories.UnitOfWork):
         *,
         session: Optional[Session] = None,
     ):
-        logger.debug('Init sqlunitofwork session=%s', session)
+        logger.debug("Init sqlunitofwork session=%s", session)
         self._session = session
         self._session_is_created_here = self._session is None
         self._state = SqlUnitOfWork.State.initialized
@@ -73,11 +71,21 @@ class SqlUnitOfWork:  # (repositories.UnitOfWork):
     def _commit(self):
         self._check_state(expected_state=SqlUnitOfWork.State.begun)
         # try:
-        logger.info('About to commit', extra={
-                    'session': self._session, 'session_new': self._session.new if self._session else None})
+        logger.info(
+            "About to commit",
+            extra={
+                "session": self._session,
+                "session_new": self._session.new if self._session else None,
+            },
+        )
         self._session.commit()
-        logger.info('commited', extra={
-                    'session': self._session, 'session_new': self._session.new if self._session else None})
+        logger.info(
+            "commited",
+            extra={
+                "session": self._session,
+                "session_new": self._session.new if self._session else None,
+            },
+        )
 
         # self._state = SqlUnitOfWork.State.initialized
         # except db.exc.IntegrityError as err:
@@ -103,12 +111,12 @@ class SqlUnitOfWork:  # (repositories.UnitOfWork):
         self._state = SqlUnitOfWork.State.initialized
 
     def rollback(self):
-        logger.debug('rollback called')
+        logger.debug("rollback called")
         self._check_state(expected_state=SqlUnitOfWork.State.begun)
         self._session.rollback()
         self._state = SqlUnitOfWork.State.initialized
 
     def _close(self):
         if self._session_is_created_here:
-            logger.debug('closing session=%s', self._session)
+            logger.debug("closing session=%s", self._session)
             self._session.close()

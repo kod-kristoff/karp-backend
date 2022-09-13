@@ -188,6 +188,9 @@ def update_entry(
         # )
         return {"newID": entry.entry_id, "entityID": entry.entity_id}
     except errors.EntryNotFound:
+        logger.error(
+            "entry not found", extra={"entry_id": entry_id, "resource_id": resource_id}
+        )
         return responses.JSONResponse(
             status_code=404,
             content={

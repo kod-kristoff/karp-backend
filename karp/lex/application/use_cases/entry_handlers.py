@@ -87,12 +87,15 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
 
         with self.get_entry_uow(resource.entry_repository_id) as uw:
             try:
-                print(f"fetching entry with entry_id '{command.entry_id}'")
+                print(
+                    f"{__name__}:90 fetching entry with entry_id '{command.entry_id}'"
+                )
                 logger.warning(
                     "fetching entry by entry_id", extra={"entry_id": command.entry_id}
                 )
                 current_db_entry = uw.repo.by_entry_id(command.entry_id)
             except errors.EntryNotFound as err:
+                print(f"{__name__}:98 not found")
                 raise errors.EntryNotFound(
                     command.resource_id,
                     command.entry_id,
@@ -137,8 +140,10 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
                 )
                 current_db_entry.entry_id = new_entry_id
                 # uw.repo.move(current_db_entry, old_entry_id=command.entry_id)
+                print(f"{__name__}:143 saving '{new_entry_id}'")
                 uw.repo.save(current_db_entry)
             else:
+                print(f"{__name__}:146 saving '{command.entry_id}'")
                 uw.repo.save(current_db_entry)
             uw.commit()
 

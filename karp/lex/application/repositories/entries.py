@@ -75,16 +75,16 @@ class EntryRepository(repository.Repository[entities.Entry]):
     def by_entry_id(
         self, entry_id: str, *, version: Optional[int] = None
     ) -> entities.Entry:
-        entry = self.get_by_entry_id_optional(
-            entry_id,
-            version=version,
-        )
-        if not entry:
+        print(f"{__name__}.by_entry_id:78 {entry_id=} {version=}")
+        if entry := self.get_by_entry_id_optional(entry_id, version=version):
+            print(f"{__name__}.by_entry_id:80 {entry_id=} {version=} {entry=}")
+
+            return entry
+        else:
             raise errors.EntryNotFound(
                 f'Entry with entry_id="{entry_id}"',
                 entity_id=None,
             )
-        return entry
 
     get_by_entry_id = by_entry_id
 
@@ -94,11 +94,18 @@ class EntryRepository(repository.Repository[entities.Entry]):
         *,
         version: Optional[int] = None,
     ) -> Optional[entities.Entry]:
+        print(f"{__name__}.get_by_entry_id_optional:97 {entry_id=} {version=}")
         entry = self._by_entry_id(entry_id)
         if not entry:
+            print(
+                f"{__name__}.get_by_entry_id_optional:100 {entry_id=} {version=} {entry=}"
+            )
             return None
         if version:
             entry = self._by_id(entry.entity_id, version=version)
+            print(
+                f"{__name__}.get_by_entry_id_optional:104 {entry_id=} {version=} {entry=}"
+            )
         if entry:
             self.seen.add(entry)
             return entry

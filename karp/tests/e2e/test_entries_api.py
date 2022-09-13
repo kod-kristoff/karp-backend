@@ -1,5 +1,4 @@
 from typing import Dict, List
-from httpx import AsyncClient
 
 import pytest  # pyre-ignore
 from fastapi import status
@@ -83,7 +82,7 @@ class TestEntryIdWithSlashLifecycle:
         assert "newID" in response_data
         assert response_data["newID"] == entry_id
 
-        print(f"get entry '{entry_id}' to resource 'lexlex'")
+        print(f"get entry '{entry_id}' from resource 'lexlex'")
         response = fa_data_client.get(
             f"/entries/lexlex/{entry_id}",
             headers=admin_token.as_header(),
@@ -94,13 +93,27 @@ class TestEntryIdWithSlashLifecycle:
         assert "entry_id" in response_data
         assert response_data["entry_id"] == entry_id
 
-        print(f"update entry '{entry_id}' to resource 'lexlex'")
-        new_entry_id = f"{entry_id}/baz"
+        print(f"update entry '{entry_id}' in resource 'lexlex'")
         response = fa_data_client.post(
             f"/entries/lexlex/{entry_id}",
             json={
-                "entry": {"baseform": new_entry_id},
+                "entry": {"baseform": entry_id, "secondary": "added"},
                 "version": 1,
+                "message": "add secondary",
+            },
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == 200
+        assert response.json()["newID"] == entry_id
+
+        new_entry_id = f"{entry_id}/baz"
+        print(f"update entry '{entry_id}' => '{new_entry_id}' in resource 'lexlex'")
+        response = fa_data_client.post(
+            f"/entries/lexlex/{entry_id}",
+            json={
+                "entry": {"baseform": new_entry_id, "secondary": "added"},
+                "version": 2,
                 "message": "change entry_id",
             },
             headers=admin_token.as_header(),

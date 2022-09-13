@@ -112,7 +112,7 @@ class SqlEntryRepository(repositories.EntryRepository, SqlRepository):
 
     def _save(self, entry: Entry):
         self._check_has_session()
-
+        print(f"{__name__}:115 saving '{entry.entry_id}'")
         history_id = self._insert_history(entry)
 
         # if entry.discarded:
@@ -146,20 +146,24 @@ class SqlEntryRepository(repositories.EntryRepository, SqlRepository):
             )
             if not entry_by_entry_id:
                 if not entry_by_entity_id:
+                    print(f"{__name__}:149 adding")
                     logger.debug("adding")
                     return self._session.add(self.runtime_model(**runtime_entry_raw))
                 else:
+                    print(f"{__name__}:153 entity_id but no entry_id")
                     logger.debug("entity_id but no entry_id")
                     entry_by_entity_id.discarded = True
                     return self._session.add(self.runtime_model(**runtime_entry_raw))
                     return
             else:
                 if not entry_by_entity_id:
+                    print(f"{__name__}:160 entry_id but no entity_id")
                     logger.debug("entry_id but no entity_id")
                     for key, value in runtime_entry_raw.items():
                         setattr(entry_by_entry_id, key, value)
                     return
                 else:
+                    print(f"{__name__}:166 updating")
                     logger.debug("updating")
                     for key, value in runtime_entry_raw.items():
                         setattr(entry_by_entry_id, key, value)
@@ -534,6 +538,7 @@ class SqlEntryRepository(repositories.EntryRepository, SqlRepository):
         }
 
     def _history_row_to_entry(self, row) -> Entry:
+        print(f"history_row = {row!r}")
         return Entry(
             body=row.body,
             message=row.message,

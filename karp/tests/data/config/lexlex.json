@@ -5,6 +5,9 @@
         "baseform": {
             "type": "string",
             "required": true
+        },
+        "secondary": {
+            "type": "string"
         }
     },
     "id": "baseform",

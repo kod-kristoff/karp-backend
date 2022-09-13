@@ -42,7 +42,9 @@ def run_migrations_online():
             # if os.environ.get("TESTING.CI", "false").lower() != "true":
             # connect to primary db
             default_engine = create_engine(
-                str(karp_config.DATABASE_URL_WO_DB), isolation_level="AUTOCOMMIT"
+                str(karp_config.DATABASE_URL_WO_DB),
+                isolation_level="AUTOCOMMIT",
+                # future=True,
             )
             # drop testing db if it exists and create a fresh one
             with default_engine.connect() as default_conn:

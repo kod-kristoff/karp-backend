@@ -29,7 +29,7 @@ from karp.tests.integration import adapters
 
 @pytest.fixture(name="in_memory_sqlite_db")
 def fixture_in_memory_sqlite_db():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", future=True)
     metadata.create_all(engine)
     yield engine
     session.close_all_sessions()
@@ -43,17 +43,20 @@ def sqlite_session_factory(in_memory_sqlite_db):
 
 @pytest.fixture()
 def integration_ctx() -> adapters.IntegrationTestContext:
-    container = injector.Injector([
-        CommandBusMod(),
-        EventBusMod(),
-        Search(),
-        SearchInfrastructure(),
-        Lex(),
-        GenericLexInfrastructure(),
-        InMemoryLexInfrastructure(),
-        GenericSearchInfrastructure(),
-        search_adapters.InMemorySearchInfrastructure(),
-    ], auto_bind=False)
+    container = injector.Injector(
+        [
+            CommandBusMod(),
+            EventBusMod(),
+            Search(),
+            SearchInfrastructure(),
+            Lex(),
+            GenericLexInfrastructure(),
+            InMemoryLexInfrastructure(),
+            GenericSearchInfrastructure(),
+            search_adapters.InMemorySearchInfrastructure(),
+        ],
+        auto_bind=False,
+    )
     return adapters.IntegrationTestContext(
         container=container,
         command_bus=container.get(CommandBus),  # type: ignore
