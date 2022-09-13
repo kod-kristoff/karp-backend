@@ -1,18 +1,16 @@
 """Pytest entry point."""
 
 # pylint: disable=wrong-import-position,missing-function-docstring
-import asyncio
+import logging
 from karp.main import AppContext
 from karp.tests.integration.auth.adapters import create_bearer_token
 from karp import auth, config
 import os
-import json
 import typing
 from typing import Any, Generator, Optional, Tuple, AsyncGenerator
 
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from httpx import AsyncClient
 from typer import Typer
 from typer.testing import CliRunner
 
@@ -20,7 +18,6 @@ import alembic.config
 import elasticsearch_test  # pyre-ignore
 
 import pytest  # pyre-ignore
-import pytest_asyncio
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import session, sessionmaker
 from starlette.testclient import TestClient
@@ -39,6 +36,9 @@ from karp.db_infrastructure.db import metadata  # nopep8
 from karp.lex.domain import commands, errors, entities  # nopep8
 from karp import errors as karp_errors  # nopep8
 from karp.tests.e2e.karp_client import KarpClient, AsyncKarpClient
+
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(name="in_memory_sqlite_db")
@@ -108,25 +108,6 @@ def fixture_client(app: FastAPI) -> Generator[TestClient, None, None]:
         yield client
 
 
-@pytest_asyncio.fixture(name="aclient", scope="session")
-async def fixture_aclient(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
-    async with LifespanManager(app):
-        async with AsyncClient(
-            app=app,
-            base_url="http://testserver",
-        ) as client:
-            yield client
-
-
-#     async with LifespanManager(app):
-#         async with AsyncClient(
-#             app=app,
-#             base_url="http://testserver",
-#             headers={"Content-Type": "application/json"}
-#         ) as client:
-#             yield client
-
-
 @pytest.fixture(scope="session", name="fa_data_client")
 def fixture_fa_data_client(
     fa_client,
@@ -150,47 +131,6 @@ def fixture_fa_data_client(
     assert ok, msg
 
     return fa_client
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="session", name="aclient_w_data")
-async def fixture_aclient_w_data(
-    aclient: AsyncClient,
-    admin_token: auth.AccessToken,
-):
-    karp_client = AsyncKarpClient(aclient)
-    ok, msg = await karp_client.create_and_publish_resource(
-        path_to_config="karp/tests/data/config/places.json",
-        access_token=admin_token,
-    )
-    assert ok, msg
-
-    ok, msg = await karp_client.create_and_publish_resource(
-        path_to_config="karp/tests/data/config/municipalities.json",
-        access_token=admin_token,
-    )
-    assert ok, msg
-
-    ok, msg = await karp_client.create_and_publish_resource(
-        path_to_config="karp/tests/data/config/lexlex.json",
-        access_token=admin_token,
-    )
-    assert ok, msg
-
-    ok, msg = await karp_client.add_entries(
-        {"places": common_data.PLACES, "municipalities": common_data.MUNICIPALITIES},
-        access_token=admin_token,
-    )
-    # assert ok, msg
-
-    return aclient
 
 
 @pytest.fixture(scope="session")

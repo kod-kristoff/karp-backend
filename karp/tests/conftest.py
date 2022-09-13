@@ -1,11 +1,11 @@
 """Pytest entry point."""
 import pytest
 
-# from starlette.config import environ
+from starlette.config import environ
 
-# environ["TESTING"] = "True"
-# environ["ELASTICSEARCH_HOST"] = "localhost:9202"
-# environ["CONSOLE_LOG_LEVEL"] = "DEBUG"
+environ["TESTING"] = "True"
+environ["ELASTICSEARCH_HOST"] = "localhost:9202"
+environ["CONSOLE_LOG_LEVEL"] = "DEBUG"
 
 from karp.tests import common_data, utils  # nopep8
 
