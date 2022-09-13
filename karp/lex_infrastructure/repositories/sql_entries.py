@@ -136,30 +136,31 @@ class SqlEntryRepository(repositories.EntryRepository, SqlRepository):
                 .first()
             )
 
-            logger.error(
-                {
+            logger.debug(
+                "about to add",
+                extra={
                     "entry_by_entry_id": entry_by_entry_id,
                     "entry_by_entity_id": entry_by_entity_id,
                     "entry": entry.dict(),
-                }
+                },
             )
             if not entry_by_entry_id:
                 if not entry_by_entity_id:
-                    logger.warning("adding")
+                    logger.debug("adding")
                     return self._session.add(self.runtime_model(**runtime_entry_raw))
                 else:
-                    logger.warning("entity_id but no entry_id")
+                    logger.debug("entity_id but no entry_id")
                     entry_by_entity_id.discarded = True
                     return self._session.add(self.runtime_model(**runtime_entry_raw))
                     return
             else:
                 if not entry_by_entity_id:
-                    logger.warning("entry_id but no entity_id")
+                    logger.debug("entry_id but no entity_id")
                     for key, value in runtime_entry_raw.items():
                         setattr(entry_by_entry_id, key, value)
                     return
                 else:
-                    logger.warning("updating")
+                    logger.debug("updating")
                     for key, value in runtime_entry_raw.items():
                         setattr(entry_by_entry_id, key, value)
                     return
