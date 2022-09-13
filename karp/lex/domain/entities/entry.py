@@ -63,7 +63,7 @@ class Entry(TimestampedVersionedEntity):
         return self._entry_id
 
     @entry_id.setter
-    @deprecated(version='6.0.7', reason='use update')
+    @deprecated(version="6.0.7", reason="use update")
     def entry_id(self, entry_id: str):
         self._check_not_discarded()
         self._entry_id = constraints.length_gt_zero("entry_id", entry_id)
@@ -74,7 +74,7 @@ class Entry(TimestampedVersionedEntity):
         return self._body
 
     @body.setter
-    @deprecated(version='6.0.7', reason='use update')
+    @deprecated(version="6.0.7", reason="use update")
     def body(self, body: Dict):
         self._check_not_discarded()
         self._body = body
@@ -90,7 +90,7 @@ class Entry(TimestampedVersionedEntity):
         return self._status
 
     @status.setter
-    @deprecated(version='6.0.7', reason='use update')
+    @deprecated(version="6.0.7", reason="use update")
     def status(self, status: EntryStatus):
         """The workflow status of this entry."""
         self._check_not_discarded()
@@ -101,7 +101,7 @@ class Entry(TimestampedVersionedEntity):
         """The message for the latest operation of this entry."""
         return self._message
 
-    def dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "entry_id": self._entry_id,
             "entity_id": self.entity_id,
@@ -147,8 +147,8 @@ class Entry(TimestampedVersionedEntity):
         self,
         user: str,
         *,
-        message: str = None,
-        timestamp: float = None,
+        message: Optional[str] = None,
+        timestamp: Optional[float] = None,
         increment_version: bool = True,
     ):
         super().stamp(user, timestamp=timestamp, increment_version=increment_version)
@@ -166,6 +166,18 @@ class Entry(TimestampedVersionedEntity):
                 version=self.version,
             )
         )
+
+    def update(
+        self,
+        entry_raw: dict,
+        *,
+        entry_id: str,
+        user: str,
+        message: Optional[str] = None,
+        timestamp: Optional[float] = None,
+    ) -> Optional[str]:
+        self._check_not_discarded()
+        old_entry_id = self.entry_id if self.entry_id != entry_id else None
 
     def __repr__(self) -> str:
         return f"Entry(id={self._id}, entry_id={self._entry_id}, version={self.version}, last_modified={self._last_modified}, body={self.body})"

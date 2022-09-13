@@ -74,10 +74,10 @@ class VersionedEntity(Entity):
         super().discard()
         self._increment_version()
 
-    def update(self, version: int) -> None:
-        self._check_not_discarded()
-        self._validate_version(version)
-        self._increment_version()
+    # def update(self, version: int) -> None:
+    #     self._check_not_discarded()
+    #     self._validate_version(version)
+    #     self._increment_version()
 
     def _increment_version(self):
         self._version += 1
@@ -126,12 +126,12 @@ class TimestampedEntity(Entity):
         self._last_modified_by = user
         self._last_modified = self._ensure_timestamp(timestamp)
 
-    def update(self, *, user, last_modified: float, timestamp: float = None):
-        self._check_not_discarded()
-        self._validate_last_modified(last_modified)
+    # def update(self, *, user, last_modified: float, timestamp: float = None):
+    #     self._check_not_discarded()
+    #     self._validate_last_modified(last_modified)
 
-        self._last_modified_by = user
-        self._last_modified = self._ensure_timestamp(timestamp)
+    #     self._last_modified_by = user
+    #     self._last_modified = self._ensure_timestamp(timestamp)
 
     def _ensure_timestamp(self, timestamp: Optional[float]) -> float:
         return monotonic_utc_now() if timestamp is None else timestamp
@@ -208,18 +208,18 @@ class TimestampedVersionedEntity(VersionedEntity, TimestampedEntity):
         self._last_modified = self._ensure_timestamp(timestamp)
         self._increment_version()
 
-    def update(
-        self,
-        *,
-        user: str,
-        version: int,
-        last_modified: float,
-        timestamp: float = None,
-    ) -> None:
-        self._check_not_discarded()
-        self._validate_version(version)
-        self._validate_last_modified(last_modified)
+    # def update(
+    #     self,
+    #     *,
+    #     user: str,
+    #     version: int,
+    #     last_modified: float,
+    #     timestamp: float = None,
+    # ) -> None:
+    #     self._check_not_discarded()
+    #     self._validate_version(version)
+    #     self._validate_last_modified(last_modified)
 
-        self._last_modified_by = user
-        self._last_modified = self._ensure_timestamp(timestamp)
-        self._increment_version()
+    #     self._last_modified_by = user
+    #     self._last_modified = self._ensure_timestamp(timestamp)
+    #     self._increment_version()

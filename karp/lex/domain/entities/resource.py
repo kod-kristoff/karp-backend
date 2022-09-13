@@ -1,8 +1,8 @@
 """LexicalResource"""
-import abc
+import copy
 import enum
 import typing
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from uuid import UUID
 
 from karp.lex.domain import constraints
@@ -332,7 +332,7 @@ class Resource(TimestampedVersionedEntity):
 
     def create_entry_from_dict(
         self,
-        entry_raw: Dict,
+        entry_raw: dict,
         *,
         user: str,
         entity_id: unique_id.UniqueId,
@@ -351,6 +351,27 @@ class Resource(TimestampedVersionedEntity):
             entity_id=entity_id,
             last_modified=timestamp,
         )
+
+    def update_entry(
+        self,
+        entry: Entry,
+        *,
+        entry_raw: dict,
+        user: str,
+        message: Optional[str] = None,
+        timestamp: Optional[float] = None,
+    ) -> Tuple[Entry, Optional[str]]:
+        self._check_not_discarded()
+        id_getter = self.id_getter()
+        new_entry_id = id_getter(entry_raw)
+        old_entry_id = entry.update(
+            entry_raw,
+            user=user,
+            message=message,
+            timestamp=timestamp,
+            entry_id=new_entry_id,
+        )
+        return entry, old_entry_id
 
     def is_protected(self, level: PermissionLevel):
         """
