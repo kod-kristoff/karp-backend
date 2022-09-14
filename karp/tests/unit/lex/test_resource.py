@@ -4,10 +4,17 @@ from unittest import mock
 import pytest
 
 from karp.lex.domain import errors, events
-from karp.lex.domain.errors import (ConsistencyError, ConstraintsError,
-                                    DiscardedEntityError)
-from karp.lex.domain.entities.resource import (Release, Resource, ResourceOp,
-                                               create_resource)
+from karp.lex.domain.errors import (
+    ConsistencyError,
+    ConstraintsError,
+    DiscardedEntityError,
+)
+from karp.lex.domain.entities.resource import (
+    Release,
+    Resource,
+    ResourceOp,
+    create_resource,
+)
 from karp.foundation.value_objects import unique_id
 
 from . import factories
@@ -24,7 +31,7 @@ def test_create_resource_creates_resource():
         "fields": {"baseform": {"type": "string", "required": True}},
     }
     with mock.patch("karp.utility.time.utc_now", return_value=12345):
-        resource = create_resource(
+        resource, domain_events = create_resource(
             conf,
             created_by="kristoff@example.com",
             entry_repo_id=unique_id.make_unique_id(),
@@ -47,7 +54,7 @@ def test_create_resource_creates_resource():
     assert int(resource.last_modified) == 12345
     assert resource.message == "Resource added."
     assert resource.op == ResourceOp.ADDED
-    assert resource.domain_events[-1] == events.ResourceCreated(
+    assert domain_events[-1] == events.ResourceCreated(
         timestamp=resource.last_modified,
         entity_id=resource.id,
         entry_repo_id=resource.entry_repository_id,
@@ -75,12 +82,14 @@ def test_resource_stamp_changes_last_modified_and_version():
     previous_last_modified = resource.last_modified
     previous_version = resource.version
 
-    resource.stamp(user="Test")
+    domain_events = resource.update(
+        name="new name", user="Test", config=resource.config, message="update"
+    )
 
     assert resource.last_modified > previous_last_modified
     assert resource.last_modified_by == "Test"
     assert resource.version == (previous_version + 1)
-    assert resource.domain_events[-1] == events.ResourceUpdated(
+    assert domain_events[-1] == events.ResourceUpdated(
         timestamp=resource.last_modified,
         entity_id=resource.id,
         entry_repo_id=resource.entry_repository_id,
@@ -200,19 +209,13 @@ def test_resource_has_entry_json_schema():
     assert "baseform" in json_schema["properties"]
 
 
-@pytest.mark.parametrize(
-    "field,value",
-    [
-        # ("resource_id", "new..1"),
-        # ("config", {"b": "r"}),
-        ("name", "New name"),
-    ],
-)
-def test_discarded_resource_has_event(field, value):
-    resource = random_resource()
-    resource.discard(user="alice@example.org", message="bad", timestamp=123.45)
+def test_discarded_resource_has_event():
+    resource = factories.ResourceFactory()
+    domain_events = resource.discard(
+        user="alice@example.org", message="bad", timestamp=123.45
+    )
     assert resource.discarded
-    assert resource.domain_events[-1] == events.ResourceDiscarded(
+    assert domain_events[-1] == events.ResourceDiscarded(
         entity_id=resource.id,
         # entry_repo_id=resource.entry_repository_id,
         resource_id=resource.resource_id,
@@ -223,17 +226,15 @@ def test_discarded_resource_has_event(field, value):
         name=resource.name,
         config=resource.config,
     )
-    with pytest.raises(errors.DiscardedEntityError):
-        setattr(resource, field, value)
 
 
 def test_published_resource_has_event():
-    resource = random_resource()
+    resource = factories.ResourceFactory()
     previous_version = resource.version
-    resource.publish(user="kristoff@example.com", message="publish")
+    domain_events = resource.publish(user="kristoff@example.com", message="publish")
     assert resource.is_published
     assert resource.version == (previous_version + 1)
-    assert resource.domain_events[-1] == events.ResourcePublished(
+    assert domain_events[-1] == events.ResourcePublished(
         entity_id=resource.id,
         entry_repo_id=resource.entry_repository_id,
         resource_id=resource.resource_id,

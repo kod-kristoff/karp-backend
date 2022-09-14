@@ -8,8 +8,15 @@ from uuid import UUID
 from karp.lex.domain import constraints
 from karp.foundation.entity import Entity, TimestampedVersionedEntity
 from karp.foundation.value_objects import PermissionLevel
+from karp.lex.domain.events import (
+    DomainEvent,
+    ResourceCreated,
+    ResourceDiscarded,
+    ResourcePublished,
+    ResourceUpdated,
+)
 from .entry import Entry, create_entry
-from karp.lex.domain import errors, events
+from karp.lex.domain import errors
 from karp.foundation.value_objects import unique_id
 from karp.utility import json_schema, time
 from karp.utility.container import create_field_getter
@@ -105,7 +112,7 @@ class Resource(TimestampedVersionedEntity):
         self._resource_id = resource_id
         self._name = name
         self.is_published = is_published
-        self.config = config
+        self._config = config
         self._message = message
         self._op = op
         self._releases = []
@@ -138,20 +145,24 @@ class Resource(TimestampedVersionedEntity):
 
     @property
     def entry_repository_settings(self) -> typing.Dict:
-        return self.config["entry_repository_settings"]
+        return self._config["entry_repository_settings"]
 
-    @entry_repository_settings.setter
-    def entry_repository_settings(self, entry_repository_settings: typing.Dict):
-        self.config["entry_repository_settings"] = entry_repository_settings
+    # @entry_repository_settings.setter
+    # def entry_repository_settings(self, entry_repository_settings: typing.Dict):
+    #     self.config["entry_repository_settings"] = entry_repository_settings
 
     @property
-    def name(self):
+    def config(self) -> Dict:
+        return self._config
+
+    @property
+    def name(self) -> str:
         return self._name
 
-    @name.setter
-    def name(self, name):
-        self._check_not_discarded()
-        self._name = name
+    # @name.setter
+    # def name(self, name):
+    #     self._check_not_discarded()
+    #     self._name = name
 
     @property
     def message(self):
@@ -177,30 +188,30 @@ class Resource(TimestampedVersionedEntity):
     #         )
     #     return self._entry_repository
 
-    def stamp(
-        self,
-        *,
-        user: str,
-        timestamp: float = None,
-        message: str = None,
-        increment_version: bool = True,
-    ):
-        self._extracted_from_publish_9(timestamp, user, message, "Updated")
-        if increment_version:
-            self._version += 1
-        self.queue_event(
-            events.ResourceUpdated(
-                entity_id=self.id,
-                resource_id=self.resource_id,
-                name=self.name,
-                config=self.config,
-                version=self.version,
-                timestamp=self.last_modified,
-                user=self.last_modified_by,
-                message=self.message,
-                entry_repo_id=self.entry_repository_id,
-            )
-        )
+    # def stamp(
+    #     self,
+    #     *,
+    #     user: str,
+    #     timestamp: float = None,
+    #     message: str = None,
+    #     increment_version: bool = True,
+    # ):
+    #     self._extracted_from_publish_9(timestamp, user, message, "Updated")
+    #     if increment_version:
+    #         self._version += 1
+    #     self.queue_event(
+    #         events.ResourceUpdated(
+    #             entity_id=self.id,
+    #             resource_id=self.resource_id,
+    #             name=self.name,
+    #             config=self.config,
+    #             version=self.version,
+    #             timestamp=self.last_modified,
+    #             user=self.last_modified_by,
+    #             message=self.message,
+    #             entry_repo_id=self.entry_repository_id,
+    #         )
+    #     )
 
     def publish(
         self,
@@ -208,12 +219,12 @@ class Resource(TimestampedVersionedEntity):
         user: str,
         message: str,
         timestamp: float = None,
-    ):
+    ) -> list[DomainEvent]:
         self._extracted_from_publish_9(timestamp, user, message, "Published")
-        self._increment_version()
+        # self._increment_version()
         self.is_published = True
-        self.queue_event(
-            events.ResourcePublished(
+        return [
+            ResourcePublished(
                 entity_id=self.id,
                 resource_id=self.resource_id,
                 entry_repo_id=self.entry_repository_id,
@@ -224,7 +235,7 @@ class Resource(TimestampedVersionedEntity):
                 config=self.config,
                 message=self.message,
             )
-        )
+        ]
 
     def set_entry_repo_id(
         self,
@@ -232,14 +243,14 @@ class Resource(TimestampedVersionedEntity):
         entry_repo_id: unique_id.UniqueId,
         user: str,
         timestamp: Optional[float] = None,
-    ):
+    ) -> list[DomainEvent]:
         self._extracted_from_publish_9(
             timestamp, user, "entry repo id updated", "entry repo id updated"
         )
-        self._increment_version()
+        # self._increment_version()
         self._entry_repo_id = entry_repo_id
-        self.queue_event(
-            events.ResourceUpdated(
+        return [
+            ResourceUpdated(
                 entity_id=self.entity_id,
                 resource_id=self.resource_id,
                 entry_repo_id=self.entry_repository_id,
@@ -250,14 +261,15 @@ class Resource(TimestampedVersionedEntity):
                 config=self.config,
                 message=self.message,
             )
-        )
+        ]
 
     def _extracted_from_publish_9(self, timestamp, user, message, arg3):
         self._check_not_discarded()
-        self._last_modified = timestamp or utc_now()
+        self._last_modified = self._ensure_timestamp(timestamp)
         self._last_modified_by = user
         self._message = message or arg3
         self._op = ResourceOp.UPDATED
+        self._increment_version()
 
     def add_new_release(self, *, name: str, user: str, description: str):
         self._check_not_discarded()
@@ -279,16 +291,19 @@ class Resource(TimestampedVersionedEntity):
         self._check_not_discarded()
         raise NotImplementedError()
 
-    def discard(self, *, user: str, message: str, timestamp: float = None):
-        self._check_not_discarded()
+    def discard(
+        self, *, user: str, message: str, timestamp: Optional[float] = None
+    ) -> list[DomainEvent]:
+        self._extracted_from_publish_9(timestamp, user, message, "entry deleted.")
+        # self._check_not_discarded()
         self._op = ResourceOp.DELETED
-        self._message = message or "Entry deleted."
+        # self._message = message or "Entry deleted."
         self._discarded = True
-        self._last_modified_by = user
-        self._last_modified = timestamp or utc_now()
-        self._version += 1
-        self.queue_event(
-            events.ResourceDiscarded(
+        # self._last_modified_by = user
+        # self._last_modified = timestamp or utc_now()
+        # self._version += 1
+        return [
+            ResourceDiscarded(
                 entity_id=self.id,
                 version=self.version,
                 # entry_repo_id=self.entry_repository_id,
@@ -299,7 +314,47 @@ class Resource(TimestampedVersionedEntity):
                 name=self.name,
                 config=self.config,
             )
+        ]
+
+    def update(
+        self,
+        *,
+        name: str,
+        config: Dict,
+        user: str,
+        message: str,
+        timestamp: Optional[float] = None,
+    ) -> list[DomainEvent]:
+        print(f"{__name__}:324 {self.version=}")
+        self._extracted_from_publish_9(
+            timestamp, user, message, "entry repo id updated"
         )
+        events: list[DomainEvent] = []
+        found_changes = False
+        if self.name != name:
+            print(f"setting {name=}")
+            self._name = name
+            found_changes = True
+        if self.config != config:
+            print(f"setting {config=}")
+            self._config = config
+            found_changes = True
+        if found_changes:
+            print("found changes")
+            events.append(
+                ResourceUpdated(
+                    entity_id=self.entity_id,
+                    resource_id=self.resource_id,
+                    entry_repo_id=self.entry_repository_id,
+                    timestamp=self.last_modified,
+                    user=self.last_modified_by,
+                    version=self.version,
+                    name=self.name,
+                    config=self.config,
+                    message=self.message,
+                )
+            )
+        return events
 
     @property
     def entry_json_schema(self) -> Dict:
@@ -332,13 +387,13 @@ class Resource(TimestampedVersionedEntity):
 
     def create_entry_from_dict(
         self,
-        entry_raw: dict,
+        entry_raw: Dict,
         *,
         user: str,
         entity_id: unique_id.UniqueId,
         message: Optional[str] = None,
         timestamp: Optional[float] = None,
-    ) -> Entry:
+    ) -> Tuple[Entry, list[DomainEvent]]:
         self._check_not_discarded()
         id_getter = self.id_getter()
         return create_entry(
@@ -356,22 +411,22 @@ class Resource(TimestampedVersionedEntity):
         self,
         entry: Entry,
         *,
-        entry_raw: dict,
+        entry_raw: Dict,
         user: str,
         message: Optional[str] = None,
         timestamp: Optional[float] = None,
-    ) -> Tuple[Entry, Optional[str]]:
+    ) -> Tuple[Entry, list[DomainEvent]]:
         self._check_not_discarded()
         id_getter = self.id_getter()
         new_entry_id = id_getter(entry_raw)
-        old_entry_id = entry.update(
+        events = entry.update(
             entry_raw,
             user=user,
             message=message,
             timestamp=timestamp,
             entry_id=new_entry_id,
         )
-        return entry, old_entry_id
+        return entry, events
 
     def is_protected(self, level: PermissionLevel):
         """
@@ -418,7 +473,7 @@ def create_resource(
     resource_id: typing.Optional[str] = None,
     message: typing.Optional[str] = None,
     name: typing.Optional[str] = None,
-) -> Resource:
+) -> Tuple[Resource, list[DomainEvent]]:
 
     resource_id_in_config = config.pop("resource_id", None)
     resource_id = resource_id or resource_id_in_config
@@ -446,8 +501,8 @@ def create_resource(
         last_modified=created_at or time.utc_now(),
         last_modified_by=user or created_by or "unknown",
     )
-    resource.queue_event(
-        events.ResourceCreated(
+    events = [
+        ResourceCreated(
             entity_id=resource.id,
             resource_id=resource.resource_id,
             entry_repo_id=resource.entry_repository_id,
@@ -457,8 +512,8 @@ def create_resource(
             user=resource.last_modified_by,
             message=resource.message,
         )
-    )
-    return resource
+    ]
+    return resource, events
 
 
 # ===== Repository =====

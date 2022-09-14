@@ -5,18 +5,10 @@ from pydantic import BaseModel
 
 from karp.foundation import events, time
 from karp.foundation.value_objects import unique_id
+from karp.lex.domain.events import base
 
 
-class Event(events.Event, BaseModel):
-    timestamp: float
-
-
-class AppStarted(Event):
-    def __init__(self):
-        self.timestamp = time.utc_now()
-
-
-class ResourceCreated(Event):
+class ResourceCreated(base.DomainEvent):
     entity_id: unique_id.UniqueId
     resource_id: str
     entry_repo_id: unique_id.UniqueId
@@ -26,7 +18,7 @@ class ResourceCreated(Event):
     message: str
 
 
-class ResourceLoaded(Event):
+class ResourceLoaded(base.DomainEvent):
     entity_id: unique_id.UniqueId
     resource_id: str
     name: str
@@ -36,7 +28,7 @@ class ResourceLoaded(Event):
     version: int
 
 
-class ResourceDiscarded(Event):
+class ResourceDiscarded(base.DomainEvent):
     entity_id: unique_id.UniqueId
     resource_id: str
     name: str
@@ -46,7 +38,7 @@ class ResourceDiscarded(Event):
     version: int
 
 
-class ResourcePublished(Event):
+class ResourcePublished(base.DomainEvent):
     entity_id: unique_id.UniqueId
     resource_id: str
     entry_repo_id: unique_id.UniqueId
@@ -57,7 +49,7 @@ class ResourcePublished(Event):
     message: str
 
 
-class ResourceUpdated(Event):
+class ResourceUpdated(base.DomainEvent):
     entity_id: unique_id.UniqueId
     resource_id: str
     entry_repo_id: unique_id.UniqueId
@@ -68,7 +60,7 @@ class ResourceUpdated(Event):
     message: str
 
 
-class EntryAdded(Event):
+class EntryAdded(base.DomainEvent):
     entity_id: unique_id.UniqueId
     repo_id: unique_id.UniqueId
     entry_id: str
@@ -77,7 +69,7 @@ class EntryAdded(Event):
     user: str
 
 
-class EntryUpdated(Event):
+class EntryUpdated(base.DomainEvent):
     entity_id: unique_id.UniqueId
     repo_id: unique_id.UniqueId
     entry_id: str
@@ -91,7 +83,7 @@ class EntryIdChanged(EntryUpdated):
     old_entry_id: str
 
 
-class EntryDeleted(Event):
+class EntryDeleted(base.DomainEvent):
     entity_id: unique_id.UniqueId
     repo_id: unique_id.UniqueId
     entry_id: str

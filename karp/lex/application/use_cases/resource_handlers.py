@@ -29,8 +29,8 @@ class BasingResource:
     def __init__(self, resource_uow: repositories.ResourceUnitOfWork) -> None:
         self.resource_uow = resource_uow
 
-    def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
-        yield from self.resource_uow.collect_new_events()
+    # def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
+    #     yield from self.resource_uow.collect_new_events()
 
 
 class CreatingResource(CommandHandler[commands.CreateResource], BasingResource):
@@ -63,7 +63,7 @@ class CreatingResource(CommandHandler[commands.CreateResource], BasingResource):
                     f"Resource with resource_id='{command.resource_id}' already exists."
                 )
 
-            resource = entities.create_resource(
+            resource, events = entities.create_resource(
                 entity_id=command.entity_id,
                 resource_id=command.resource_id,
                 config=command.config,
@@ -74,12 +74,13 @@ class CreatingResource(CommandHandler[commands.CreateResource], BasingResource):
                 name=command.name,
             )
 
+            uow.record_events(events)
             uow.repo.save(resource)
             uow.commit()
         return ResourceDto(**resource.dict())
 
-    def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
-        yield from self.resource_uow.collect_new_events()
+    # def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
+    #     yield from self.resource_uow.collect_new_events()
 
 
 class SettingEntryRepoId(CommandHandler[commands.SetEntryRepoId], BasingResource):
@@ -119,24 +120,22 @@ class UpdatingResource(CommandHandler[commands.UpdateResource], BasingResource):
     def execute(self, command: commands.UpdateResource):
         with self.resource_uow as uow:
             resource = uow.repo.by_resource_id(command.resource_id)
-            found_changes = False
-            if resource.name != command.name:
-                resource.name = command.name
-                found_changes = True
-            if resource.config != command.config:
-                resource.config = command.config
-                found_changes = True
-            if found_changes:
-                resource.stamp(
-                    user=command.user,
-                    message=command.message,
-                    timestamp=command.timestamp,
-                )
+
+            if events := resource.update(
+                name=command.name,
+                config=command.config,
+                user=command.user,
+                message=command.message,
+                timestamp=command.timestamp,
+            ):
+                print(f"{__name__}:131 saving resource")
+                print(f"{__name__}:132 {resource.config=}")
+                uow.record_events(events)
                 uow.repo.save(resource)
             uow.commit()
 
-    def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
-        yield from self.resource_uow.collect_new_events()
+    # def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
+    #     yield from self.resource_uow.collect_new_events()
 
 
 class PublishingResource(CommandHandler[commands.PublishResource], BasingResource):
@@ -185,4 +184,3 @@ class DeletingResource(CommandHandler[commands.DeleteResource], BasingResource):
 
     def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
         yield from self.resource_uow.collect_new_events()
-

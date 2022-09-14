@@ -1,8 +1,9 @@
 import abc
+from collections.abc import Iterable
 import logging
 import typing
 
-from karp.foundation.events import EventBus
+from karp.foundation.events import Event, EventBus
 
 
 RepositoryType = typing.TypeVar("RepositoryType")
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 class UnitOfWork(typing.Generic[RepositoryType], abc.ABC):
     def __init__(self, event_bus: EventBus) -> None:
         self.event_bus = event_bus
+        self._pending_events: list[Event] = []
 
     def __enter__(self):
         return self
@@ -23,17 +25,20 @@ class UnitOfWork(typing.Generic[RepositoryType], abc.ABC):
         self.close()
 
     def commit(self):
-        logger.debug('called commit')
+        logger.debug("called commit")
         self._commit()
-        for event in self.collect_new_events():
-            logger.debug('collecting events')
+        for event in self._pending_events:
+            logger.debug("posting events")
             self.event_bus.post(event)
+        self._pending_events.clear()
 
-    def collect_new_events(self) -> typing.Iterable:
-        for entity in self.repo.seen:
-            # yield from entity.domain_events
-            yield from entity.collect_new_events()
-            entity.clear_events()
+    # def collect_new_events(self) -> typing.Iterable:
+    #     for entity in self.repo.seen:
+    #         # yield from entity.domain_events
+    #         yield from entity.collect_new_events()
+    #         entity.clear_events()
+    def record_events(self, events: Iterable[Event]) -> None:
+        self._pending_events.extend(events)
 
     @abc.abstractmethod
     def _commit(self):

@@ -1,3 +1,4 @@
+import copy
 import dataclasses
 import typing
 from typing import Dict, Iterable, List, Optional
@@ -32,7 +33,8 @@ class InMemoryResourceRepository(lex_repositories.ResourceRepository):
         pass
 
     def _save(self, resource):
-        self.resources[resource.id] = resource
+        print(f"{__name__}:36 saving {resource.version=}")
+        self.resources[resource.id] = copy.deepcopy(resource)
 
     # def _update(self, resource):
     #     r = self._by_id(resource.id)
@@ -40,13 +42,15 @@ class InMemoryResourceRepository(lex_repositories.ResourceRepository):
     #     self.resources.add(resource)
 
     def _by_id(self, id_, *, version=None):
-        return self.resources.get(id_)
+        resource = self.resources.get(id_)
+        return copy.deepcopy(resource) if resource else None
 
     def _by_resource_id(self, resource_id):
-        return next(
+        resource = next(
             (res for res in self.resources.values() if res.resource_id == resource_id),
             None,
         )
+        return copy.deepcopy(resource) if resource else None
 
     def __len__(self):
         return len(self.resources)
@@ -68,15 +72,15 @@ class InMemoryReadResourceRepository(ReadOnlyResourceRepository):
     def __init__(self, resources: Dict):
         self.resources = resources
 
-    def get_by_id(self, entity_id: UniqueId, version: Optional[int] = None) -> Optional[ResourceDto]:
+    def get_by_id(
+        self, entity_id: UniqueId, version: Optional[int] = None
+    ) -> Optional[ResourceDto]:
         resource = self.resources.get(entity_id)
         if resource:
             return self._row_to_dto(resource)
         return None
 
-    def _get_by_resource_id(
-        self, resource_id: str
-    ) -> Optional[ResourceDto]:
+    def _get_by_resource_id(self, resource_id: str) -> Optional[ResourceDto]:
         return next(
             (
                 self._row_to_dto(res)
@@ -110,18 +114,18 @@ class InMemoryReadResourceRepository(ReadOnlyResourceRepository):
 class InMemoryEntryRepository(lex_repositories.EntryRepository):
     def __init__(self):
         super().__init__()
-        self.entries = set()
+        self.entries = {}
 
     def check_status(self):
         pass
 
-    def _save(self, entry):
-        self.entries.add(entry)
+    def _save(self, entry, **kwargs):
+        self.entries[entry.id] = copy.deepcopy(entry)
 
     def _update(self, entry):
-        r = self._by_id(entry.id)
-        self.entries.discard(r)
-        self.entries.add(entry)
+        # r = self._by_id(entry.id)
+        # self.entries.discard(r)
+        self.entries[entry.id] = copy.deepcopy(entry)
 
     def _by_id(
         self,
@@ -132,7 +136,8 @@ class InMemoryEntryRepository(lex_repositories.EntryRepository):
         before_date=None,
         oldest_first=False,
     ):
-        return next((r for r in self.entries if r.id == id), None)
+        entry = self.entries.get(id)
+        return copy.deepcopy(entry) if entry else None
 
     def _by_entry_id(
         self,
@@ -142,7 +147,8 @@ class InMemoryEntryRepository(lex_repositories.EntryRepository):
         after_date=None,
         before_date=None,
     ):
-        return next((r for r in self.entries if r.entry_id == entry_id), None)
+        entry = next((r for r in self.entries.values() if r.entry_id == entry_id), None)
+        return copy.deepcopy(entry) if entry else None
 
     def __len__(self):
         return len(self.entries)
@@ -155,10 +161,10 @@ class InMemoryEntryRepository(lex_repositories.EntryRepository):
         return cls()
 
     def all_entries(self) -> typing.Iterable[lex_entities.Entry]:
-        yield from self.entries
+        yield from self.entries.values()
 
     def num_entities(self) -> int:
-        return sum(not e.discarded for e in self.entries)
+        return sum(not e.discarded for e in self.all_entries())
 
     def by_referenceable(
         self, filters: Optional[Dict] = None, **kwargs

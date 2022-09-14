@@ -27,8 +27,7 @@ class TestCreateResource:
         cmd = factories.CreateEntryRepositoryFactory()
         lex_ctx.command_bus.dispatch(cmd)
 
-        cmd = factories.CreateResourceFactory(
-            entry_repo_id=cmd.entity_id)
+        cmd = factories.CreateResourceFactory(entry_repo_id=cmd.entity_id)
         lex_ctx.command_bus.dispatch(cmd)
 
         resource_uow = lex_ctx.container.get(ResourceUnitOfWork)
@@ -52,8 +51,7 @@ class TestCreateResource:
         with pytest.raises(errors.IntegrityError):
             lex_ctx.command_bus.dispatch(
                 factories.CreateResourceFactory(
-                    resource_id=cmd2.resource_id,
-                    entry_repo_id=cmd1.entity_id
+                    resource_id=cmd2.resource_id, entry_repo_id=cmd1.entity_id
                 )
             )
 
@@ -70,7 +68,7 @@ class TestCreateResource:
             lex_ctx.command_bus.dispatch(
                 factories.CreateResourceFactory(
                     entry_repo_id=cmd.entity_id,
-                    resource_id='with space',
+                    resource_id="with space",
                 )
             )
 
@@ -86,7 +84,7 @@ class TestUpdateResource:
         lex_ctx.command_bus.dispatch(cmd2)
 
         changed_config = copy.deepcopy(cmd2.config)
-        changed_config['fields']['b'] = {'type': 'integer'}
+        changed_config["fields"]["b"] = {"type": "integer"}
         lex_ctx.command_bus.dispatch(
             factories.UpdateResourceFactory(
                 resource_id=cmd2.resource_id,
@@ -102,15 +100,16 @@ class TestUpdateResource:
 
         assert resource_uow.was_committed  # type: ignore
 
-        resource = resource_uow.resources.by_resource_id(cmd2.resource_id)
-        assert resource is not None
-        assert resource.config == changed_config
-        assert resource.version == 2
-
         resource = resource_uow.resources.get_by_id(cmd2.entity_id)
         assert resource is not None
-        assert resource.config == changed_config
+        assert resource.id == cmd2.entity_id
         assert resource.version == 2
+        assert resource.config == changed_config
+
+        resource = resource_uow.resources.by_resource_id(cmd2.resource_id)
+        assert resource is not None
+        assert resource.version == 2
+        assert resource.config == changed_config
 
 
 class TestPublishResource:
@@ -126,7 +125,7 @@ class TestPublishResource:
         lex_ctx.command_bus.dispatch(
             commands.PublishResource(
                 resource_id=cmd2.resource_id,
-                message='publish',
+                message="publish",
                 user="kristoff@example.com",
             )
         )

@@ -31,9 +31,9 @@ class BasingEntry:
         self.entry_repo_uow = entry_repo_uow
         self.resource_uow = resource_uow
 
-    def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
-        yield from self.resource_uow.collect_new_events()
-        yield from self.entry_repo_uow.collect_new_events()
+    # def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
+    #     yield from self.resource_uow.collect_new_events()
+    #     yield from self.entry_repo_uow.collect_new_events()
 
     def get_entry_uow(self, entry_repo_id: unique_id.UniqueId) -> EntryUnitOfWork:
         with self.entry_repo_uow as uw:
@@ -66,12 +66,13 @@ class AddingEntry(BasingEntry, CommandHandler[commands.AddEntry]):
 
             entry_schema.validate_entry(command.entry)
 
-            entry = resource.create_entry_from_dict(
+            entry, events = resource.create_entry_from_dict(
                 command.entry,
                 user=command.user,
                 message=command.message,
                 entity_id=command.entity_id,
             )
+            uw.record_events(events)
             uw.entries.save(entry)
             uw.commit()
         return entry
@@ -130,29 +131,29 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
                 message=command.message,
                 timestamp=command.timestamp,
             )
-            id_getter = resource.id_getter()
-            new_entry_id = id_getter(command.entry)
+            # id_getter = resource.id_getter()
+            # new_entry_id = id_getter(command.entry)
 
-            current_db_entry.body = command.entry
-            current_db_entry.stamp(
-                command.user, message=command.message, timestamp=command.timestamp
-            )
-            if new_entry_id != command.entry_id:
-                logger.info(
-                    "updating entry_id",
-                    extra={
-                        "entry_id": command.entry_id,
-                        "new_entry_id": new_entry_id,
-                    },
-                )
-                current_db_entry.entry_id = new_entry_id
-                # uw.repo.move(current_db_entry, old_entry_id=command.entry_id)
+            # current_db_entry.body = command.entry
+            # current_db_entry.stamp(
+            #     command.user, message=command.message, timestamp=command.timestamp
+            # )
+            # if new_entry_id != command.entry_id:
+            #     logger.info(
+            #         "updating entry_id",
+            #         extra={
+            #             "entry_id": command.entry_id,
+            #             "new_entry_id": new_entry_id,
+            #         },
+            #     )
+            #     current_db_entry.entry_id = new_entry_id
+            # uw.repo.move(current_db_entry, old_entry_id=command.entry_id)
             print(f"{__name__}:143 saving '{old_entry_id}'")
-            uw.repo.save(current_db_entry, old_entry_id=old_entry_id)
+            uw.repo.save(db_entry, old_entry_id=old_entry_id)
 
             uw.commit()
 
-        return current_db_entry
+        return db_entry
 
 
 # def update_entries(*args, **kwargs):
@@ -209,7 +210,7 @@ class AddingEntries(BasingEntry, CommandHandler[commands.AddEntries]):
 
                 entry_schema.validate_entry(entry_raw)
 
-                entry = resource.create_entry_from_dict(
+                entry, events = resource.create_entry_from_dict(
                     entry_raw,
                     user=command.user,
                     message=command.message,
@@ -220,6 +221,7 @@ class AddingEntries(BasingEntry, CommandHandler[commands.AddEntries]):
                     raise errors.IntegrityError(
                         f"An entry with entry_id '{entry.entry_id}' already exists."
                     )
+                uw.record_events(events)
                 uw.entries.save(entry)
                 created_db_entries.append(entry)
 
@@ -268,7 +270,7 @@ class ImportingEntries(BasingEntry, CommandHandler[commands.ImportEntries]):
             for i, entry_raw in enumerate(command.entries):
                 entry_schema.validate_entry(entry_raw["entry"])
 
-                entry = resource.create_entry_from_dict(
+                entry, events = resource.create_entry_from_dict(
                     entry_raw["entry"],
                     user=entry_raw.get("user") or command.user,
                     message=entry_raw.get("message") or command.message,
@@ -285,6 +287,7 @@ class ImportingEntries(BasingEntry, CommandHandler[commands.ImportEntries]):
                             raise integrity_error
                     else:
                         raise integrity_error
+                uw.record_events(events)
                 uw.entries.save(entry)
                 created_db_entries.append(entry)
 
@@ -305,10 +308,11 @@ class DeletingEntry(BasingEntry, CommandHandler[commands.DeleteEntry]):
         ) as uw:
             entry = uw.repo.by_entry_id(command.entry_id)
 
-            entry.discard(
+            events = entry.discard(
                 user=command.user,
                 message=command.message,
                 timestamp=command.timestamp,
             )
+            uw.record_events(events)
             uw.repo.save(entry)
             uw.commit()

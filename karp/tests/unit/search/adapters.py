@@ -23,9 +23,7 @@ class InMemoryIndex(Index):
     class Index:
         config: Dict
         created_at: float
-        entries: Dict[str, IndexEntry] = dataclasses.field(
-            default_factory=dict
-        )
+        entries: Dict[str, IndexEntry] = dataclasses.field(default_factory=dict)
         created: bool = True
         published: bool = False
 
@@ -36,7 +34,8 @@ class InMemoryIndex(Index):
 
     def create_index(self, resource_id: str, config: Dict):
         self.indicies[resource_id] = InMemoryIndex.Index(
-            config=config, created_at=utc_now())
+            config=config, created_at=utc_now()
+        )
 
     def publish_index(self, alias_name: str, index_name: str = None):
         self.indicies[alias_name].published = True
@@ -54,26 +53,26 @@ class InMemoryIndex(Index):
     ):
         del self.indicies[resource_id].entries[entry_id]
 
-#    def search_ids(self, resource_id: str, entry_ids: str):
-#        return {}
-#
-#    def query(self, request: search_service.QueryRequest):
-#        return {}
-#
-#    def query_split(self, request: search_service.QueryRequest):
-#        return {}
-#
-#    def statistics(self, resource_id: str, field: str):
-#        return {}
+    #    def search_ids(self, resource_id: str, entry_ids: str):
+    #        return {}
+    #
+    #    def query(self, request: search_service.QueryRequest):
+    #        return {}
+    #
+    #    def query_split(self, request: search_service.QueryRequest):
+    #        return {}
+    #
+    #    def statistics(self, resource_id: str, field: str):
+    #        return {}
     def num_entities(self) -> int:
         return sum(len(entries) for entries in self.indicies.values())
 
 
-class InMemoryIndexUnitOfWork(
-    InMemoryUnitOfWork, IndexUnitOfWork
-):
-    def __init__(self):
+class InMemoryIndexUnitOfWork(InMemoryUnitOfWork, IndexUnitOfWork):
+    def __init__(self, event_bus: EventBus):
         # super().__init__()
+        InMemoryUnitOfWork.__init__(self)
+        IndexUnitOfWork.__init__(self, event_bus=event_bus)
         self._index = InMemoryIndex()
 
     @property
@@ -84,5 +83,5 @@ class InMemoryIndexUnitOfWork(
 class InMemorySearchInfrastructure(injector.Module):
     @injector.provider
     @injector.singleton
-    def index_uow(self) -> IndexUnitOfWork:
-        return InMemoryIndexUnitOfWork()
+    def index_uow(self, event_bus: EventBus) -> IndexUnitOfWork:
+        return InMemoryIndexUnitOfWork(event_bus=event_bus)

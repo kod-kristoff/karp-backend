@@ -14,12 +14,12 @@ class Repository(Generic[EntityType], abc.ABC):
     def __init__(self):
         self.seen = set()
 
-    def save(self, entity: EntityType):
-        self._save(entity)
+    def save(self, entity: EntityType, **kwargs):
+        self._save(entity, **kwargs)
         self.seen.add(entity)
 
     @abc.abstractmethod
-    def _save(self, entity: EntityType):
+    def _save(self, entity: EntityType, **kwargs):
         raise NotImplementedError()
 
     def _check_id_has_correct_type(self, id_) -> None:

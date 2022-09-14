@@ -9,7 +9,8 @@ from karp.foundation import events
 from karp.utility.time import monotonic_utc_now
 
 
-class Entity(events.EventMixin):
+# class Entity(events.EventMixin):
+class Entity:
     DiscardedEntityError = errors.DiscardedEntityError
 
     def __init__(self, entity_id, discarded: bool = False, aggregate_root=None):
@@ -18,8 +19,8 @@ class Entity(events.EventMixin):
         self._discarded = discarded
         self._root = aggregate_root
 
-    def queue_event(self, event):
-        self._record_event(event)
+    # def queue_event(self, event):
+    #     self._record_event(event)
 
     @property
     def id(self):

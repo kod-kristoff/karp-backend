@@ -2,14 +2,22 @@
 import enum
 import logging
 import typing
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any, Tuple
 
 from deprecated import deprecated
+from karp import foundation
 
 from karp.foundation import constraints
-from karp.lex.domain import errors, events
+from karp.lex.domain import errors
 from karp.foundation.entity import TimestampedVersionedEntity
 from karp.foundation.value_objects import unique_id
+from karp.lex.domain.events import (
+    DomainEvent,
+    EntryAdded,
+    EntryDeleted,
+    EntryIdChanged,
+    EntryUpdated,
+)
 
 logger = logging.getLogger("karp")
 
@@ -48,7 +56,7 @@ class Entry(TimestampedVersionedEntity):
         self._entry_id = entry_id
         self._body = body
         self._op = op
-        self._message = "Entry added." if message is None else message
+        self._message: str = message
         # self.resource_id = resource_id
         self._status = status
         self._repo_id = repository_id
@@ -62,22 +70,22 @@ class Entry(TimestampedVersionedEntity):
         """The entry_id of this entry."""
         return self._entry_id
 
-    @entry_id.setter
-    @deprecated(version="6.0.7", reason="use update")
-    def entry_id(self, entry_id: str):
-        self._check_not_discarded()
-        self._entry_id = constraints.length_gt_zero("entry_id", entry_id)
+    # @entry_id.setter
+    # @deprecated(version="6.0.7", reason="use update")
+    # def entry_id(self, entry_id: str):
+    #     self._check_not_discarded()
+    #     self._entry_id = constraints.length_gt_zero("entry_id", entry_id)
 
     @property
     def body(self):
         """The body of the entry."""
         return self._body
 
-    @body.setter
-    @deprecated(version="6.0.7", reason="use update")
-    def body(self, body: Dict):
-        self._check_not_discarded()
-        self._body = body
+    # @body.setter
+    # @deprecated(version="6.0.7", reason="use update")
+    # def body(self, body: Dict):
+    #     self._check_not_discarded()
+    #     self._body = body
 
     @property
     def op(self):
@@ -89,15 +97,15 @@ class Entry(TimestampedVersionedEntity):
         """The workflow status of this entry."""
         return self._status
 
-    @status.setter
-    @deprecated(version="6.0.7", reason="use update")
-    def status(self, status: EntryStatus):
-        """The workflow status of this entry."""
-        self._check_not_discarded()
-        self._status = status
+    # @status.setter
+    # @deprecated(version="6.0.7", reason="use update")
+    # def status(self, status: EntryStatus):
+    #     """The workflow status of this entry."""
+    #     self._check_not_discarded()
+    #     self._status = status
 
     @property
-    def message(self):
+    def message(self) -> str:
         """The message for the latest operation of this entry."""
         return self._message
 
@@ -118,19 +126,19 @@ class Entry(TimestampedVersionedEntity):
         self,
         *,
         user: str,
-        timestamp: float = None,
-        message: str = None,
-    ):
+        timestamp: Optional[float] = None,
+        message: Optional[str] = None,
+    ) -> list[DomainEvent]:
         if self._discarded:
-            return
+            return []
         self._op = EntryOp.DELETED
         self._message = message or "Entry deleted."
         self._discarded = True
         self._last_modified_by = user
         self._last_modified = self._ensure_timestamp(timestamp)
         self._increment_version()
-        self._record_event(
-            events.EntryDeleted(
+        return [
+            EntryDeleted(
                 entity_id=self.id,
                 entry_id=self.entry_id,
                 timestamp=self.last_modified,
@@ -139,33 +147,33 @@ class Entry(TimestampedVersionedEntity):
                 version=self.version,
                 repo_id=self.repo_id,
             )
-        )
+        ]
         # event.mutate(self)
         # event_handler.publish(event)
 
-    def stamp(
-        self,
-        user: str,
-        *,
-        message: Optional[str] = None,
-        timestamp: Optional[float] = None,
-        increment_version: bool = True,
-    ):
-        super().stamp(user, timestamp=timestamp, increment_version=increment_version)
-        self._message = message
-        self._op = EntryOp.UPDATED
-        self._record_event(
-            events.EntryUpdated(
-                timestamp=self.last_modified,
-                entity_id=self.id,
-                repo_id=self.repo_id,
-                entry_id=self.entry_id,
-                body=self.body,
-                message=self.message or "",
-                user=self.last_modified_by,
-                version=self.version,
-            )
-        )
+    # def stamp(
+    #     self,
+    #     user: str,
+    #     *,
+    #     message: Optional[str] = None,
+    #     timestamp: Optional[float] = None,
+    #     increment_version: bool = True,
+    # ):
+    #     super().stamp(user, timestamp=timestamp, increment_version=increment_version)
+    #     self._message = message
+    #     self._op = EntryOp.UPDATED
+    #     self._record_event(
+    #         events.EntryUpdated(
+    #             timestamp=self.last_modified,
+    #             entity_id=self.id,
+    #             repo_id=self.repo_id,
+    #             entry_id=self.entry_id,
+    #             body=self.body,
+    #             message=self.message or "",
+    #             user=self.last_modified_by,
+    #             version=self.version,
+    #         )
+    #     )
 
     def update(
         self,
@@ -175,18 +183,19 @@ class Entry(TimestampedVersionedEntity):
         user: str,
         message: Optional[str] = None,
         timestamp: Optional[float] = None,
-    ) -> Optional[str]:
+    ) -> list[DomainEvent]:
         self._check_not_discarded()
         old_entry_id = self.entry_id if self.entry_id != entry_id else None
         self._entry_id = entry_id
         self._message = message or "updated"
         self._last_modified_by = user
-        self._last_modified_by = self._ensure_timestamp(timestamp)
+        self._last_modified = self._ensure_timestamp(timestamp)
         self._body = entry_raw
         self._increment_version()
+        events: list[DomainEvent] = []
         if old_entry_id:
-            self._record_event(
-                events.EntryIdChanged(
+            events.append(
+                EntryIdChanged(
                     timestamp=self.last_modified,
                     entity_id=self.id,
                     repo_id=self.repo_id,
@@ -195,11 +204,12 @@ class Entry(TimestampedVersionedEntity):
                     message=self.message or "",
                     user=self.last_modified_by,
                     version=self.version,
+                    old_entry_id=old_entry_id,
                 )
             )
         else:
-            self._record_event(
-                events.EntryUpdated(
+            events.append(
+                EntryUpdated(
                     timestamp=self.last_modified,
                     entity_id=self.id,
                     repo_id=self.repo_id,
@@ -211,7 +221,7 @@ class Entry(TimestampedVersionedEntity):
                 )
             )
 
-        return old_entry_id
+        return events
 
     def __repr__(self) -> str:
         return f"Entry(id={self._id}, entry_id={self._entry_id}, version={self.version}, last_modified={self._last_modified}, body={self.body})"
@@ -227,7 +237,7 @@ def create_entry(
     last_modified_by: str = None,
     message: Optional[str] = None,
     last_modified: typing.Optional[float] = None,
-) -> Entry:
+) -> Tuple[Entry, list[DomainEvent]]:
     if not isinstance(entry_id, str):
         entry_id = str(entry_id)
     entry = Entry(
@@ -243,8 +253,8 @@ def create_entry(
         entity_id=entity_id,
         last_modified=last_modified,
     )
-    entry.queue_event(
-        events.EntryAdded(
+    events = [
+        EntryAdded(
             repo_id=repo_id,
             entity_id=entry.id,
             entry_id=entry.entry_id,
@@ -253,8 +263,8 @@ def create_entry(
             user=entry.last_modified_by,
             timestamp=entry.last_modified,
         )
-    )
-    return entry
+    ]
+    return entry, events
 
 
 # === Repository ===
