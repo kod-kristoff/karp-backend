@@ -95,7 +95,7 @@ class Search(injector.Module):
             )
         ]
 
-     @injector.multiprovider
+    @injector.multiprovider
     def change_entry_id(
         self,
         index_uow: IndexUnitOfWork,
@@ -103,13 +103,12 @@ class Search(injector.Module):
         resource_views: ResourceViews,
     ) -> List[EventHandler[lex_events.EntryIdChanged]]:
         return [
-        #     EntryUpdatedHandler(
-        #         index_uow=index_uow,
-        #         entry_transformer=entry_transformer,
-        #         resource_views=resource_views,
-        #     )
+            #     EntryUpdatedHandler(
+            #         index_uow=index_uow,
+            #         entry_transformer=entry_transformer,
+            #         resource_views=resource_views,
+            #     )
         ]
-
 
     @injector.multiprovider
     def delete_entry(
