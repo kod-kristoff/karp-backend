@@ -101,7 +101,7 @@ class Entry(TimestampedVersionedEntity):
         """The message for the latest operation of this entry."""
         return self._message
 
-    def to_dict(self) -> Dict[str, Any]:
+    def dict(self) -> Dict[str, Any]:
         return {
             "entry_id": self._entry_id,
             "entity_id": self.entity_id,
@@ -169,7 +169,7 @@ class Entry(TimestampedVersionedEntity):
 
     def update(
         self,
-        entry_raw: dict,
+        entry_raw: Dict,
         *,
         entry_id: str,
         user: str,
@@ -178,6 +178,40 @@ class Entry(TimestampedVersionedEntity):
     ) -> Optional[str]:
         self._check_not_discarded()
         old_entry_id = self.entry_id if self.entry_id != entry_id else None
+        self._entry_id = entry_id
+        self._message = message or "updated"
+        self._last_modified_by = user
+        self._last_modified_by = self._ensure_timestamp(timestamp)
+        self._body = entry_raw
+        self._increment_version()
+        if old_entry_id:
+            self._record_event(
+                events.EntryIdChanged(
+                    timestamp=self.last_modified,
+                    entity_id=self.id,
+                    repo_id=self.repo_id,
+                    entry_id=self.entry_id,
+                    body=self.body,
+                    message=self.message or "",
+                    user=self.last_modified_by,
+                    version=self.version,
+                )
+            )
+        else:
+            self._record_event(
+                events.EntryUpdated(
+                    timestamp=self.last_modified,
+                    entity_id=self.id,
+                    repo_id=self.repo_id,
+                    entry_id=self.entry_id,
+                    body=self.body,
+                    message=self.message or "",
+                    user=self.last_modified_by,
+                    version=self.version,
+                )
+            )
+
+        return old_entry_id
 
     def __repr__(self) -> str:
         return f"Entry(id={self._id}, entry_id={self._entry_id}, version={self.version}, last_modified={self._last_modified}, body={self.body})"

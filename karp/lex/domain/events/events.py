@@ -87,6 +87,10 @@ class EntryUpdated(Event):
     version: int
 
 
+class EntryIdChanged(EntryUpdated):
+    old_entry_id: str
+
+
 class EntryDeleted(Event):
     entity_id: unique_id.UniqueId
     repo_id: unique_id.UniqueId
