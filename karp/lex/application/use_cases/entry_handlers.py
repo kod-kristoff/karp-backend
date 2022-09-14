@@ -124,7 +124,7 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
                 )
                 raise errors.UpdateConflict(diff)
 
-            db_entry, old_entry_id = resource.update_entry(
+            db_entry, events = resource.update_entry(
                 current_db_entry,
                 entry_raw=command.entry,
                 user=command.user,
@@ -148,8 +148,9 @@ class UpdatingEntry(BasingEntry, CommandHandler[commands.UpdateEntry]):
             #     )
             #     current_db_entry.entry_id = new_entry_id
             # uw.repo.move(current_db_entry, old_entry_id=command.entry_id)
-            print(f"{__name__}:143 saving '{old_entry_id}'")
-            uw.repo.save(db_entry, old_entry_id=old_entry_id)
+            print(f"{__name__}:143 saving '{db_entry.entry_id}'")
+            uw.record_events(events)
+            uw.repo.save(db_entry)
 
             uw.commit()
 
