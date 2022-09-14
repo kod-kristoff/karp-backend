@@ -128,8 +128,8 @@ class CreateSearchServiceHandler(
     def __init__(self, index_uow: IndexUnitOfWork):
         self.index_uow = index_uow
 
-    def collect_new_events(self) -> Iterable[foundation_events.Event]:
-        yield from self.index_uow.collect_new_events()
+    # def collect_new_events(self) -> Iterable[foundation_events.Event]:
+    #     yield from self.index_uow.collect_new_events()
 
     def __call__(self, event: events.ResourceCreated, *args, **kwargs):
         with self.index_uow as uw:
@@ -141,8 +141,8 @@ class DeletingIndex(foundation_events.EventHandler[lex_events.ResourceDiscarded]
     def __init__(self, index_uow: IndexUnitOfWork):
         self.index_uow = index_uow
 
-    def collect_new_events(self) -> Iterable[foundation_events.Event]:
-        yield from self.index_uow.collect_new_events()
+    # def collect_new_events(self) -> Iterable[foundation_events.Event]:
+    #     yield from self.index_uow.collect_new_events()
 
     def __call__(self, event: events.ResourceDiscarded, *args, **kwargs):
         pass

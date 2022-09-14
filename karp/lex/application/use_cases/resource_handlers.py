@@ -152,14 +152,12 @@ class PublishingResource(CommandHandler[commands.PublishResource], BasingResourc
             resource = uow.repo.by_resource_id(command.resource_id)
             if not resource:
                 raise errors.ResourceNotFound(command.resource_id)
-            resource.publish(
+            events = resource.publish(
                 user=command.user, message=command.message, timestamp=command.timestamp
             )
+            uow.record_events(events)
             uow.repo.save(resource)
             uow.commit()
-
-    def collect_new_events(self) -> typing.Iterable[foundation_events.Event]:
-        yield from self.resource_uow.collect_new_events()
 
 
 class DeletingResource(CommandHandler[commands.DeleteResource], BasingResource):

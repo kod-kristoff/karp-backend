@@ -75,6 +75,7 @@ class InjectorEventBus(EventBus):
                 try:
                     evt_handler(event)
                 except Exception as err:
+                    assert False, str(err)
                     print(f"exception handling event: {str(err)}")
                     logger.exception(
                         "Exception handling event", extra={"karp_event": event}

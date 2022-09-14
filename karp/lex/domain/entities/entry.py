@@ -191,6 +191,7 @@ class Entry(TimestampedVersionedEntity):
         self._last_modified_by = user
         self._last_modified = self._ensure_timestamp(timestamp)
         self._body = entry_raw
+        self._op = EntryOp.UPDATED
         self._increment_version()
         events: list[DomainEvent] = []
         if old_entry_id:
