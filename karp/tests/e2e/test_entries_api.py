@@ -2,6 +2,7 @@ from typing import Dict, List
 
 import pytest  # pyre-ignore
 from fastapi import status
+from httpx import AsyncClient
 
 from karp import auth
 from karp.errors import ClientErrorCodes
@@ -63,76 +64,15 @@ class TestEntriesRoutes:
         assert response.status_code != status.HTTP_404_NOT_FOUND
 
 
-class TestEntryIdWithSlashLifecycle:
-    def test_add_with_entry_id_w_slash_returns_201(
-        self,
-        fa_data_client,
-        admin_token: auth.AccessToken,
-    ):
-        entry_id = "foo/bar"
-        print(f"add entry '{entry_id}' to resource 'lexlex'")
-        response = fa_data_client.put(
-            "/entries/lexlex",
-            json={"entry": {"baseform": entry_id}},
-            headers=admin_token.as_header(),
-        )
-        print(f"response. = {response.json()}")
-        assert response.status_code == 201
-        response_data = response.json()
-        assert "newID" in response_data
-        assert response_data["newID"] == entry_id
-
-        print(f"get entry '{entry_id}' from resource 'lexlex'")
-        response = fa_data_client.get(
-            f"/entries/lexlex/{entry_id}",
-            headers=admin_token.as_header(),
-        )
-        print(f"response. = {response.json()}")
-        assert response.status_code == 200
-        response_data = response.json()
-        assert "entry_id" in response_data
-        assert response_data["entry_id"] == entry_id
-
-        print(f"update entry '{entry_id}' in resource 'lexlex'")
-        response = fa_data_client.post(
-            f"/entries/lexlex/{entry_id}",
-            json={
-                "entry": {"baseform": entry_id, "secondary": "added"},
-                "version": 1,
-                "message": "add secondary",
-            },
-            headers=admin_token.as_header(),
-        )
-        print(f"response. = {response.json()}")
-        assert response.status_code == 200
-        assert response.json()["newID"] == entry_id
-
-        new_entry_id = f"{entry_id}/baz"
-        print(f"update entry '{entry_id}' => '{new_entry_id}' in resource 'lexlex'")
-        response = fa_data_client.post(
-            f"/entries/lexlex/{entry_id}",
-            json={
-                "entry": {"baseform": new_entry_id, "secondary": "added"},
-                "version": 2,
-                "message": "change entry_id",
-            },
-            headers=admin_token.as_header(),
-        )
-        print(f"response. = {response.json()}")
-        assert response.status_code == 200
-        assert response.json()["newID"] == new_entry_id
-
-
 # class TestEntryIdWithSlashLifecycle:
-#     @pytest.mark.asyncio
-#     async def test_add_with_entry_id_w_slash_returns_201(
+#     def test_add_with_entry_id_w_slash_returns_201(
 #         self,
-#         aclient_w_data: AsyncClient,
+#         fa_data_client,
 #         admin_token: auth.AccessToken,
 #     ):
 #         entry_id = "foo/bar"
 #         print(f"add entry '{entry_id}' to resource 'lexlex'")
-#         response = await aclient_w_data.put(
+#         response = fa_data_client.put(
 #             "/entries/lexlex",
 #             json={"entry": {"baseform": entry_id}},
 #             headers=admin_token.as_header(),
@@ -143,8 +83,8 @@ class TestEntryIdWithSlashLifecycle:
 #         assert "newID" in response_data
 #         assert response_data["newID"] == entry_id
 
-#         print(f"get entry '{entry_id}' to resource 'lexlex'")
-#         response = await aclient_w_data.get(
+#         print(f"get entry '{entry_id}' from resource 'lexlex'")
+#         response = fa_data_client.get(
 #             f"/entries/lexlex/{entry_id}",
 #             headers=admin_token.as_header(),
 #         )
@@ -154,13 +94,27 @@ class TestEntryIdWithSlashLifecycle:
 #         assert "entry_id" in response_data
 #         assert response_data["entry_id"] == entry_id
 
-#         print(f"update entry '{entry_id}' to resource 'lexlex'")
-#         new_entry_id = f"{entry_id}/baz"
-#         response = await aclient_w_data.post(
+#         print(f"update entry '{entry_id}' in resource 'lexlex'")
+#         response = fa_data_client.post(
 #             f"/entries/lexlex/{entry_id}",
 #             json={
-#                 "entry": {"baseform": new_entry_id},
+#                 "entry": {"baseform": entry_id, "secondary": "added"},
 #                 "version": 1,
+#                 "message": "add secondary",
+#             },
+#             headers=admin_token.as_header(),
+#         )
+#         print(f"response. = {response.json()}")
+#         assert response.status_code == 200
+#         assert response.json()["newID"] == entry_id
+
+#         new_entry_id = f"{entry_id}/baz"
+#         print(f"update entry '{entry_id}' => '{new_entry_id}' in resource 'lexlex'")
+#         response = fa_data_client.post(
+#             f"/entries/lexlex/{entry_id}",
+#             json={
+#                 "entry": {"baseform": new_entry_id, "secondary": "added"},
+#                 "version": 2,
 #                 "message": "change entry_id",
 #             },
 #             headers=admin_token.as_header(),
@@ -168,6 +122,74 @@ class TestEntryIdWithSlashLifecycle:
 #         print(f"response. = {response.json()}")
 #         assert response.status_code == 200
 #         assert response.json()["newID"] == new_entry_id
+
+
+class TestEntryLifecycle:
+    @pytest.mark.asyncio
+    async def test_entry_id_w_slash_lifecycle(
+        self,
+        aclient_w_data: AsyncClient,
+        admin_token: auth.AccessToken,
+    ):
+        entry_id = "bar/foo"
+        print(f"add entry '{entry_id}' to resource 'lexlex'")
+        response = await aclient_w_data.put(
+            "/entries/lexlex",
+            json={"entry": {"baseform": entry_id}},
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == status.HTTP_201_CREATED
+        response_data = response.json()
+        assert "newID" in response_data
+        assert response_data["newID"] == entry_id
+
+        print(f"get entry '{entry_id}' from resource 'lexlex'")
+        response = await aclient_w_data.get(
+            f"/entries/lexlex/{entry_id}",
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == status.HTTP_200_OK
+        response_data = response.json()
+        assert "entry_id" in response_data
+        assert response_data["entry_id"] == entry_id
+
+        print(f"update entry '{entry_id}' in resource 'lexlex'")
+        response = await aclient_w_data.post(
+            f"/entries/lexlex/{entry_id}",
+            json={
+                "entry": {"baseform": entry_id, "secondary": "added"},
+                "version": 1,
+                "message": "add secondary",
+            },
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["newID"] == entry_id
+
+        new_entry_id = f"{entry_id}/baz"
+        print(f"update entry '{entry_id}' => '{new_entry_id}' in resource 'lexlex'")
+        response = await aclient_w_data.post(
+            f"/entries/lexlex/{entry_id}",
+            json={
+                "entry": {"baseform": new_entry_id, "secondary": "added"},
+                "version": 2,
+                "message": "change entry_id",
+            },
+            headers=admin_token.as_header(),
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["newID"] == new_entry_id
+
+        print(f"delete entry '{new_entry_id}' from resource 'lexlex'")
+        response = await aclient_w_data.delete(
+            f"/entries/lexlex/{new_entry_id}", headers=admin_token.as_header()
+        )
+        print(f"response. = {response.json()}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 class TestAddEntry:

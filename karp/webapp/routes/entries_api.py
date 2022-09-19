@@ -213,12 +213,7 @@ def update_entry(
 
 
 @router.delete(
-    "/{resource_id}/{entry_id}/delete",
-    tags=["Editing"],
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@router.delete(
-    "/{resource_id}/{entry_id}",
+    "/{resource_id}/{entry_id:path}",
     tags=["Editing"],
     status_code=status.HTTP_204_NO_CONTENT,
 )

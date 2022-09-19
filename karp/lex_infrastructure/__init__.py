@@ -1,12 +1,12 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 import injector
 from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session
 
 from karp import lex
-from karp.foundation.events import EventBus
+from karp.foundation.events import EventBus, EventHandler
 from karp.lex.application.queries import (
     GetPublishedResources,
     GetResources,
@@ -40,6 +40,7 @@ from karp.lex_infrastructure.queries import (
     GenericGetHistory,
     SqlReadOnlyEntryRepoRepositry,
     SqlReadOnlyResourceRepository,
+    SqlEntryViews,
 )
 from karp.lex_infrastructure.repositories import (
     SqlEntryUowRepositoryUnitOfWork,
@@ -47,6 +48,9 @@ from karp.lex_infrastructure.repositories import (
     SqlEntryUowV2Creator,
     SqlResourceUnitOfWork,
 )
+from karp.lex_infrastructure.use_cases import CreatingReadModel
+
+from karp.lex import events
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +66,9 @@ class LexInfrastructure(injector.Module):
         return SqlGetResources(conn)
 
     @injector.provider
-    def read_only_resource_repo(self, conn: Connection) -> lex.ReadOnlyResourceRepository:
+    def read_only_resource_repo(
+        self, conn: Connection
+    ) -> lex.ReadOnlyResourceRepository:
         return SqlReadOnlyResourceRepository(conn)
 
     @injector.provider
@@ -70,7 +76,9 @@ class LexInfrastructure(injector.Module):
         return SqlListEntryRepos(conn)
 
     @injector.provider
-    def read_only_entry_repo_repo(self, conn: Connection) -> lex.ReadOnlyEntryRepoRepositry:
+    def read_only_entry_repo_repo(
+        self, conn: Connection
+    ) -> lex.ReadOnlyEntryRepoRepositry:
         return SqlReadOnlyEntryRepoRepositry(conn)
 
     @injector.provider
@@ -81,8 +89,7 @@ class LexInfrastructure(injector.Module):
         entry_uow_factory: EntryRepositoryUnitOfWorkFactory,
         event_bus: EventBus,
     ) -> EntryUowRepositoryUnitOfWork:
-        logger.debug(
-            'creating entry_repo_uow', extra={'session': session})
+        logger.debug("creating entry_repo_uow", extra={"session": session})
         return SqlEntryUowRepositoryUnitOfWork(
             session=session,
             entry_uow_factory=entry_uow_factory,
@@ -103,10 +110,20 @@ class LexInfrastructure(injector.Module):
     @injector.multiprovider
     def entry_uow_creator_map(self) -> Dict[str, EntryUnitOfWorkCreator]:
         return {
-            'default': SqlEntryUowV2Creator,
+            "default": SqlEntryUowV2Creator,  # type: ignore
             SqlEntryUowV1Creator.repository_type: SqlEntryUowV1Creator,
             SqlEntryUowV2Creator.repository_type: SqlEntryUowV2Creator,
         }
+
+    @injector.provider
+    def entry_views(self, conn: Connection) -> SqlEntryViews:
+        return SqlEntryViews(connection=conn)
+
+    @injector.multiprovider
+    def create_read_table(
+        self, entry_views: SqlEntryViews
+    ) -> List[EventHandler[events.ResourceCreated]]:
+        return [CreatingReadModel(entry_views)]
 
 
 class GenericLexInfrastructure(injector.Module):
@@ -122,7 +139,7 @@ class GenericLexInfrastructure(injector.Module):
         )
 
     @injector.provider
-    def gey_entry_diff(
+    def get_entry_diff(
         self,
         resources_uow: lex.ResourceUnitOfWork,
         entry_repo_uow: EntryUowRepositoryUnitOfWork,

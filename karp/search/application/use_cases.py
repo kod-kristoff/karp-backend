@@ -102,9 +102,10 @@ class ReindexingResource(foundation_commands.CommandHandler[commands.ReindexReso
             uw.commit()
 
 
-class ResourcePublishedHandler(
-    foundation_events.EventHandler[lex_events.ResourcePublished]
-):
+class ResourcePublishedHandler:
+    # (
+    #     foundation_events.EventHandler[lex_events.ResourcePublished]
+    # ):
     def __init__(self, index_uow: IndexUnitOfWork):
         self.index_uow = index_uow
 

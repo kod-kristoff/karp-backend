@@ -3,7 +3,7 @@ from typing import List
 import injector
 
 from karp.foundation.commands import CommandHandler
-from karp.foundation.events import EventHandler
+from karp.foundation.events import EventHandler, AsyncEventHandler
 from karp.lex.domain import events as lex_events
 from karp.search.domain import commands
 from karp.search.domain.errors import IncompleteQuery
@@ -49,20 +49,20 @@ class Search(injector.Module):
     @injector.multiprovider
     def create_index(
         self, index_uow: IndexUnitOfWork
-    ) -> List[EventHandler[lex_events.ResourceCreated]]:
+    ) -> List[AsyncEventHandler[lex_events.ResourceCreated]]:
         return [CreateSearchServiceHandler(index_uow)]
 
     @injector.multiprovider
     def deleting_index(
         self,
         index_uow: IndexUnitOfWork,
-    ) -> List[EventHandler[lex_events.ResourceDiscarded]]:
+    ) -> List[AsyncEventHandler[lex_events.ResourceDiscarded]]:
         return [DeletingIndex(index_uow=index_uow)]
 
     @injector.multiprovider
     def publish_index(
         self, index_uow: IndexUnitOfWork
-    ) -> List[EventHandler[lex_events.ResourcePublished]]:
+    ) -> List[AsyncEventHandler[lex_events.ResourcePublished]]:
         return [ResourcePublishedHandler(index_uow)]
 
     @injector.multiprovider
@@ -71,7 +71,7 @@ class Search(injector.Module):
         index_uow: IndexUnitOfWork,
         entry_transformer: EntryTransformer,
         resource_views: ResourceViews,
-    ) -> List[EventHandler[lex_events.EntryAdded]]:
+    ) -> List[AsyncEventHandler[lex_events.EntryAdded]]:
         return [
             EntryAddedHandler(
                 index_uow=index_uow,
@@ -86,7 +86,7 @@ class Search(injector.Module):
         index_uow: IndexUnitOfWork,
         entry_transformer: EntryTransformer,
         resource_views: ResourceViews,
-    ) -> List[EventHandler[lex_events.EntryUpdated]]:
+    ) -> List[AsyncEventHandler[lex_events.EntryUpdated]]:
         return [
             EntryUpdatedHandler(
                 index_uow=index_uow,
@@ -101,7 +101,7 @@ class Search(injector.Module):
         index_uow: IndexUnitOfWork,
         entry_transformer: EntryTransformer,
         resource_views: ResourceViews,
-    ) -> List[EventHandler[lex_events.EntryIdChanged]]:
+    ) -> List[AsyncEventHandler[lex_events.EntryIdChanged]]:
         return [
             #     EntryUpdatedHandler(
             #         index_uow=index_uow,
@@ -116,7 +116,7 @@ class Search(injector.Module):
         index_uow: IndexUnitOfWork,
         entry_transformer: EntryTransformer,
         resource_views: ResourceViews,
-    ) -> List[EventHandler[lex_events.EntryDeleted]]:
+    ) -> List[AsyncEventHandler[lex_events.EntryDeleted]]:
         return [
             EntryDeletedHandler(
                 index_uow=index_uow,

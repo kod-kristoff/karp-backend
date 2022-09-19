@@ -18,7 +18,7 @@ from karp.lex.domain.commands import (
     ImportEntriesInChunks,
     SetEntryRepoId,
 )
-from karp.lex.domain import commands
+from karp.lex.domain import commands, events
 from karp.lex.domain.commands.resource_commands import SetEntryRepoId
 from karp.lex.domain.value_objects import EntrySchema
 from karp.lex.application.use_cases import (
@@ -54,6 +54,8 @@ from karp.lex.application.queries import (
 
 
 __all__ = [
+    "commands",
+    "events",
     # commands
     "AddEntries",
     "AddEntriesInChunks",
