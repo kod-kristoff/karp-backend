@@ -14,3 +14,4 @@ class CreatingReadModel(EventHandler[events.ResourceCreated]):
         runtime_model = sql_models.get_or_create_entry_runtime_model(
             event.resource_id, None, event.config
         )
+        assert isinstance(self._entry_views, SqlEntryViews)
