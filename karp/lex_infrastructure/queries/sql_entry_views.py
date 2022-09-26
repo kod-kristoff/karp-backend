@@ -5,11 +5,17 @@ from sqlalchemy.engine import Connection
 from karp.foundation.value_objects import UniqueId
 from karp.lex import EntryViews, EntryDto
 
+from karp.lex_infrastructure.sql import sql_models
 
 class SqlEntryViews(EntryViews):
     def __init__(self, connection: Connection) -> None:
         self._conn = connection
 
+    def create_resource(self, resource_id: str, resource_config: dict):
+        runtime_model = sql_models.get_or_create_entry_runtime_model(
+            event.resource_id, None, event.config
+        )
+        
     def all_entries(self, resource_id: str) -> typing.Iterable[EntryDto]:
         return super().all_entries(resource_id)
 
