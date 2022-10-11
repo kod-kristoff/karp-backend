@@ -146,15 +146,61 @@ def _test_against_entries_general(
 
 
 class TestQuery:
-    def test_route_exist(self, fa_data_client):
+    def test_route_get_query_exist(self, fa_data_client):
         response = fa_data_client.get('/query/places')
         print(f'{response.json()=}')
         assert response.status_code != status.HTTP_404_NOT_FOUND
 
+    def test_route_post_query_exist(self, fa_data_client):
+        response = fa_data_client.post('/query/')
+        print(f'{response.json()=}')
+        assert response.status_code != status.HTTP_404_NOT_FOUND
 
-def test_query_no_q(
-    fa_data_client,
-    read_token: auth.AccessToken,
+
+class TestPostQuery:
+    @pytest.mark.parametrize("query, expected", [
+        (
+            {
+                "resources": "places",
+                "query": {
+                    "and": [{
+                        "equals": {
+                            "field": "lemma",
+                            "arg": "thrive(r)"
+                        }
+                    }]
+                }
+            },
+            ""
+        ),
+    ])
+    def test_query(query: dict, expected, fa_data_client, read_token: auth.AccessToken):
+        response = fa_data_client.post("/query/", json=query)
+        assert response.status_code == status.HTTP_200_OK
+        
+        class TestPostQuery:
+            @pytest.mark.parametrize("query, expected")
+            def test_query(query: dict, expected):
+, [{"resources": "places", "query": {
+        
+    (    
+            
+
+    }}]
+def test_que
+y_no_q(    a
+    _datac,
+    "l
+
+    "and": [{
+        "field": "lemma",
+    }]
+       {
+        "equals":     read        _token: auth.Acce
+    "args: "thriv, fa_data_client, read_token: auth.AAccessToke(r
+        response = fa_data_client.post("/query/s, json=queryT
+        assert response.status_code == status.HTTP_200_OK
+}oken   ,
     app_context,
 ):
     resource = 'places'
