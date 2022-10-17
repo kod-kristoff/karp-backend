@@ -160,8 +160,11 @@ def validate_entries(
     output: Optional[Path] = typer.Option(
         None, "--output", "-o", help="file to write to"
     ),
+    for_import: bool = typer.Option(
+        False,
+    ),
 ):
-    typer.echo(f"reading from {path if path else 'stdin'} ...", err=True)
+    typer.echo(f"reading from {path or 'stdin'} ...", err=True)
     err_output = None
 
     if not output and path:
@@ -178,8 +181,7 @@ def validate_entries(
         config = json_streams.jsonlib.load_from_file(config_path)
     elif resource_id_raw:
         repo = inject_from_ctx(lex.ReadOnlyResourceRepository, ctx=ctx)
-        resource = repo.get_by_resource_id(resource_id_raw)
-        if resource:
+        if resource := repo.get_by_resource_id(resource_id_raw):
             config = resource.config
         else:
             typer.echo(f"Can't find resource '{resource_id_raw}'", err=True)
@@ -198,11 +200,14 @@ def validate_entries(
         output, use_stdout_as_default=True
     ) as correct_sink:
         error_counter = Counter(error_sink)
-        # error_counter.send(None)
+        entries = json_streams.load_from_file(path, use_stdin_as_default=True)
+        if for_import:
+            typer.echo("validating data for import")
+            entries = (entry["entry"] for entry in entries)
         jt_val.processing_validate(
             schema,
             tqdm(
-                json_streams.load_from_file(path, use_stdin_as_default=True),
+                entries,
                 desc="Validating",
                 unit=" entries",
             ),
