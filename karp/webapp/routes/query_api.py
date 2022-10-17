@@ -201,5 +201,14 @@ def query(
     return response
 
 
+@router.post(
+    "/",
+    name="Query",
+    responses={200: {"content": {"application/json": {}}}},
+)
+def post_query():
+    pass
+
+
 def init_app(app):
     app.include_router(router)
