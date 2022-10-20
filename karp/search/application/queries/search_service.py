@@ -40,7 +40,7 @@ class StatisticsDto(pydantic.BaseModel):
 
 class QueryRequest(pydantic.BaseModel):  # pylint: disable=no-member
     resource_ids: typing.List[str]
-    q: typing.Optional[str] = None
+    q: typing.Optional[typing.Union[str, dict[str, list[str]]]] = None
     from_: int = 0
     size: int = 25
     lexicon_stats: bool = True
@@ -82,5 +82,7 @@ class SearchService(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def statistics(self, resource_id: str, field: str) -> typing.Iterable[StatisticsDto]:
+    def statistics(
+        self, resource_id: str, field: str
+    ) -> typing.Iterable[StatisticsDto]:
         raise NotImplementedError()

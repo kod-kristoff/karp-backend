@@ -10,6 +10,7 @@ import typing
 from typing import Any, Dict, Generator, Optional, Tuple
 
 from fastapi import FastAPI
+import json_streams
 from typer import Typer
 from typer.testing import CliRunner
 
@@ -177,9 +178,21 @@ def fixture_fa_data_client(
         access_token=admin_token,
     )
     assert ok, msg
+    ok, msg = create_and_publish_resource(
+        fa_client,
+        path_to_config="karp/tests/data/config/example-lexicon.json",
+        access_token=admin_token,
+    )
+    assert ok, msg
     utils.add_entries(
         fa_client,
-        {"places": common_data.PLACES, "municipalities": common_data.MUNICIPALITIES},
+        {
+            "places": common_data.PLACES,
+            "municipalities": common_data.MUNICIPALITIES,
+            "example-lexicon": json_streams.load_from_file(
+                "karp/tests/data/example-lexicon.jsonl"
+            ),
+        },
         access_token=admin_token,
     )
 
@@ -246,6 +259,7 @@ def admin_token(auth_levels: typing.Dict[str, int]) -> auth.AccessToken:
                 "places": auth_levels[auth.PermissionLevel.admin],
                 "test_resource": auth_levels[auth.PermissionLevel.admin],
                 "municipalities": auth_levels[auth.PermissionLevel.admin],
+                "example-lexicon": auth_levels[auth.PermissionLevel.admin],
             }
         },
     )
@@ -261,6 +275,7 @@ def read_token(auth_levels: typing.Dict[str, int]) -> auth.AccessToken:
                 "places": auth_levels[auth.PermissionLevel.read],
                 "test_resource": auth_levels[auth.PermissionLevel.read],
                 "municipalities": auth_levels[auth.PermissionLevel.read],
+                "example-lexicon": auth_levels[auth.PermissionLevel.read],
             }
         },
     )

@@ -164,10 +164,8 @@ class TestPostQuery:
         [
             (
                 {
-                    "resources": "places",
-                    "query": {
-                        "and": [{"equals": {"field": "lemma", "arg": "thrive(r)"}}]
-                    },
+                    "resources": "example-lexicon",
+                    "query": {"and": ["equals|lemma|thrive(r)"]},
                 },
                 "",
             ),
@@ -177,6 +175,7 @@ class TestPostQuery:
         self, query: dict, expected, fa_data_client, read_token: auth.AccessToken
     ):
         response = fa_data_client.post("/query/", json=query)
+        print(f"{response.json()=}")
         assert response.status_code == status.HTTP_200_OK
 
     def test_query_no_q(
@@ -189,6 +188,7 @@ class TestPostQuery:
         response = fa_data_client.post(
             "/query/", json={"resources": resource}, headers=read_token.as_header()
         )
+        print(f"{response.json()=}")
         assert response.status_code == status.HTTP_200_OK
         entries = response.json()
         entry_views = app_context.container.get(EntryViews)

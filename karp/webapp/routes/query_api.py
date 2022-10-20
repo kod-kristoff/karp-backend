@@ -4,9 +4,10 @@ Query API.
 ## Query DSL
 """
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
+import pydantic
 
 from karp import errors as karp_errors, auth, search
 from karp.search.application.queries import SearchService, QueryRequest
@@ -189,16 +190,25 @@ def query(
         lexicon_stats=lexicon_stats,
     )
     try:
-        print(f"{search_service=}")
         response = search_service.query(query_request)
 
     except karp_errors.KarpError as err:
         logger.exception(
-            "Error occured when calling 'query' with",
+            "Error occured when calling GET 'query' with",
             extra={"resources": resources, "q": q, "error_message": err.message},
         )
         raise
     return response
+
+
+class KarpQuery(pydantic.BaseModel):
+    resources: list[str]
+    query: Optional[dict[str, list[str]]]
+
+    @pydantic.validator("resources", pre=True)
+    @classmethod
+    def split_str(cls, v):
+        return v.split(",") if isinstance(v, str) else v
 
 
 @router.post(
@@ -206,8 +216,39 @@ def query(
     name="Query",
     responses={200: {"content": {"application/json": {}}}},
 )
-def post_query():
-    pass
+def post_query(
+    query: KarpQuery,
+    user: auth.User = Security(deps.get_user_optional, scopes=["read"]),
+    auth_service: auth.AuthService = Depends(deps.get_auth_service),
+    search_service: SearchService = Depends(inject_from_req(SearchService)),
+):
+    if not auth_service.authorize(auth.PermissionLevel.read, user, query.resources):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not enough permissions",
+            headers={"WWW-Authenticate": 'Bearer scope="read"'},
+        )
+    query_request = QueryRequest(
+        resource_ids=query.resources,
+        q=query.query,
+        # from_=from_,
+        # size=size,
+        # sort=sort,
+        # include_fields=include_fields,
+        # exclude_fields=exclude_fields,
+        # format_=format_,
+        # lexicon_stats=lexicon_stats,
+    )
+    try:
+        response = search_service.query(query_request)
+
+    except karp_errors.KarpError as err:
+        logger.exception(
+            "Error occured when calling POST 'query' with",
+            extra={"query": query, "error_message": err.message},
+        )
+        raise
+    return response
 
 
 def init_app(app):

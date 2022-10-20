@@ -45,7 +45,7 @@ class TestGetResourcePermissions:
 
         response_data = response.json()
 
-        assert len(response_data) == 2
+        assert len(response_data) == 3
         assert response_data[0] == {
             "resource_id": "places",
             "protected": None,
@@ -53,6 +53,10 @@ class TestGetResourcePermissions:
         assert response_data[1] == {
             "resource_id": "municipalities",
             "protected": "READ",
+        }
+        assert response_data[2] == {
+            "resource_id": "example-lexicon",
+            "protected": None,
         }
 
 
