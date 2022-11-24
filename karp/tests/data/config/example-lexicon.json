@@ -1,0 +1,14 @@
+{
+    "resource_id": "example-lexicon",
+    "resource_name": "Example Lexicon",
+    "fields": {
+        "lemma": {
+            "type": "string",
+            "required": true
+        }
+    },
+    "id": "lemma",
+    "sort": [
+        "lemma"
+    ]
+}
