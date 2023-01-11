@@ -49,9 +49,7 @@ class QueryRequest(pydantic.BaseModel):  # pylint: disable=no-member
     @pydantic.validator("resource_ids", pre=True)
     @classmethod
     def split_str(cls, v):
-        if isinstance(v, str):
-            return v.split(",")
-        return v
+        return v.split(",") if isinstance(v, str) else v
 
 
 class SearchService(abc.ABC):

@@ -48,10 +48,7 @@ class SqlEntryUowRepository(SqlRepository, EntryUowRepository):
             .filter_by(entity_id=id_)
             .order_by(EntryUowModel.last_modified.desc())
         )
-        row = stmt.first()
-        if row:
-            return self._row_to_entity(row)
-        return None
+        return self._row_to_entity(row) if (row := stmt.first()) else None
 
     def num_entities(self) -> int:
         self._check_has_session()

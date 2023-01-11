@@ -3,9 +3,7 @@ from typing import Any, Dict
 
 
 def json_schema_type(in_type: str) -> str:
-    if in_type == "long_string":
-        return "string"
-    return in_type
+    return "string" if in_type == "long_string" else in_type
 
 
 def create_entry_json_schema(fields: Dict[str, Any]):

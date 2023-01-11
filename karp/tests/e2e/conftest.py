@@ -88,9 +88,7 @@ def fixture_app(
 ) -> Generator[FastAPI, None, None]:
     from karp.webapp.main import create_app
 
-    app = create_app()
-    # app.state.app_context.container.binder.install(TestAuthInfrastructure())
-    yield app
+    yield create_app()
     print("dropping app")
     app = None
 

@@ -29,7 +29,7 @@ class TestSqlResourceUnitOfWork:
 
         new_session = sqlite_session_factory()
         rows = list(new_session.execute('SELECT * FROM "resources"'))
-        assert rows == []
+        assert not rows
 
     def test_rolls_back_on_error(self, sqlite_session_factory):
         def do_something_that_fails(resource):
@@ -46,7 +46,7 @@ class TestSqlResourceUnitOfWork:
 
         new_session = sqlite_session_factory()
         rows = list(new_session.execute('SELECT * FROM "resources"'))
-        assert rows == []
+        assert not rows
 
 
 class MyException(Exception):
@@ -72,7 +72,7 @@ class TestSqlEntryUnitOfWork:
 
         new_session = sqlite_session_factory()
         rows = list(new_session.execute('SELECT * FROM "test"'))
-        assert rows == []
+        assert not rows
 
     def test_rolls_back_on_error(self, sqlite_session_factory):
 
@@ -95,7 +95,7 @@ class TestSqlEntryUnitOfWork:
 
         new_session = sqlite_session_factory()
         rows = list(new_session.execute('SELECT * FROM "test"'))
-        assert rows == []
+        assert not rows
 
 
 def do_something_that_fails() -> None:

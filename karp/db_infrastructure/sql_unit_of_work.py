@@ -59,8 +59,7 @@ class SqlUnitOfWork:  # (repositories.UnitOfWork):
         return self
 
     def _check_state(self, expected_state):
-        if self._state != expected_state:
-            pass
+        pass
             # logger.warning(
             #     "State conflict. repositories is in state '%s' and not '%s'",
             #     self._state,

@@ -36,14 +36,13 @@ class EntryRepository(repository.Repository[entities.Entry]):
         oldest_first: bool = False,
         **kwargs,
     ) -> entities.Entry:
-        entry = self._by_id(
+        if entry := self._by_id(
             id_,
             version=version,
             after_date=after_date,
             before_date=before_date,
             oldest_first=oldest_first,
-        )
-        if entry:
+        ):
             self.seen.add(entry)
             return entry
         raise errors.EntryNotFound(id_=id_)

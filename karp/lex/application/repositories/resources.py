@@ -26,14 +26,14 @@ class ResourceRepository(repository.Repository[entities.Resource]):
     def get_by_resource_id(
         self, resource_id: str, *, version: Optional[int] = None
     ) -> entities.Resource:
-        resource = self.get_by_resource_id_optional(resource_id, version=version)
-
-        if not resource:
+        if resource := self.get_by_resource_id_optional(
+            resource_id, version=version
+        ):
+            return resource
+        else:
             raise self.EntityNotFound(
                 f"Entity with resource_id='{resource_id}' can't be found."
             )
-
-        return resource
 
     def get_by_resource_id_optional(
         self, resource_id: str, *, version: Optional[int] = None

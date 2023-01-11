@@ -42,9 +42,7 @@ class Query(pydantic.BaseModel):
     )
     @classmethod
     def split_str(cls, v):
-        if isinstance(v, str):
-            return v.split(",")
-        return v
+        return v.split(",") if isinstance(v, str) else v
 
     @pydantic.validator("fields", "sort", pre=True, always=True)
     @classmethod

@@ -266,7 +266,6 @@ class GenericEntryTransformer(EntryTransformer):
         logger.debug("indexing._evaluate_function", extra={"src_entry": src_entry})
         if "multi_ref" in function_conf:
             function_conf = function_conf["multi_ref"]
-            target_field = function_conf["field"]
             if "resource_id" in function_conf:
                 logger.debug(
                     "indexing._evaluate_function: trying to find '%s'",
@@ -288,26 +287,25 @@ class GenericEntryTransformer(EntryTransformer):
                 "indexing._evaluate_function target_resource='%s'",
                 target_resource.resource_id,
             )
-            if "test" in function_conf:
-                operator, args = list(function_conf["test"].items())[0]
-                if operator in ["equals", "contains"]:
-                    filters = {"discarded": False}
-                    for arg in args:
-                        if "self" in arg:
-                            filters[target_field] = src_entry[arg["self"]]
-                        else:
-                            raise NotImplementedError()
-                    # target_entries = entryread.get_entries_by_column(
-                    #     target_resource, filters
-                    # )
-                    target_entries = self.entry_views.get_by_referenceable(
-                        target_resource.resource_id, filters
-                    )
-                else:
-                    raise NotImplementedError()
-            else:
+            if "test" not in function_conf:
                 raise NotImplementedError()
 
+            operator, args = list(function_conf["test"].items())[0]
+            if operator not in ["equals", "contains"]:
+                raise NotImplementedError()
+            filters = {"discarded": False}
+            target_field = function_conf["field"]
+            for arg in args:
+                if "self" in arg:
+                    filters[target_field] = src_entry[arg["self"]]
+                else:
+                    raise NotImplementedError()
+            # target_entries = entryread.get_entries_by_column(
+            #     target_resource, filters
+            # )
+            target_entries = self.entry_views.get_by_referenceable(
+                target_resource.resource_id, filters
+            )
             res = self.index_uow.repo.create_empty_list()
             for entry in target_entries:
                 index_entry = self.index_uow.repo.create_empty_object()
@@ -344,10 +342,9 @@ class GenericEntryTransformer(EntryTransformer):
         for src_entry_id in entry_ids:
             refs = self.get_referenced_entries.query(resource_id, src_entry_id)
             for field_ref in refs:
-                ref_resource = self.resource_repo.get_by_resource_id(
+                if ref_resource := self.resource_repo.get_by_resource_id(
                     field_ref.resource_id, version=(field_ref.resource_version)
-                )
-                if ref_resource:
+                ):
                     ref_index_entry = self.transform(
                         # resource_repo,
                         # indexer,

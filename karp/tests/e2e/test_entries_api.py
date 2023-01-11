@@ -848,7 +848,7 @@ def test_refs(fa_data_client):
     for val in entries["hits"]:
         assert "entry" in val
         entry = val["entry"]
-        print("entry = {}".format(entry))
+        print(f"entry = {entry}")
         if entry["code"] == 1:
             assert "v_larger_place" not in entry
             assert "larger_place" not in entry
@@ -934,11 +934,10 @@ def test_external_refs(fa_data_client):
         assert len(place_codes) == 2
         if entry["code"] == 1:
             assert 1 in place_codes
-            assert 2 in place_codes
         else:
-            assert 2 in place_codes
             assert 3 in place_codes
 
+        assert 2 in place_codes
     places_entries = get_json(client, "places/query")
     for val in places_entries["hits"]:
         assert "entry" in val
@@ -985,7 +984,7 @@ def test_update_refs(fa_data_client):
     for val in entries["hits"]:
         assert "entry" in val
         entry = val["entry"]
-        print("entry = {}".format(entry))
+        print(f"entry = {entry}")
         if entry["code"] == 5:
             assert "v_smaller_places" in entry
             assert entry["v_smaller_places"][0]["code"] == 6

@@ -163,6 +163,5 @@ def load_modules(group_name: str, app=None):
             )
             mod = ep.load()
             if app:
-                init_app = getattr(mod, "init_app", None)
-                if init_app:
+                if init_app := getattr(mod, "init_app", None):
                     init_app(app)

@@ -47,8 +47,7 @@ class AppContext:
 def bootstrap_app(container=None) -> AppContext:
     env = config.load_env()
     db_url = config.parse_database_url(env)
-    es_enabled = env.bool("ELASTICSEARCH_ENABLED", False)
-    if es_enabled:
+    if es_enabled := env.bool("ELASTICSEARCH_ENABLED", False):
         es_url = env("ELASTICSEARCH_HOST")
     else:
         es_url = env("ELASTICSEARCH_HOST", "")

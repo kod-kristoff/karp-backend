@@ -71,8 +71,7 @@ class InMemoryReadResourceRepository(ReadOnlyResourceRepository):
     def get_by_id(
         self, entity_id: UniqueId, version: Optional[int] = None
     ) -> Optional[ResourceDto]:
-        resource = self.resources.get(entity_id)
-        if resource:
+        if resource := self.resources.get(entity_id):
             return self._row_to_dto(resource)
         return None
 
