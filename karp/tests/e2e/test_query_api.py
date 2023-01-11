@@ -87,9 +87,7 @@ def _test_against_entries(
     entries = get_json(client, path, **kwargs)
     names = extract_names(entries)
 
-    if field.endswith(".raw"):
-        field = field[:-4]
-
+    field = field.removesuffix(".raw")
     if expected_n_hits:
         assert len(entries["hits"]) == expected_n_hits
     else:
@@ -173,32 +171,12 @@ def test_query_no_q(
     print(f"entries = {entries}")
     assert entries["total"] == expected_total
     assert len(names) == expected_total
-    print("names = {}".format(names))
+    print(f"names = {names}")
 
     # for entry in PLACES:
     #     assert entry["name"] in names
 
     return
-
-    for i, name in enumerate(names):
-        print("name = {}".format(name))
-        print("  entry = {}".format(entries["hits"][i]["entry"]))
-        if name in ["Grund test", "Hambo", "Alhamn"]:
-            print("Testing 'larger_place' for '{}' ...".format(name))
-            print("  entry = {}".format(entries["hits"][i]["entry"]))
-            assert "larger_place" in entries["hits"][i]["entry"]
-            assert "v_larger_place" in entries["hits"][i]["entry"]
-        if name == "Alvik":
-            print("Testing 'smaller_places' for '{}' ...".format(name))
-            print("  entry = {}".format(entries["hits"][i]["entry"]))
-            assert "v_smaller_places" in entries["hits"][i]["entry"]
-            assert (
-                entries["hits"][i]["entry"]["v_smaller_places"][0]["name"] == "Bjurvik"
-            )
-        elif name in ["Botten test", "Alhamn"]:
-            print("Testing 'smaller_places' for '{}' ...".format(name))
-            print("  entry = {}".format(entries["hits"][i]["entry"]))
-            assert "v_smaller_places" in entries["hits"][i]["entry"]
 
 
 def test_query_split(
@@ -208,14 +186,14 @@ def test_query_split(
     resources = ["places", "municipalities"]
     entries = get_json(
         fa_data_client,
-        "/query/split/{}".format(",".join(resources)),
+        f'/query/split/{",".join(resources)}',
         headers=read_token.as_header(),
     )
 
     entry_views = fa_data_client.app.state.app_context.container.get(EntryViews)
-    expected_result = {}
-    for resource in resources:
-        expected_result[resource] = entry_views.get_total(resource)
+    expected_result = {
+        resource: entry_views.get_total(resource) for resource in resources
+    }
     assert entries["distribution"] == expected_result
     # assert entries["distribution"] == {"municipalities": 3, "places": 22}
 
@@ -285,10 +263,7 @@ def test_contains(
     entry_views = app_context.container.get(EntryViews)  # type: ignore [misc]
     expected_result = []
     real_field = field.split(".raw")[0]
-    if real_field == field:
-        analyzed_value = value
-    else:
-        analyzed_value = value.lower()
+    analyzed_value = value if real_field == field else value.lower()
     print(f"{value=} {analyzed_value=}")
     for entry in entry_views.all_entries("places"):
         print(f"{entry=}")

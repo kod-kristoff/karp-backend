@@ -123,9 +123,7 @@ class SqlResourceRepository(SqlRepository, repositories.ResourceRepository):
             .filter_by(resource_id=resource_id)
             .first()
         )
-        if row is None:
-            return 0
-        return row.version
+        return 0 if row is None else row.version
 
     def history_by_resource_id(
         self, resource_id: str

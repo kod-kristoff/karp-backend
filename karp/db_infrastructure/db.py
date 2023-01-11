@@ -66,7 +66,7 @@ class SQLEngineSessionfactory:
         return cls(engine, session_factory, metadata_)
 
 
-_db_handlers: Dict[str, SQLEngineSessionfactory] = dict()
+_db_handlers: Dict[str, SQLEngineSessionfactory] = {}
 
 
 def create_session(db_uri: str) -> Session:

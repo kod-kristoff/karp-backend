@@ -12,9 +12,7 @@ def arg_get(
     arg = args.get(arg_name, None)
     if arg is None:
         return default
-    if convert is None:
-        return arg
-    return convert(arg)
+    return arg if convert is None else convert(arg)
 
 
 def create_field_getter(

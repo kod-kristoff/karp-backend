@@ -31,9 +31,11 @@ def bearer_scheme(authorization=Header(None)):
     if not authorization:
         return None
     scheme, credentials = security_utils.get_authorization_scheme_param(authorization)
-    if not (scheme and credentials):
-        return None
-    return HTTPAuthorizationCredentials(scheme=scheme, credentials=credentials)
+    return (
+        HTTPAuthorizationCredentials(scheme=scheme, credentials=credentials)
+        if (scheme and credentials)
+        else None
+    )
 
 
 def get_resource_permissions(

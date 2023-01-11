@@ -74,8 +74,7 @@ def list(ctx: typer.Context):
 @subapp.command()
 def show(ctx: typer.Context, name: str):
     repo = inject_from_ctx(lex.ReadOnlyEntryRepoRepositry, ctx)
-    entry_repo = repo.get_by_name(name)
-    if entry_repo:
+    if entry_repo := repo.get_by_name(name):
         typer.echo(tabulate(((key, value) for key, value in entry_repo.dict().items())))
     else:
         typer.echo("No such entry-repo")

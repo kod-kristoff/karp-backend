@@ -42,9 +42,7 @@ class MatomoMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        headers = {}
-        for k, v in request.headers.items():
-            headers[k.lower()] = v
+        headers = {k.lower(): v for k, v in request.headers.items()}
         scope = request.scope
         if "x-forwarded-server" in headers:
             server = headers["x-forwarded-server"]

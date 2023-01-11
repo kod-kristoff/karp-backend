@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, orm, pool
 class Database:
     def __init__(self, db_url: str) -> None:
         kwargs = {}
-        if str(db_url).startswith("sqlite"):
+        if db_url.startswith("sqlite"):
             kwargs["poolclass"] = pool.SingletonThreadPool
             kwargs["connect_args"] = {"check_same_thread": False}
         self._engine = create_engine(db_url, echo=True, future=True, **kwargs)

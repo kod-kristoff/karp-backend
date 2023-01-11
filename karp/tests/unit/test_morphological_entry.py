@@ -102,8 +102,6 @@ def test_morph_entry_inflect_av_1_höger():
 
     inflection_table = morph_entry.get_inflection_table("höger")
 
-    pass
-
 
 def test_morph_entry_inflect_nn_0n_ansvar():
     morph_entry = create_morphological_entry(

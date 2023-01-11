@@ -223,8 +223,7 @@ def show(ctx: typer.Context, resource_id: str, version: Optional[int] = None):
     if not resource:
         typer.echo(
             "Can't find resource '{resource_id}', version '{version}'".format(
-                resource_id=resource_id,
-                version=version if version else "latest",
+                resource_id=resource_id, version=version or "latest"
             )
         )
         raise typer.Exit(3)

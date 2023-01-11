@@ -183,14 +183,12 @@ def create_entry(
     # if not isinstance(entry_id, str):
     #     entry_id = str(entry_id)
     entry = Entry(
-        # entry_id=entry_id,
         body=body,
-        message="Entry added." if not message else message,
+        message=message or "Entry added.",
         status=EntryStatus.IN_PROGRESS,
         op=EntryOp.ADDED,
-        # entity_id=unique_id.make_unique_id(),
         version=1,
-        last_modified_by="Unknown user" if not last_modified_by else last_modified_by,
+        last_modified_by=last_modified_by or "Unknown user",
         repository_id=repo_id,
         entity_id=entity_id,
         last_modified=last_modified,

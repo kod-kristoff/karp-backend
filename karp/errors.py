@@ -103,9 +103,9 @@ class EntryNotFoundError(KarpError):
         super().__init__(
             msg.format(
                 resource_id=resource_id,
-                resource_version=resource_version if resource_version else "latest",
+                resource_version=resource_version or "latest",
                 entry_id=entry_id,
-                entry_version=entry_version if entry_version else "latest",
+                entry_version=entry_version or "latest",
             ),
             ClientErrorCodes.ENTRY_NOT_FOUND,
         )
@@ -132,7 +132,7 @@ class PluginNotFoundError(KarpError):
     def __init__(self, plugin_id: str, resource_id: str = None):
         super().__init__(
             "Plugin '{plugin_id}' not found, referenced by '{resource_id}'".format(
-                plugin_id=plugin_id, resource_id=resource_id if resource_id else "..."
+                plugin_id=plugin_id, resource_id=resource_id or "..."
             ),
             ClientErrorCodes.PLUGIN_DOES_NOT_EXIT,
         )

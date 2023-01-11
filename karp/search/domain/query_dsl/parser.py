@@ -66,10 +66,7 @@ class op:
 
 
 def is_a(x: Union[Node, Token], type_) -> bool:
-    if isinstance(type_, list):
-        return x.type in type_
-    else:
-        return x.type == type_
+    return x.type in type_ if isinstance(type_, list) else x.type == type_
 
 
 def arg_token_any(s) -> Token:
@@ -151,8 +148,7 @@ class KarpTNGLexer:
         exprs = s.split(self.SEPARATOR_1)
         arg_types = []
         for expr in exprs:
-            logical_type = self.logical.get(expr)
-            if logical_type:
+            if logical_type := self.logical.get(expr):
                 yield Token(logical_type)
             else:
                 print("Tokenizing {expr}".format(expr=expr))
@@ -166,15 +162,14 @@ class KarpTNGLexer:
                         yield arg_1(sub_exprs[1])
                         arg_1 = None
                         if len(sub_exprs) > 2:
-                            if arg_2:
-                                yield arg_2(sub_exprs[2])
-                                arg_2 = None
-                            else:
+                            if not arg_2:
                                 raise SyntaxError(
                                     "Too many arguments to '{op}' in '{expr}'".format(
                                         op=sub_exprs[0], expr=expr
                                     )
                                 )
+                            yield arg_2(sub_exprs[2])
+                            arg_2 = None
                     if arg_2:
                         arg_types.append(arg_2)
                     if arg_1:
@@ -212,7 +207,7 @@ class KarpTNGParser:
         curr = None
         stack = []
         for tok in tokens:
-            print("Token({}, {})".format(tok.type, tok.value))
+            print(f"Token({tok.type}, {tok.value})")
             if is_a(tok, op.ARGS):
                 n = create_node(tok)
                 if curr:
@@ -225,13 +220,12 @@ class KarpTNGParser:
                         stack.append(curr)
                     elif is_a(curr, op.ARG_LOGICAL):
                         n = stack.pop()
-                        if is_a(n, op.OPS):
-                            n.add_child(curr)
-                            stack.append(n)
-                        else:
+                        if not is_a(n, op.OPS):
                             raise ParseError(
                                 "No OP to add ARG_LOGICAL '{curr}'".format(curr=curr)
                             )
+                        n.add_child(curr)
+                        stack.append(n)
                     elif stack:
                         n1 = stack.pop()
                         n1.add_child(curr)
@@ -249,9 +243,9 @@ class KarpTNGParser:
                     curr = None
             elif is_a(tok, op.LOGICAL):
                 stack.append(create_node(tok))
+            elif curr:
+                raise RuntimeError("")
             else:
-                if curr:
-                    raise RuntimeError("")
                 curr = create_node(tok)
             print("curr = {curr}".format(curr=curr))
             print("stack = {stack}".format(stack=stack))
@@ -271,6 +265,4 @@ _parser = KarpTNGParser()
 
 
 def parse(s: Optional[str]) -> Ast:
-    if not s:
-        return Ast()
-    return Ast(_parser.parse(_lexer.tokenize(s)))
+    return Ast(_parser.parse(_lexer.tokenize(s))) if s else Ast()

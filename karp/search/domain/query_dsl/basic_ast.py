@@ -10,7 +10,7 @@ class Ast:
         self.root = root
 
     def __repr__(self):
-        return "<Tree root={}>".format(repr(self.root))
+        return f"<Tree root={repr(self.root)}>"
 
     def is_empty(self) -> bool:
         return self.root is None
