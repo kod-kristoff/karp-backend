@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "karp-lex-core"
+version = "0.1.4"
+description = "Core of karp lex"
+authors = ["Kristoffer Andersson <kod.kristoff@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "karp_lex_core"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ulid-py = "^1.1.0"
+pydantic = "^1.10.4"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
