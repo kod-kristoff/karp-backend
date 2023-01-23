@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "*"
+    tags-ignore:
+      - v*
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  tests:
+    name: ${{ matrix.task.name }} py-${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+        python-version: ["3.10"]
+        # python-version: ["3.10", "3.11-dev"]  TODO: enable when setup-pdm works
+        os: [ubuntu-latest]
+        task:
+          - name: Lint code
+            run: make lint
+            # allow_failure: false
+          - name: Typecheck
+            run: make type-check
+            # allow_failure: true
+          - name: Doc tests
+            run: make run-doc-tests
+          - name: Tests
+            run: make test
+        # allow_failure: false
+        # include:
+        #   - task.allow_failure: false
+        #   - task.allow_failure: true
+        #     python-version: "3.11-dev"
+        # - name: Lint w bandit
+        #   run: make lint-security-issues
+        #   allow_failure: false
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up PDM & Python ${{ matrix.python-version }}
+        uses: pdm-project/setup-pdm@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: make install-dev
+
+      - name: ${{ matrix.task.name }}
+        run: ${{ matrix.task.run }}
+        # continue-on-error: ${{ matrix.task.allow_failure }}

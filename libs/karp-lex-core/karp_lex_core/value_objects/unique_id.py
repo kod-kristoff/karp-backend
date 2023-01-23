@@ -1,6 +1,6 @@
 """Handle of unique ids."""
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 import uuid
 
 import ulid
@@ -23,7 +23,7 @@ def make_unique_id(t: Optional[ulid.codec.TimestampPrimitive] = None) -> UniqueI
     return ulid.new() if t is None else ulid.from_timestamp(t)
 
 
-def to_unique_id(phrase: typing.Any) -> UniqueId:
+def to_unique_id(phrase: Any) -> UniqueId:
     if isinstance(phrase, str):
         return ulid.from_str(phrase)
     raise ValueError()
